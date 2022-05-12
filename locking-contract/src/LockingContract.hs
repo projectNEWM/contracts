@@ -25,9 +25,9 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module RoyaltyPayout
-  ( royaltyPayoutScript
-  , royaltyPayoutScriptShortBs
+module LockingContract
+  ( lockingContractScript
+  , lockingContractScriptShortBs
   , CustomDatumType
   , Schema
   , contract
@@ -41,10 +41,10 @@ import qualified Ledger.Typed.Scripts      as Scripts
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import           Plutus.Contract
-import qualified Plutus.V1.Ledger.Ada      as Ada
 import qualified Plutus.V1.Ledger.Scripts  as Plutus
-import qualified Plutus.V1.Ledger.Contexts as Contexts
-import qualified Plutus.V1.Ledger.Value    as Value
+-- import qualified Plutus.V1.Ledger.Ada      as Ada
+-- import qualified Plutus.V1.Ledger.Contexts as Contexts
+-- import qualified Plutus.V1.Ledger.Value    as Value
 import           Data.Aeson                ( FromJSON, ToJSON )
 import           Data.OpenApi.Schema       ( ToSchema )
 import           GHC.Generics              ( Generic )
@@ -59,10 +59,8 @@ import           Prelude                   ( Show )
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-    { cdtGroupPKHs :: ![PubKeyHash]
-    -- ^ List of the public key hashes
-    , cdtPayouts   :: ![Integer]
-    -- ^ List of the payouts in lovelace.
+    { newmPKH :: !PubKeyHash
+    -- ^ Newm's public key hashe
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -71,8 +69,8 @@ PlutusTx.makeLift ''CustomDatumType
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
-data RoyaltyPayoutParams = RoyaltyPayoutParams {}
-PlutusTx.makeLift ''RoyaltyPayoutParams
+data LockingContractParams = LockingContractParams {}
+PlutusTx.makeLift ''LockingContractParams
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -83,35 +81,8 @@ PlutusTx.makeLift ''CustomRedeemerType
 -- | mkValidator :: TypeData -> Datum -> Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
-mkValidator :: RoyaltyPayoutParams -> CustomDatumType -> CustomRedeemerType -> ScriptContext -> Bool
-mkValidator _ datum _ context = oneScriptInput && checkAllPayments (cdtGroupPKHs datum) (cdtPayouts datum)
-  where
-    -- Get the Tx Info
-    info :: TxInfo
-    info = scriptContextTxInfo context
-
-    -- Loop the pkh and amount lists, checking each case.
-    checkAllPayments :: [PubKeyHash] -> [Integer] -> Bool
-    checkAllPayments [] [] = True -- everyone got paid correctly
-    checkAllPayments [] _  = True -- leftover goes back as change
-    checkAllPayments _  [] = True -- leftover goes back as change
-    checkAllPayments (pkh:pkhs) (amt:amts)
-      | checkValuePaidTo = checkAllPayments pkhs amts
-      | otherwise        = traceIfFalse "A Member Of The Group Is Not Being Paid." False
-        where
-          checkValuePaidTo :: Bool
-          checkValuePaidTo = Value.geq (Contexts.valuePaidTo info pkh) (Ada.lovelaceValueOf amt)
-
-    -- Force a single script utxo input.
-    oneScriptInput :: Bool
-    oneScriptInput = traceIfFalse "More Than One Script Input Is Being Validated." $ loopInputs (txInfoInputs info) 0
-      where
-        loopInputs :: [TxInInfo] -> Integer -> Bool
-        loopInputs []      counter = counter == 1 -- There can only be one
-        loopInputs (x:xs) !counter =
-          case txOutDatumHash $ txInInfoResolved x of
-            Nothing -> do counter <= 1 && loopInputs xs counter
-            Just _  -> do counter <= 1 && loopInputs xs (counter + 1)
+mkValidator :: LockingContractParams -> CustomDatumType -> CustomRedeemerType -> ScriptContext -> Bool
+mkValidator _ _ _ _ = True
 -------------------------------------------------------------------------------
 -- | This determines the data type for Datum and Redeemer.
 -------------------------------------------------------------------------------
@@ -122,7 +93,7 @@ instance Scripts.ValidatorTypes Typed where
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Typed Validator.
 -------------------------------------------------------------------------------
-typedValidator :: RoyaltyPayoutParams -> Scripts.TypedValidator Typed
+typedValidator :: LockingContractParams -> Scripts.TypedValidator Typed
 typedValidator rpp = Scripts.mkTypedValidator @Typed
   ($$(PlutusTx.compile [|| mkValidator ||]) `PlutusTx.applyCode` PlutusTx.liftCode rpp)
    $$(PlutusTx.compile [|| wrap        ||])
@@ -132,18 +103,18 @@ typedValidator rpp = Scripts.mkTypedValidator @Typed
 -- | Define The Validator Here
 -------------------------------------------------------------------------------
 validator :: Plutus.Validator
-validator = Scripts.validatorScript (typedValidator $ RoyaltyPayoutParams {})
+validator = Scripts.validatorScript (typedValidator $ LockingContractParams {})
 -------------------------------------------------------------------------------
 -- | The code below is required for the plutus script compile.
 -------------------------------------------------------------------------------
 script :: Plutus.Script
 script = Plutus.unValidatorScript validator
 
-royaltyPayoutScriptShortBs :: SBS.ShortByteString
-royaltyPayoutScriptShortBs = SBS.toShort . LBS.toStrict $ serialise script
+lockingContractScriptShortBs :: SBS.ShortByteString
+lockingContractScriptShortBs = SBS.toShort . LBS.toStrict $ serialise script
 
-royaltyPayoutScript :: PlutusScript PlutusScriptV1
-royaltyPayoutScript = PlutusScriptSerialised royaltyPayoutScriptShortBs
+lockingContractScript :: PlutusScript PlutusScriptV1
+lockingContractScript = PlutusScriptSerialised lockingContractScriptShortBs
 -------------------------------------------------------------------------------
 -- | Off Chain
 -------------------------------------------------------------------------------

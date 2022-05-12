@@ -30,7 +30,7 @@ import qualified Plutus.PAB.Webserver.Server         as PAB.Server
 import           Plutus.Trace.Emulator.Extract       (writeScriptsTo, ScriptsConfig (..), Command (..))
 import           Ledger.Index                        (ValidatorMode(..))
 
-import RoyaltyPayout
+import LockingContract
 
 main :: IO ()
 main = void $ Simulator.runSimulationWith handlers $ do
@@ -61,7 +61,7 @@ writeCostingScripts = do
 
 
 data StarterContracts =
-    RoyaltyPayout
+    LockingContract
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass OpenApi.ToSchema
 
@@ -83,11 +83,11 @@ instance Pretty StarterContracts where
     pretty = viaShow
 
 instance Builtin.HasDefinitions StarterContracts where
-    getDefinitions = [RoyaltyPayout]
+    getDefinitions = [LockingContract]
     getSchema =  \case
-        RoyaltyPayout -> Builtin.endpointsToSchemas @RoyaltyPayout.Schema
+        LockingContract -> Builtin.endpointsToSchemas @LockingContract.Schema
     getContract = \case
-        RoyaltyPayout -> SomeBuiltin (RoyaltyPayout.contract @ContractError)
+        LockingContract -> SomeBuiltin (LockingContract.contract @ContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =

@@ -5,16 +5,16 @@ import           Cardano.Api.Shelley
 import qualified Cardano.Ledger.Alonzo.Data as Alonzo
 import qualified Plutus.V1.Ledger.Api as Plutus
 import qualified Data.ByteString.Short as SBS
-import           RoyaltyPayout (royaltyPayoutScript, royaltyPayoutScriptShortBs)
+import           LockingContract (lockingContractScript, lockingContractScriptShortBs)
 
 main :: IO ()
 main = do
   args <- getArgs
   let nargs = length args
   let scriptnum = if nargs > 0 then read (args!!0) else 420
-  let scriptname = if nargs > 1 then args!!1 else  "royalty_payout.plutus"
+  let scriptname = if nargs > 1 then args!!1 else  "locking_contract.plutus"
   putStrLn $ "OUTPUT: " ++ scriptname
-  writePlutusScript scriptnum scriptname royaltyPayoutScript royaltyPayoutScriptShortBs
+  writePlutusScript scriptnum scriptname lockingContractScript lockingContractScriptShortBs
 
 writePlutusScript :: Integer -> FilePath -> PlutusScript PlutusScriptV1 -> SBS.ShortByteString -> IO ()
 writePlutusScript scriptnum filename scriptSerial scriptSBS =
