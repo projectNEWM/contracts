@@ -21,3 +21,8 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
+result*
+.envrc
+.vim
+scripts/wallet
+status.json

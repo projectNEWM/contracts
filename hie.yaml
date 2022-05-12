@@ -1,0 +1,18 @@
+cradle:
+  cabal:
+    - path: "./token-sale/src"
+      component: "token-sale:lib:token-sale"
+    - path: "./token-sale/pab"
+      component: "plutus-starter:exe:plutus-starter-pab"
+    - path: "./royalty-payout/src"
+      component: "royalty-payout:lib:royalty-payout"
+    - path: "./royalty-payout/pab"
+      component: "plutus-starter:exe:plutus-starter-pab"
+    - path: "./auction-sale/src"
+      component: "auction-sale:lib:auction-sale"
+    - path: "./auction-sale/pab"
+      component: "plutus-starter:exe:plutus-starter-pab"
+    - path: "./structure-contract/src"
+      component: "structure-contract:lib:structure-contract"
+    - path: "./structure-contract/pab"
+      component: "plutus-starter:exe:plutus-starter-pab"
