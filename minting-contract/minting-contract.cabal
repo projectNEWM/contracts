@@ -1,10 +1,10 @@
 cabal-version: 2.4
 
-name:                   token-sale
+name:                   minting-contract
 version:                0
-description:            A plutus script for retreiving funds.
-author:                 The Ancient Kraken
-maintainer:             logical.mechanism@protonmail.com
+description:            A plutus script for minting FTs.
+author:                 Quinn Parkinson
+maintainer:             qparkinson@projectnewm.io
 license:                AGPL-3.0-only
 build-type:             Simple
 
@@ -45,9 +45,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      TokenSale
-                        DataTypes
-                        CheckFuncs
+  exposed-modules:      MintingContract
 
   build-depends:        bytestring
                       , cardano-api
@@ -64,10 +62,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable token-sale
+executable minting-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              token-sale.hs
+  main-is:              minting-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -76,7 +74,7 @@ executable token-sale
 
   build-depends:        cardano-api
                       , cardano-ledger-alonzo
-                      , token-sale
+                      , minting-contract
                       , plutus-ledger-api
                       , bytestring
 
