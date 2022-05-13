@@ -45,10 +45,16 @@ mkPolicy mp _ context = checkMintedAmount && checkSigner
     checkSigner :: Bool
     checkSigner = traceIfFalse "Incorrect Signer" $ txSignedBy info (mpNewmPKH mp)
 
+    checkPolicyId :: CurrencySymbol ->  Bool
+    checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ownCurrencySymbol context
+
+    checkAmount :: Integer -> Bool
+    checkAmount amt = traceIfFalse "Incorrect Mint/Burn Amount" $ amt == (100 :: Integer) || amt == (-100 :: Integer)
+
     checkMintedAmount :: Bool
     checkMintedAmount = case flattenValue (txInfoMint info) of
-      [(cs, _, _)] -> cs  == ownCurrencySymbol context
-      _            -> traceIfFalse "Incorrect Policy Id" False
+      [(cs, _, amt)] -> checkPolicyId cs && checkAmount amt
+      _              -> traceIfFalse "Mint/Burn Error" False
 
 -------------------------------------------------------------------------------
 policy :: MintParams -> Scripts.MintingPolicy

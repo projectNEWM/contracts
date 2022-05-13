@@ -39,9 +39,10 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
 seller_tx_in=${TXIN::-8}
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
-collateral_tx_in=${CTXIN::-19}
+# CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
+# collateral_tx_in=${CTXIN::-19}
 
+collat=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --alonzo-era \
@@ -49,7 +50,7 @@ FEE=$(${cli} transaction build \
     --invalid-hereafter 99999999 \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
-    --tx-in-collateral #0 \
+    --tx-in-collateral="${collat}#0" \
     --tx-in ${seller_tx_in} \
     --tx-out="${seller_address_out}" \
     --mint="${BURN_ASSET}" \
