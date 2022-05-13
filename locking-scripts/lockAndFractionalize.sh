@@ -72,7 +72,7 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-collateral f01c2b8c8e9d57fc162819177903d1de40908667f0b02e821a0abd1869526857#0 \
+    --tx-in-collateral 7832abe6a6016f21730512bcfaac59f14e3389002b1db5de698c7c8971b0cd13#0 \
     --tx-in-datum-file data/datum.json \
     --tx-in-redeemer-file data/lock_redeemer.json \
     --tx-out="${buyer_address_out}" \

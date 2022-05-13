@@ -62,6 +62,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 # exit
+collat=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --alonzo-era \
@@ -70,7 +71,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
-    --tx-in-collateral b8b4419936e288e5a5fe94866edbe45df98ded69d55e192920785d143a0fb5e5#0 \
+    --tx-in-collateral="${collat}#0" \
     --tx-in ${script_tx_in} \
     --tx-in-script-file ${script_path} \
     --tx-in-datum-file data/datum.json \
