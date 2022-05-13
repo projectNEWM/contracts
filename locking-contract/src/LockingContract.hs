@@ -70,6 +70,14 @@ data CustomDatumType = CustomDatumType
     deriving anyclass (FromJSON, ToJSON, ToSchema)
 PlutusTx.unstableMakeIsData ''CustomDatumType
 PlutusTx.makeLift ''CustomDatumType
+-- old == new
+instance Eq CustomDatumType where
+  {-# INLINABLE (==) #-}
+  a == b = ( cdtNewmPKH   a == cdtNewmPKH   b) &&
+           ( cdtNewmPid   a == cdtNewmPid   b) &&
+           ( cdtArtistPid a == cdtArtistPid b) &&
+           ( cdtArtistTn  a == cdtArtistTn  b) &&
+           ( cdtArtistPKH a == cdtArtistPKH b)
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
@@ -94,11 +102,12 @@ mkValidator :: LockingContractParams -> CustomDatumType -> CustomRedeemerType ->
 mkValidator _ datum redeemer context =
   case redeemer of
     Lock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH && txSignedBy info artistPKH
-      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
-      ; let c = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue + singularNFT)
-      ; let d = traceIfFalse "FT Mint Error"         checkMintedAmount
-      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b,c,d]
+      { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH && txSignedBy info artistPKH
+      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
+      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs (validatingValue + singularNFT)
+      ; let d = traceIfFalse "FT Mint Error"       checkMintedAmount
+      ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatum contOutputs
+      ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Unlock -> do 
       { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH && txSignedBy info artistPKH
@@ -106,12 +115,12 @@ mkValidator _ datum redeemer context =
       ; let c = traceIfFalse "NFT Payout Error"      $ isPKHGettingPaid txOutputs artistPKH singularNFT
       ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
       ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
-      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b,c,d,e]
+      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Exit -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH
-      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
-      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b]
+      { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH
+      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
+      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b]
       }
    where
     info :: TxInfo
@@ -130,7 +139,7 @@ mkValidator _ datum redeemer context =
     newmPKH = cdtNewmPKH datum
 
     artistPKH :: PubKeyHash
-    artistPKH = cdtNewmPKH datum
+    artistPKH = cdtArtistPKH datum
 
     validatingValue :: Value
     validatingValue = 
@@ -145,6 +154,19 @@ mkValidator _ datum redeemer context =
     checkMintedAmount = case Value.flattenValue (txInfoMint info) of
         [(cs, tn, _)] -> cs == cdtNewmPid datum && tn == cdtArtistTn datum
         _             -> False
+    
+    isEmbeddedDatum :: [TxOut] -> Bool
+    isEmbeddedDatum []     = False
+    isEmbeddedDatum (x:xs) = 
+      case txOutDatumHash x of
+        Nothing -> isEmbeddedDatum xs
+        Just dh -> 
+          case findDatum dh info of
+            Nothing        -> False
+            Just (Datum d) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing       -> False
+                Just embedded -> datum == embedded
 -------------------------------------------------------------------------------
 -- | This determines the data type for Datum and Redeemer.
 -------------------------------------------------------------------------------
