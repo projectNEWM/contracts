@@ -20,42 +20,35 @@ module MintingContract
 
 import           Ledger                   hiding (singleton)
 import           PlutusTx.Prelude         hiding (Semigroup (..), unless)
--- import           Prelude                  (IO, Semigroup (..), Show (..), String, snd)
 import           Cardano.Api.Shelley      (PlutusScript (..), PlutusScriptV1)
--- import           Plutus.V1.Ledger.Time    (POSIXTime (POSIXTime, getPOSIXTime), POSIXTimeRange)
 import           Plutus.V1.Ledger.Value   as PV
--- import           Ledger.Interval          (after, lowerBound)
--- import           PlutusTx                 (Data (..))
 import qualified Data.ByteString.Lazy     as LB
 import qualified Data.ByteString.Short    as SBS
 import qualified Ledger.Typed.Scripts     as Scripts
--- import           Ledger.Value             as Value
--- import           Ledger.Ada               as Ada
 import qualified PlutusTx
 import           Codec.Serialise
--- import           Ledger.TimeSlot
--- import qualified Data.Text                as T
--- import           Data.Text.Encoding        as Text (decodeUtf8, encodeUtf8)
--- import           PlutusTx.Builtins
 {-
-
   Author: Quinn Parkinson
-
+  Rev: 0
 -}
-data MintParams = MintParams {}
+newtype MintParams = MintParams
+  { mpNewmPKH :: PubKeyHash }
 PlutusTx.makeLift ''MintParams
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: MintParams -> BuiltinData -> ScriptContext -> Bool
-mkPolicy _ _ context = checkMintedAmount
+mkPolicy mp _ context = checkMintedAmount && checkSigner
   where
     info :: TxInfo
     info = scriptContextTxInfo context
 
+    checkSigner :: Bool
+    checkSigner = traceIfFalse "Incorrect Signer" $ txSignedBy info (mpNewmPKH mp)
+
     checkMintedAmount :: Bool
     checkMintedAmount = case flattenValue (txInfoMint info) of
-      [(cs, _, amt)] -> cs  == ownCurrencySymbol context && amt == (100000000 :: Integer)
-      _              -> traceIfFalse "Minting was done incorrectly." False
+      [(cs, _, _)] -> cs  == ownCurrencySymbol context
+      _            -> traceIfFalse "Incorrect Policy Id" False
 
 -------------------------------------------------------------------------------
 policy :: MintParams -> Scripts.MintingPolicy
@@ -65,7 +58,7 @@ policy mp = mkMintingPolicyScript $
      PlutusTx.liftCode mp
 -------------------------------------------------------------------------------
 plutusScript :: Script
-plutusScript = unMintingPolicyScript (policy $ MintParams {})
+plutusScript = unMintingPolicyScript (policy $ MintParams { mpNewmPKH = "06c35b3567b2d8f4c3a838c44050fa785c702d532467c8bfdb85046b"})
 
 validator :: Validator
 validator = Validator plutusScript

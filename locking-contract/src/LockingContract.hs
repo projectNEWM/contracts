@@ -44,11 +44,12 @@ import           Plutus.Contract
 import qualified Plutus.V1.Ledger.Scripts  as Plutus
 -- import qualified Plutus.V1.Ledger.Ada      as Ada
 -- import qualified Plutus.V1.Ledger.Contexts as Contexts
--- import qualified Plutus.V1.Ledger.Value    as Value
+import qualified Plutus.V1.Ledger.Value    as Value
 import           Data.Aeson                ( FromJSON, ToJSON )
 import           Data.OpenApi.Schema       ( ToSchema )
 import           GHC.Generics              ( Generic )
 import           Prelude                   ( Show )
+import CheckFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -59,8 +60,11 @@ import           Prelude                   ( Show )
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-    { newmPKH :: !PubKeyHash
-    -- ^ Newm's public key hashe
+    { cdtNewmPKH   :: !PubKeyHash
+    , cdtNewmPid   :: !CurrencySymbol
+    , cdtArtistPid :: !CurrencySymbol
+    , cdtArtistTn  :: !TokenName
+    , cdtArtistPKH :: !PubKeyHash
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -72,17 +76,75 @@ PlutusTx.makeLift ''CustomDatumType
 data LockingContractParams = LockingContractParams {}
 PlutusTx.makeLift ''LockingContractParams
 -------------------------------------------------------------------------------
--- | Create the redeemer parameters data object.
+-- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = CustomRedeemerType {}
-PlutusTx.unstableMakeIsData ''CustomRedeemerType
+data CustomRedeemerType = Lock   |
+                          Unlock |
+                          Exit
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ('Lock,   0)
+                                                , ('Unlock, 1)
+                                                , ('Exit,   2)
+                                                ]
 PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
 -- | mkValidator :: TypeData -> Datum -> Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
 mkValidator :: LockingContractParams -> CustomDatumType -> CustomRedeemerType -> ScriptContext -> Bool
-mkValidator _ _ _ _ = True
+mkValidator _ datum redeemer context =
+  case redeemer of
+    Lock -> do 
+      { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH && txSignedBy info artistPKH
+      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
+      ; let c = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue + singularNFT)
+      ; let d = traceIfFalse "FT Mint Error"         checkMintedAmount
+      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b,c,d]
+      }
+    Unlock -> do 
+      { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH && txSignedBy info artistPKH
+      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
+      ; let c = traceIfFalse "NFT Payout Error"      $ isPKHGettingPaid txOutputs artistPKH singularNFT
+      ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
+      ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
+      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b,c,d,e]
+      }
+    Exit -> do 
+      { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH
+      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
+      ;         traceIfFalse "Remove Endpoint Error" $ all (==True) [a,b]
+      }
+   where
+    info :: TxInfo
+    info = scriptContextTxInfo  context
+
+    contOutputs :: [TxOut]
+    contOutputs = getContinuingOutputs context
+
+    txInputs :: [TxInInfo]
+    txInputs = txInfoInputs  info
+
+    txOutputs :: [TxOut]
+    txOutputs = txInfoOutputs info
+
+    newmPKH :: PubKeyHash
+    newmPKH = cdtNewmPKH datum
+
+    artistPKH :: PubKeyHash
+    artistPKH = cdtNewmPKH datum
+
+    validatingValue :: Value
+    validatingValue = 
+      case findOwnInput context of
+        Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
+        Just input -> txOutValue $ txInInfoResolved input
+
+    singularNFT :: Value
+    singularNFT = Value.singleton (cdtArtistPid datum) (cdtArtistTn datum) (1 :: Integer)
+
+    checkMintedAmount :: Bool
+    checkMintedAmount = case Value.flattenValue (txInfoMint info) of
+        [(cs, tn, _)] -> cs == cdtNewmPid datum && tn == cdtArtistTn datum
+        _             -> False
 -------------------------------------------------------------------------------
 -- | This determines the data type for Datum and Redeemer.
 -------------------------------------------------------------------------------
