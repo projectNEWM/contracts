@@ -3,20 +3,21 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../token-sale/token_sale.plutus"
+script_path="../minting-contract/minting_contract.plutus"
 
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
+seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+policy_id=$(cat ../minting-contract/policy.id)
 
-SC_ASSET="9001 57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf3916522.43484f43"
 
-SC_UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+ASSET="100 ${policy_id}.43484f43"
+
+UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-datum-embed-file data/create_sale_datum.json \
-    --tx-out="${SCRIPT_ADDRESS} ${SC_ASSET}" | tr -dc '0-9')
-sc_address_out="${SCRIPT_ADDRESS} + ${SC_UTXO_VALUE} + ${SC_ASSET}"
-echo "Script OUTPUT: "${sc_address_out}
-
+    --tx-out="${seller_address} ${ASSET}" | tr -dc '0-9')
+seller_address_out="${seller_address} + ${UTXO_VALUE} + ${ASSET}"
+echo ${seller_address_out}
 #
 # exit
 #
@@ -37,6 +38,8 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
 seller_tx_in=${TXIN::-8}
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
+collateral_tx_in=${CTXIN::-19}
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -45,9 +48,13 @@ FEE=$(${cli} transaction build \
     --invalid-hereafter 99999999 \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
+    --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${seller_tx_in} \
-    --tx-out="${sc_address_out}" \
-    --tx-out-datum-embed-file data/create_sale_datum.json  \
+    --tx-out="${seller_address_out}" \
+    --mint="${ASSET}" \
+    --mint-redeemer-file data/redeemer.json \
+    --mint-script-file ${script_path} \
+    --required-signer-hash ${seller_pkh} \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
