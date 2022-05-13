@@ -58,7 +58,7 @@ policy mp = mkMintingPolicyScript $
      PlutusTx.liftCode mp
 -------------------------------------------------------------------------------
 plutusScript :: Script
-plutusScript = unMintingPolicyScript (policy $ MintParams { mpNewmPKH = "06c35b3567b2d8f4c3a838c44050fa785c702d532467c8bfdb85046b"})
+plutusScript = unMintingPolicyScript (policy $ MintParams { mpNewmPKH = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"})
 
 validator :: Validator
 validator = Validator plutusScript
