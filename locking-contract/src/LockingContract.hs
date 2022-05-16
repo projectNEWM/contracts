@@ -42,8 +42,7 @@ import qualified PlutusTx
 import           PlutusTx.Prelude
 import           Plutus.Contract
 import qualified Plutus.V1.Ledger.Scripts  as Plutus
--- import qualified Plutus.V1.Ledger.Ada      as Ada
--- import qualified Plutus.V1.Ledger.Contexts as Contexts
+-- import qualified Plutus.V1.Ledger.Ada as Ada
 import qualified Plutus.V1.Ledger.Value    as Value
 import           Data.Aeson                ( FromJSON, ToJSON )
 import           Data.OpenApi.Schema       ( ToSchema )
@@ -65,6 +64,7 @@ data CustomDatumType = CustomDatumType
     , cdtArtistPid :: !CurrencySymbol
     , cdtArtistTn  :: !TokenName
     , cdtArtistPKH :: !PubKeyHash
+    , cdtUniqueId  :: !BuiltinByteString 
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -77,7 +77,8 @@ instance Eq CustomDatumType where
            ( cdtNewmPid   a == cdtNewmPid   b) &&
            ( cdtArtistPid a == cdtArtistPid b) &&
            ( cdtArtistTn  a == cdtArtistTn  b) &&
-           ( cdtArtistPKH a == cdtArtistPKH b)
+           ( cdtArtistPKH a == cdtArtistPKH b) &&
+           ( cdtUniqueId  a == cdtUniqueId  b)
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
@@ -115,12 +116,12 @@ mkValidator _ datum redeemer context =
       ; let c = traceIfFalse "NFT Payout Error"      $ isPKHGettingPaid txOutputs artistPKH singularNFT
       ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
       ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
-      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e]
+      ; let f = traceIfFalse "Datum Error"           $ isEmbeddedDatum contOutputs
+      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e,f]
       }
     Exit -> do 
       { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH
-      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b]
+      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
    where
     info :: TxInfo
@@ -151,7 +152,8 @@ mkValidator _ datum redeemer context =
     singularNFT = Value.singleton (cdtArtistPid datum) (cdtArtistTn datum) (1 :: Integer)
 
     checkMintedAmount :: Bool
-    checkMintedAmount = case Value.flattenValue (txInfoMint info) of
+    checkMintedAmount = 
+      case Value.flattenValue (txInfoMint info) of
         [(cs, tn, _)] -> cs == cdtNewmPid datum && tn == cdtArtistTn datum
         _             -> False
     
