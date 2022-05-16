@@ -46,6 +46,7 @@ library
   hs-source-dirs:       src
 
   exposed-modules:      LockingContract
+                        CheckFuncs
 
   build-depends:        bytestring
                       , cardano-api

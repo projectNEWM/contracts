@@ -3,29 +3,32 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../token-sale/token_sale.plutus"
+script_path="../locking-contract/locking_contract.plutus"
+mint_path="../minting-contract/minting_contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-profit_address=$(cat wallets/profit-wallet/payment.addr)
+#
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+#
 seller_address=$(cat wallets/seller-wallet/payment.addr)
-
-SC_ASSET="9001 57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf3916522.43484f43"
-CHANGE_ASSET=""
-
-SC_UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+#
+policy_id=$(cat ../minting-contract/policy.id)
+#
+SC_ASSET="1 7470b5d94b828481469f1c1a15edbcc5d23e0326fe60892fcf8dcdeb.455247"
+MINT_ASSET="100 ${policy_id}.455247"
+UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-datum-embed-file data/create_sale_datum.json \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
-buyer_address_out="${buyer_address} + ${SC_UTXO_VALUE} + ${SC_ASSET}"
-# change_return_out="${buyer_address} + ${SC_UTXO_VALUE} + ${CHANGE_ASSET}"
-echo "Buy OUTPUT: "${buyer_address_out}
-
+#
+script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
+buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
+echo "Script OUTPUT: "${script_address_out}
+echo "Mint OUTPUT: "${buyer_address_out}
 #
 # exit
 #
-
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
@@ -69,16 +72,19 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-collateral ${collateral_tx_in} \
-    --tx-in-datum-file data/create_sale_datum.json \
-    --tx-in-redeemer-file data/buy_redeemer.json \
-    --tx-out ${profit_address}+2000000 \
-    --tx-out ${seller_address}+5000000 \
+    --tx-in-collateral 85598de14b96a9c45442c55eae6d3b097071099289580a51bc3ec1ffe061f9e6#0 \
+    --tx-in-datum-file data/datum.json \
+    --tx-in-redeemer-file data/lock_redeemer.json \
     --tx-out="${buyer_address_out}" \
+    --tx-out="${script_address_out}" \
+    --tx-out-datum-embed-file data/datum.json \
     --required-signer-hash ${buyer_pkh} \
+    --required-signer-hash ${seller_pkh} \
     --tx-in-script-file ${script_path} \
+    --mint="${MINT_ASSET}" \
+    --mint-redeemer-file data/datum.json \
+    --mint-script-file ${mint_path} \
     --testnet-magic 1097911063)
-    # --tx-out="${change_return_out}" \
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -90,6 +96,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

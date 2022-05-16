@@ -6,11 +6,11 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 
 # Addresses
-sender_address=$(cat wallets/buyer-wallet/payment.addr)
-receiver_address=$(cat wallets/seller-wallet/payment.addr)
+sender_address=$(cat wallets/seller-wallet/payment.addr)
+receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
 # Define Asset to be printed here
-asset="9001 57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf3916522.43484f43"
+asset="100 85a7c8b5171c7f114b8263b195203b7becb285d29d36cca039bdeb20.43484f43"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
@@ -56,7 +56,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063
