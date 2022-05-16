@@ -10,11 +10,13 @@ seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 policy_id=$(cat ../minting-contract/policy.id)
 
+dh=$(cardano-cli transaction hash-script-data --script-data-file data/datum.json)
 
 ASSET="100 ${policy_id}.43484f43"
 
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
+    --tx-out-datum-embed-file data/datum.json \
     --tx-out="${seller_address} ${ASSET}" | tr -dc '0-9')
 seller_address_out="${seller_address} + ${UTXO_VALUE} + ${ASSET}"
 echo ${seller_address_out}
@@ -51,8 +53,9 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${seller_tx_in} \
     --tx-out="${seller_address_out}" \
+    --tx-out-datum-embed-file data/datum.json \
     --mint="${ASSET}" \
-    --mint-redeemer-file data/redeemer.json \
+    --mint-redeemer-file data/datum.json \
     --mint-script-file ${script_path} \
     --required-signer-hash ${seller_pkh} \
     --testnet-magic 1097911063)
@@ -62,7 +65,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

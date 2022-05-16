@@ -82,7 +82,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${buyer_pkh} \
     --required-signer-hash ${seller_pkh} \
     --mint="${BURN_ASSET}" \
-    --mint-redeemer-file data/unlock_redeemer.json \
+    --mint-redeemer-file data/datum.json \
     --mint-script-file ${mint_path} \
     --testnet-magic 1097911063)
 

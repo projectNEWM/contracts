@@ -72,7 +72,7 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-collateral 7832abe6a6016f21730512bcfaac59f14e3389002b1db5de698c7c8971b0cd13#0 \
+    --tx-in-collateral 85598de14b96a9c45442c55eae6d3b097071099289580a51bc3ec1ffe061f9e6#0 \
     --tx-in-datum-file data/datum.json \
     --tx-in-redeemer-file data/lock_redeemer.json \
     --tx-out="${buyer_address_out}" \
@@ -82,7 +82,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${seller_pkh} \
     --tx-in-script-file ${script_path} \
     --mint="${MINT_ASSET}" \
-    --mint-redeemer-file data/lock_redeemer.json \
+    --mint-redeemer-file data/datum.json \
     --mint-script-file ${mint_path} \
     --testnet-magic 1097911063)
 
