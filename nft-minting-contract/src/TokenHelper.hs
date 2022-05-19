@@ -39,8 +39,9 @@ import qualified PlutusTx.Builtins.Internal as Internal
   Version  : Rev 1
 -}
 -------------------------------------------------------------------------------
-nftName :: Integer -> BuiltinByteString
-nftName num = "NewM_" <> integerToInteger num
+nftName :: BuiltinByteString -> Integer -> BuiltinByteString
+nftName prefix num = prefix <> integerToInteger num
+
 -------------------------------------------------------------------------------
 intChars :: Integer -> BuiltinByteString
 intChars ch

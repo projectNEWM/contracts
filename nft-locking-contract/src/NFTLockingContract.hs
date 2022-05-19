@@ -60,6 +60,7 @@ import TokenHelper
 data CustomDatumType = CustomDatumType
   { cdtNewmPid :: !CurrencySymbol
   , cdtNumber  :: !Integer
+  , cdtPrefix  :: !BuiltinByteString
   }
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -69,7 +70,8 @@ PlutusTx.makeLift ''CustomDatumType
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtNewmPid    a == cdtNewmPid b) &&
-           ( cdtNumber a + 1 == cdtNumber  b)
+           ( cdtNumber a + 1 == cdtNumber  b) &&
+           ( cdtPrefix     a == cdtPrefix  b)
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
@@ -126,7 +128,7 @@ mkValidator lcp datum redeemer context =
     checkMintedAmount :: Bool
     checkMintedAmount =
       case Value.flattenValue (txInfoMint info) of
-        [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtNumber datum)) && (amt == (1 :: Integer))
+        [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
         _                -> False
 
     isEmbeddedDatum :: [TxOut] -> Bool

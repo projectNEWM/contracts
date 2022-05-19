@@ -61,6 +61,7 @@ PlutusTx.makeLift ''MintParams
 data CustomRedeemerType = CustomRedeemerType
     { crtNewmPid :: !CurrencySymbol
     , crtNumber  :: !Integer
+    , crtPrefix  :: !BuiltinByteString
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -97,6 +98,7 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
         d = CustomRedeemerType
               { crtNewmPid = crtNewmPid redeemer'
               , crtNumber = crtNumber redeemer'
+              , crtPrefix = crtPrefix redeemer'
               }
     
     valueAtValidator :: Value
@@ -117,6 +119,7 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
         d = CustomRedeemerType
               { crtNewmPid = crtNewmPid redeemer'
               , crtNumber = crtNumber redeemer'+1
+              , crtPrefix = crtPrefix redeemer'
               }
 
     redeemer' :: CustomRedeemerType
@@ -132,10 +135,10 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
     checkAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
 
     checkTkn :: TokenName -> Bool
-    checkTkn tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtNumber redeemer')
+    checkTkn tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix redeemer') (crtNumber redeemer')
       where
         debug :: BuiltinString
-        debug = decodeUtf8 $ nftName (crtNumber redeemer')
+        debug = decodeUtf8 $ nftName (crtPrefix redeemer') (crtNumber redeemer')
 
     checkMintedAmount :: Bool
     checkMintedAmount =
@@ -150,7 +153,7 @@ policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPo
 plutusScript :: Script
 plutusScript = unMintingPolicyScript $ policy params
   where
-    params = MintParams { mpValidatorHash = "619fa1405dd5057de3f622f05507f1758e837e1d4dedefeb5e2fe096"
+    params = MintParams { mpValidatorHash = "2ce17650d458c78ed350adaf0bea254b38c7591d04e6ea7c890ebc03"
                         , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
                         }
 
