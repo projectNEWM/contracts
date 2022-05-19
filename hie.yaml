@@ -6,3 +6,5 @@ cradle:
       component: "plutus-starter:exe:plutus-starter-pab"
     - path: "./minting-contract/src"
       component: "minting-contract:lib:minting-contract"
+    - path: "./nft-minting-contract/src"
+      component: "nft-locking-contract:lib:nft-locking-contract"
