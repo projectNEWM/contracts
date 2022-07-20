@@ -10,7 +10,7 @@ SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
 BUYER_ADDRESS=$(cat wallets/buyer-wallet/payment.addr)
 PROFIT_ADDRESS=$(cat wallets/profit-wallet/payment.addr)
 
-cardano-cli query protocol-parameters --testnet-magic 1097911063 --out-file tmp/protocol.json
+${cli} query protocol-parameters --testnet-magic 1097911063 --out-file tmp/protocol.json
 ${cli} query tip --testnet-magic 1097911063 | jq
 
 #

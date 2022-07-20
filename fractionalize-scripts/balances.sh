@@ -10,7 +10,7 @@ SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
 BUYER_ADDRESS=$(cat wallets/buyer-wallet/payment.addr)
 PROFIT_ADDRESS=$(cat wallets/profit-wallet/payment.addr)
 
-echo
+${cli} query protocol-parameters --testnet-magic 1097911063 --out-file tmp/protocol.json
 ${cli} query tip --testnet-magic 1097911063 | jq
 #
 echo
@@ -31,5 +31,4 @@ ${cli} query utxo --address ${BUYER_ADDRESS} --testnet-magic 1097911063
 echo
 echo -e "\033[1;34m Profit Address: \033[0m" 
 echo -e "\n \033[1;34m ${PROFIT_ADDRESS} \033[0m \n";
-${cli} query utxo --address ${PROFIT_ADDRESS} --testnet-magic 1097911063
-#
+# ${cli} query utxo --address ${PROFIT_ADDRESS} --testnet-magic 1097911063

@@ -7,28 +7,27 @@ script_path="../locking-contract/locking_contract.plutus"
 mint_path="../minting-contract/minting_contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-#
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
-#
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-#
 policy_id=$(cat ../minting-contract/policy.id)
-#
-SC_ASSET="1 7470b5d94b828481469f1c1a15edbcc5d23e0326fe60892fcf8dcdeb.455247"
-MINT_ASSET="100 ${policy_id}.455247"
+
+SC_ASSET="1 a896333a052024101cca7218b1ea94d87af763e2b7166bac67a34566.4e65774d5f30"
+BURN_ASSET="-100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
-#
-script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
-buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
+
+script_address_out="${script_address} + 5000000"
+buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${SC_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${buyer_address_out}
+
 #
 # exit
 #
+
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
@@ -63,25 +62,25 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 # exit
+collat=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
-    --alonzo-era \
+    --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --invalid-hereafter 99999999 \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
+    --tx-in-collateral="${collat}#0" \
     --tx-in ${script_tx_in} \
-    --tx-in-collateral 3ffc0c720f618c2ea451dfa95ede3836f674508673678dc356c8ffc531bd3343#0 \
+    --tx-in-script-file ${script_path} \
     --tx-in-datum-file data/datum.json \
-    --tx-in-redeemer-file data/lock_redeemer.json \
+    --tx-in-redeemer-file data/unlock_redeemer.json \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-datum-embed-file data/datum.json \
     --required-signer-hash ${buyer_pkh} \
     --required-signer-hash ${seller_pkh} \
-    --tx-in-script-file ${script_path} \
-    --mint="${MINT_ASSET}" \
+    --mint="${BURN_ASSET}" \
     --mint-redeemer-file data/datum.json \
     --mint-script-file ${mint_path} \
     --testnet-magic 1097911063)

@@ -1,0 +1,1 @@
+/home/logic/Documents/Work/LogicalMechanism/full-node-wallet/node/db-testnet/node.socket
