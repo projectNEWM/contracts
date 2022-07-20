@@ -34,9 +34,9 @@ module NFTMintingContract
 
 import           Ledger                   hiding (singleton)
 import           PlutusTx.Prelude         hiding (Semigroup (..), unless)
-import           Cardano.Api.Shelley      (PlutusScript (..), PlutusScriptV1)
+import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
 import           Plutus.V1.Ledger.Value   as Value
-import qualified Plutus.V1.Ledger.Ada as Ada
+import qualified Plutus.V1.Ledger.Ada     as Ada
 import qualified Plutus.V1.Ledger.Address as Address
 import qualified Data.ByteString.Lazy     as LB
 import qualified Data.ByteString.Short    as SBS
@@ -49,12 +49,15 @@ import           GHC.Generics              ( Generic )
 import           Prelude                   ( Show )
 import TokenHelper
 {-
-  Author: Quinn Parkinson
-  Rev: 0
+  Author   : The Ancient Kraken
+  Copyright: 2022
+  Version  : Rev 1
 -}
 data MintParams = MintParams
   { mpValidatorHash :: !ValidatorHash
+  -- ^ The locking script validator hash.
   , mpNewmPKH       :: !PubKeyHash
+  -- ^ The Newm public key hash.
   }
 PlutusTx.makeLift ''MintParams
 
@@ -70,7 +73,13 @@ PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: MintParams -> BuiltinData -> ScriptContext -> Bool
-mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && checkInputDatum && checkOutputDatum
+mkPolicy mp redeemer context = do
+      { let a = traceIfFalse "Minting Error"      checkTokenMint && checkIncreasingOutputDatum || checkTokenBurn && checkConstantOutputDatum
+      ; let b = traceIfFalse "Signing Error"      checkSigner
+      ; let c = traceIfFalse "Min ADA Error"      checkVal
+      ; let d = traceIfFalse "Input Datum Error"  checkInputDatum
+      ;         traceIfFalse "Minting Endpoint Error" $ all (==True) [a,b,c,d]
+      }
   where
     info :: TxInfo
     info = scriptContextTxInfo context
@@ -78,6 +87,11 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
     txInputs :: [TxInInfo]
     txInputs = txInfoInputs info
 
+    -- the redeemer is the datum of the locking script
+    redeemer' :: CustomRedeemerType
+    redeemer' = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer
+
+    -- return the first datum hash from a txout going to the locking script
     checkInputs :: [TxInInfo] -> Maybe DatumHash
     checkInputs [] = Nothing
     checkInputs (x:xs) =
@@ -85,6 +99,7 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
       then txOutDatumHash (txInInfoResolved x)
       else checkInputs xs
 
+    -- check that the locking script has the correct datum hash
     checkInputDatum :: Bool
     checkInputDatum =
       case checkInputs txInputs of
@@ -97,20 +112,22 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
         d :: CustomRedeemerType
         d = CustomRedeemerType
               { crtNewmPid = crtNewmPid redeemer'
-              , crtNumber = crtNumber redeemer'
-              , crtPrefix = crtPrefix redeemer'
+              , crtNumber  = crtNumber  redeemer'
+              , crtPrefix  = crtPrefix  redeemer'
               }
     
     valueAtValidator :: Value
     valueAtValidator = snd $ head $ scriptOutputsAt (mpValidatorHash mp) info
 
+    -- a decentrlized approach to this would be looking for an nft and not an ada amount.
     checkVal :: Bool
     checkVal = traceIfFalse "Incorrect Script Amount" $ Ada.lovelaceValueOf (5_000_000 :: Integer) == valueAtValidator
 
     datumHashAtValidator :: DatumHash
     datumHashAtValidator = fst $ head $ scriptOutputsAt (mpValidatorHash mp) info
 
-    checkOutputDatum =
+    checkIncreasingOutputDatum :: Bool
+    checkIncreasingOutputDatum =
       case findDatumHash (Datum $ PlutusTx.toBuiltinData d) info of
         Nothing -> traceIfFalse "No Datum Hash" False
         Just dh -> dh == datumHashAtValidator
@@ -118,33 +135,52 @@ mkPolicy mp redeemer context = checkMintedAmount && checkSigner && checkVal && c
         d :: CustomRedeemerType
         d = CustomRedeemerType
               { crtNewmPid = crtNewmPid redeemer'
-              , crtNumber = crtNumber redeemer'+1
-              , crtPrefix = crtPrefix redeemer'
+              , crtNumber  = crtNumber  redeemer' + 1
+              , crtPrefix  = crtPrefix  redeemer'
+              }
+    
+    checkConstantOutputDatum :: Bool
+    checkConstantOutputDatum =
+      case findDatumHash (Datum $ PlutusTx.toBuiltinData d) info of
+        Nothing -> traceIfFalse "No Datum Hash" False
+        Just dh -> dh == datumHashAtValidator
+      where
+        d :: CustomRedeemerType
+        d = CustomRedeemerType
+              { crtNewmPid = crtNewmPid redeemer'
+              , crtNumber  = crtNumber  redeemer'
+              , crtPrefix  = crtPrefix  redeemer'
               }
 
-    redeemer' :: CustomRedeemerType
-    redeemer' = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer
-
+    -- only newm can mint it
     checkSigner :: Bool
     checkSigner = traceIfFalse "Incorrect Signer" $ txSignedBy info (mpNewmPKH mp)
 
+    -- check the minting stuff here
+    checkTokenMint :: Bool
+    checkTokenMint =
+      case Value.flattenValue (txInfoMint info) of
+        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName tkn && checkMintAmount amt
+        _                -> traceIfFalse "Mint/Burn Error" False
+    
+    -- check the minting stuff here
+    checkTokenBurn :: Bool
+    checkTokenBurn =
+      case Value.flattenValue (txInfoMint info) of
+        [(cs, _, amt)] -> checkPolicyId cs && amt == (-1 :: Integer)
+        _                -> traceIfFalse "Mint/Burn Error" False
+    
     checkPolicyId :: CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ownCurrencySymbol context
 
-    checkAmount :: Integer -> Bool
-    checkAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
-
-    checkTkn :: TokenName -> Bool
-    checkTkn tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix redeemer') (crtNumber redeemer')
+    checkTokenName :: TokenName -> Bool
+    checkTokenName tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix redeemer') (crtNumber redeemer')
       where
         debug :: BuiltinString
         debug = decodeUtf8 $ nftName (crtPrefix redeemer') (crtNumber redeemer')
 
-    checkMintedAmount :: Bool
-    checkMintedAmount =
-      case Value.flattenValue (txInfoMint info) of
-        [(cs, tkn, amt)] -> checkPolicyId cs && checkTkn tkn && checkAmount amt
-        _                -> traceIfFalse "Mint/Burn Error" False
+    checkMintAmount :: Integer -> Bool
+    checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
 
 -------------------------------------------------------------------------------
 policy :: MintParams -> Scripts.MintingPolicy
@@ -153,8 +189,8 @@ policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPo
 plutusScript :: Script
 plutusScript = unMintingPolicyScript $ policy params
   where
-    params = MintParams { mpValidatorHash = "2ce17650d458c78ed350adaf0bea254b38c7591d04e6ea7c890ebc03"
-                        , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
+    params = MintParams { mpValidatorHash = "f4b38fbbad1937f227e3a59cae26fa3c9eaa6ca89f938f0d02b7d92d" -- locking script
+                        , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" -- newm pkh
                         }
 
 validator :: Validator

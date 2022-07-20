@@ -59,12 +59,16 @@ import CheckFuncs
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-    { cdtNewmPKH   :: !PubKeyHash
-    , cdtNewmPid   :: !CurrencySymbol
-    , cdtArtistPid :: !CurrencySymbol
-    , cdtArtistTn  :: !TokenName
-    , cdtArtistPKH :: !PubKeyHash
-    , cdtUniqueId  :: !BuiltinByteString 
+    { cdtFractionalPid :: !CurrencySymbol
+    -- ^ The Newm fractionalization minting policy
+    , cdtTokenizedPid  :: !CurrencySymbol
+    -- ^ The artist's tokenized policy id
+    , cdtTokenizedTn   :: !TokenName
+    -- ^ the artist's tokenized token name.
+    , cdtArtistPKH     :: !PubKeyHash
+    -- ^ The artist's public key hash.
+    , cdtArtistSC      :: !PubKeyHash
+    -- ^ The artist's staking key hash.
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -73,16 +77,15 @@ PlutusTx.makeLift ''CustomDatumType
 -- old == new
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( cdtNewmPKH   a == cdtNewmPKH   b) &&
-           ( cdtNewmPid   a == cdtNewmPid   b) &&
-           ( cdtArtistPid a == cdtArtistPid b) &&
-           ( cdtArtistTn  a == cdtArtistTn  b) &&
-           ( cdtArtistPKH a == cdtArtistPKH b) &&
-           ( cdtUniqueId  a == cdtUniqueId  b)
+  a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
+           ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
+           ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
+           ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
+           ( cdtArtistSC      a == cdtArtistSC      b )
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
-data LockingContractParams = LockingContractParams {}
+newtype LockingContractParams = LockingContractParams { lcNewmPKH :: PubKeyHash }
 PlutusTx.makeLift ''LockingContractParams
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
@@ -100,7 +103,7 @@ PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
 mkValidator :: LockingContractParams -> CustomDatumType -> CustomRedeemerType -> ScriptContext -> Bool
-mkValidator _ datum redeemer context =
+mkValidator lcp datum redeemer context =
   case redeemer of
     Lock -> do 
       { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH && txSignedBy info artistPKH
@@ -113,7 +116,7 @@ mkValidator _ datum redeemer context =
     Unlock -> do 
       { let a = traceIfFalse "Signing Tx Error"      $ txSignedBy info newmPKH && txSignedBy info artistPKH
       ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
-      ; let c = traceIfFalse "NFT Payout Error"      $ isPKHGettingPaid txOutputs artistPKH singularNFT
+      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr singularNFT
       ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
       ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
       ; let f = traceIfFalse "Datum Error"           $ isEmbeddedDatum contOutputs
@@ -127,6 +130,7 @@ mkValidator _ datum redeemer context =
     info :: TxInfo
     info = scriptContextTxInfo  context
 
+    -- inputs / outputs
     contOutputs :: [TxOut]
     contOutputs = getContinuingOutputs context
 
@@ -136,12 +140,21 @@ mkValidator _ datum redeemer context =
     txOutputs :: [TxOut]
     txOutputs = txInfoOutputs info
 
+    -- newm info
     newmPKH :: PubKeyHash
-    newmPKH = cdtNewmPKH datum
+    newmPKH = lcNewmPKH lcp
 
+    -- artist info
     artistPKH :: PubKeyHash
     artistPKH = cdtArtistPKH datum
 
+    artistSC :: PubKeyHash
+    artistSC = cdtArtistSC datum
+
+    artistAddr :: Address
+    artistAddr =  createAddress artistPKH artistSC
+
+    -- value info
     validatingValue :: Value
     validatingValue = 
       case findOwnInput context of
@@ -149,12 +162,13 @@ mkValidator _ datum redeemer context =
         Just input -> txOutValue $ txInInfoResolved input
 
     singularNFT :: Value
-    singularNFT = Value.singleton (cdtArtistPid datum) (cdtArtistTn datum) (1 :: Integer)
+    singularNFT = Value.singleton (cdtTokenizedPid datum) (cdtTokenizedTn datum) (1 :: Integer)
 
+    -- minting
     checkMintedAmount :: Bool
     checkMintedAmount = 
       case Value.flattenValue (txInfoMint info) of
-        [(cs, tn, _)] -> cs == cdtNewmPid datum && tn == cdtArtistTn datum
+        [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
         _             -> False
     
     isEmbeddedDatum :: [TxOut] -> Bool
@@ -189,7 +203,7 @@ typedValidator rpp = Scripts.mkTypedValidator @Typed
 -- | Define The Validator Here
 -------------------------------------------------------------------------------
 validator :: Plutus.Validator
-validator = Scripts.validatorScript (typedValidator $ LockingContractParams {})
+validator = Scripts.validatorScript (typedValidator $ LockingContractParams { lcNewmPKH = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" })
 -------------------------------------------------------------------------------
 -- | The code below is required for the plutus script compile.
 -------------------------------------------------------------------------------

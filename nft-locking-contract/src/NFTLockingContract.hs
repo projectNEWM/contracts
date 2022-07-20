@@ -55,12 +55,20 @@ import TokenHelper
   Version  : Rev 0
 -}
 -------------------------------------------------------------------------------
+-- | A custom eq class for datum objects.
+-------------------------------------------------------------------------------
+class Equiv a where
+  (===) :: a -> a -> Bool
+-------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
   { cdtNewmPid :: !CurrencySymbol
+  -- ^ The policy id from the minting script.
   , cdtNumber  :: !Integer
+  -- ^ The starting number for the catalog.
   , cdtPrefix  :: !BuiltinByteString
+  -- ^ The prefix for a catalog.
   }
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -72,6 +80,12 @@ instance Eq CustomDatumType where
   a == b = ( cdtNewmPid    a == cdtNewmPid b) &&
            ( cdtNumber a + 1 == cdtNumber  b) &&
            ( cdtPrefix     a == cdtPrefix  b)
+-- old === new
+instance Equiv CustomDatumType where
+  {-# INLINABLE (===) #-}
+  a === b = ( cdtNewmPid a == cdtNewmPid b) &&
+            ( cdtNumber  a == cdtNumber  b) &&
+            ( cdtPrefix  a == cdtPrefix  b)
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
@@ -81,10 +95,12 @@ PlutusTx.makeLift ''LockingContractParams
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = MintNFT   |
+data CustomRedeemerType = MintNFT |
+                          BurnNFT |
                           Exit
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ('MintNFT, 0)
-                                                , ('Exit,    1)
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'MintNFT, 0 )
+                                                , ( 'BurnNFT, 1 )
+                                                , ( 'Exit,    2 )
                                                 ]
 PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
@@ -99,7 +115,15 @@ mkValidator lcp datum redeemer context =
       ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Mint Error"      checkMintedAmount
-      ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatum contOutputs
+      ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatumIncreasing contOutputs
+      ;         traceIfFalse "MintNFT Endpoint Error" $ all (==True) [a,b,c,d,e]
+      }
+    BurnNFT -> do
+      { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH
+      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
+      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
+      ; let d = traceIfFalse "NFT Mint Error"      checkBurnedAmount
+      ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatumConstant contOutputs
       ;         traceIfFalse "MintNFT Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Exit -> do
@@ -130,12 +154,18 @@ mkValidator lcp datum redeemer context =
       case Value.flattenValue (txInfoMint info) of
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
         _                -> False
+    
+    checkBurnedAmount :: Bool
+    checkBurnedAmount =
+      case Value.flattenValue (txInfoMint info) of
+        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
+        _                -> False
 
-    isEmbeddedDatum :: [TxOut] -> Bool
-    isEmbeddedDatum []     = False
-    isEmbeddedDatum (x:xs) =
+    isEmbeddedDatumIncreasing :: [TxOut] -> Bool
+    isEmbeddedDatumIncreasing []     = False
+    isEmbeddedDatumIncreasing (x:xs) =
       case txOutDatumHash x of
-        Nothing -> isEmbeddedDatum xs
+        Nothing -> isEmbeddedDatumIncreasing xs
         Just dh ->
           case findDatum dh info of
             Nothing        -> False
@@ -143,6 +173,19 @@ mkValidator lcp datum redeemer context =
               case PlutusTx.fromBuiltinData d of
                 Nothing       -> False
                 Just embedded -> datum == embedded
+    
+    isEmbeddedDatumConstant :: [TxOut] -> Bool
+    isEmbeddedDatumConstant []     = False
+    isEmbeddedDatumConstant (x:xs) =
+      case txOutDatumHash x of
+        Nothing -> isEmbeddedDatumConstant xs
+        Just dh ->
+          case findDatum dh info of
+            Nothing        -> False
+            Just (Datum d) ->
+              case PlutusTx.fromBuiltinData d of
+                Nothing       -> False
+                Just embedded -> datum === embedded
 -------------------------------------------------------------------------------
 -- | This determines the data type for Datum and Redeemer.
 -------------------------------------------------------------------------------

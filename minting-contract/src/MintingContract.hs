@@ -32,35 +32,44 @@ module MintingContract
   , mintingScriptShortBs
   ) where
 
+import           Codec.Serialise
+import qualified PlutusTx
 import           Ledger                   hiding (singleton)
 import           PlutusTx.Prelude         hiding (Semigroup (..), unless)
-import           Cardano.Api.Shelley      (PlutusScript (..), PlutusScriptV1)
 import           Plutus.V1.Ledger.Value   as Value
 import qualified Plutus.V1.Ledger.Address as Address
 import qualified Data.ByteString.Lazy     as LB
 import qualified Data.ByteString.Short    as SBS
 import qualified Ledger.Typed.Scripts     as Scripts
-import qualified PlutusTx
-import           Codec.Serialise
--- import Data.Maybe
-import           Data.Aeson                ( FromJSON, ToJSON )
-import           Data.OpenApi.Schema       ( ToSchema )
-import           GHC.Generics              ( Generic )
-import           Prelude                   ( Show )
+import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
+import           Data.Aeson               ( FromJSON, ToJSON )
+import           Data.OpenApi.Schema      ( ToSchema )
+import           GHC.Generics             ( Generic )
+import           Prelude                  ( Show )
 {-
-  Author: Quinn Parkinson
-  Rev: 0
+  Author   : The Ancient Kraken
+  Copyright: 2022
+  Version  : Rev 1
 -}
-newtype MintParams = MintParams
-  { mpValidatorHash :: ValidatorHash }
+data MintParams = MintParams
+  { mpValidatorHash :: !ValidatorHash
+  -- ^ Validator hash of the locking script
+  , mpNewmPKH       :: !PubKeyHash
+  -- ^ Official Newm public key hash.
+  }
 PlutusTx.makeLift ''MintParams
 
 data CustomRedeemerType = CustomRedeemerType
-    { cdtNewmPKH   :: !PubKeyHash
-    , cdtNewmPid   :: !CurrencySymbol
+    { cdtNewmPid   :: !CurrencySymbol
+    -- ^ The Newm fractionalization minting policy
     , cdtArtistPid :: !CurrencySymbol
+    -- ^ The artist's tokenized policy id
     , cdtArtistTn  :: !TokenName
+    -- ^ the artist's tokenized token name.
     , cdtArtistPKH :: !PubKeyHash
+    -- ^ The artist's public key hash.
+    , cdtArtistSC ::  !PubKeyHash
+    -- ^ The artist's staking key hash.
     }
     deriving stock (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
@@ -73,9 +82,6 @@ mkPolicy mp _ context = checkMintedAmount && checkSigner
   where
     info :: TxInfo
     info = scriptContextTxInfo context
-
-    -- redeemer' :: CustomRedeemerType
-    -- redeemer' = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer
 
     txOutputs :: [TxOut]
     txOutputs = txInfoOutputs info
@@ -94,21 +100,19 @@ mkPolicy mp _ context = checkMintedAmount && checkSigner
       else isEmbeddedDatum xs
 
     checkSigner :: Bool
-    -- checkSigner = traceIfFalse "Sign Error" $ txSignedBy info (cdtNewmPKH redeemer')
-    checkSigner = traceIfFalse "Sign Error" signerFromTxOut
+    checkSigner = traceIfFalse "Signer Error" signerFromTxOut
       where
         signerFromTxOut :: Bool
         signerFromTxOut =
           case isEmbeddedDatum txOutputs of
-            Nothing -> traceIfFalse "Incorrect Datum" False
-            Just datum' -> traceIfFalse "Incorrect Signer"  $ txSignedBy info (cdtNewmPKH datum')
+            Nothing     -> traceIfFalse "No Datum Found" False
+            Just datum' -> traceIfFalse "Incorrect Signer"  $ txSignedBy info (mpNewmPKH mp) && txSignedBy info (cdtArtistPKH datum')
 
     checkPolicyId :: CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ownCurrencySymbol context
 
     checkAmount :: Integer -> Bool
-    checkAmount amt = traceIfFalse "Incorrect Mint/Burn Amount" $ amt == (100 :: Integer) || amt == (-100 :: Integer)
-    -- checkAmount amt = traceIfFalse "Incorrect Mint/Burn Amount" $ amt == (100_000_000 :: Integer) || amt == (-100_000_000 :: Integer)
+    checkAmount amt = traceIfFalse "Incorrect Mint/Burn Amount" $ amt == (100_000_000 :: Integer) || amt == (-100_000_000 :: Integer)
 
     checkMintedAmount :: Bool
     checkMintedAmount =
@@ -121,7 +125,10 @@ policy :: MintParams -> Scripts.MintingPolicy
 policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPolicy . mkPolicy ||]) `PlutusTx.applyCode` PlutusTx.liftCode mp)
 -------------------------------------------------------------------------------
 plutusScript :: Script
-plutusScript = unMintingPolicyScript (policy $ MintParams { mpValidatorHash = "4618bf7d25472ff02e7598658022fad0be333f23183093267c6a7561"})
+plutusScript = unMintingPolicyScript (policy params)
+  where params = MintParams { mpValidatorHash = "ceb5b477efe434f6e811b6d39531fe7afedf66417f782f9c66e2bd73" -- locking script
+                            , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" -- newm pkh
+                            }
 
 validator :: Validator
 validator = Validator plutusScript
