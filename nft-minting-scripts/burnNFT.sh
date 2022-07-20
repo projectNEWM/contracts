@@ -17,15 +17,15 @@ seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallet
 policy_id=$(cat ../nft-minting-contract/policy.id)
 #
 name=$(echo -n "NewM_0" | xxd -ps)
-MINT_ASSET="1 ${policy_id}.${name}"
-UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
+MINT_ASSET="-1 ${policy_id}.${name}"
+# UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+#     --protocol-params-file tmp/protocol.json \
+#     --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000"
-buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
+# buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
-echo "Mint OUTPUT: "${buyer_address_out}
+# echo "Mint OUTPUT: "${buyer_address_out}
 #
 # exit
 #
@@ -62,6 +62,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
+collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -69,18 +70,17 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
-    --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-script-file ${script_path} \
-    --tx-in-datum-file data/current_datum.json \
-    --tx-in-redeemer-file data/mint_redeemer.json \
-    --tx-out="${buyer_address_out}" \
+    --tx-in-collateral="${collat_utxo}#0" \
+    --tx-in-datum-file data/next_datum.json \
+    --tx-in-redeemer-file data/burn_redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-datum-embed-file data/next_datum.json \
     --required-signer-hash ${seller_pkh} \
+    --tx-in-script-file ${script_path} \
     --mint="${MINT_ASSET}" \
-    --mint-redeemer-file data/current_datum.json \
+    --mint-redeemer-file data/next_datum.json \
     --mint-script-file ${mint_path} \
     --testnet-magic 1097911063)
 

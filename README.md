@@ -1,19 +1,13 @@
 # Project Newm Contracts
 
-A user will lock a NFT into a contract and then mint the cooresponding fractions for that NFT.
+A collection of contracts used my Project Newm.
 
-# Compile Instructions
+# E2E Testing
 
-Compile LockingContract.hs
+The initial testing will assume Newm holds a special wallet that will regulate all token minting. In the future, this will be expanded into more decentralized solutions.
 
-```bash
-cardano-cli transaction policyid --script-file locking_contract.plutus > validator.hash
-```
+## Flow
 
-Place the validator hash of the plutus script into the minting policy.
+An artist comes to Newm wishing to tokenize a song then fractionalize the tokenization. First, we need to create the initial tokenized version of the art by minting a token on the official Newm catalog policy id. The current implementation of the contract is designed such that many Newm catalogs of different types of art can coexist, each with a unique name prefix. An artist may keep the original tokenized version of their art or they may fractionalize the original token. 
 
-Compile MintingContract.hs
-
-```bash
-cardano-cli transaction policyid --script-file minting_contract.plutus > policy.id
-```
+The fractionalization of a token is the splitting of the ownership rights of the original tokenized art into 100 million pieces.

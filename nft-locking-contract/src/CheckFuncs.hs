@@ -27,10 +27,9 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module CheckFuncs
   ( isValueContinuing
-  , isPKHGettingPaid
   , isSingleScript
   ) where
-import qualified Plutus.V1.Ledger.Address as Address
+-- import qualified Plutus.V1.Ledger.Address as Address
 import qualified Plutus.V1.Ledger.Value as Value
 import           Ledger                   hiding (singleton)
 import           PlutusTx.Prelude 
@@ -48,20 +47,6 @@ isValueContinuing (x:xs) val
   | checkVal  = True
   | otherwise = isValueContinuing xs val
   where
-    checkVal :: Bool
-    checkVal = Value.geq (txOutValue x) val
--------------------------------------------------------------------------------
--- | Search each TxOut for an address and value.
--------------------------------------------------------------------------------
-isPKHGettingPaid :: [TxOut] -> PubKeyHash -> Value -> Bool
-isPKHGettingPaid [] _pkh _val = False
-isPKHGettingPaid (x:xs) pkh val
-  | checkAddr && checkVal = True
-  | otherwise             = isPKHGettingPaid xs pkh val
-  where
-    checkAddr :: Bool
-    checkAddr = txOutAddress x == Address.pubKeyHashAddress pkh
-
     checkVal :: Bool
     checkVal = Value.geq (txOutValue x) val
 -------------------------------------------------------------------------------
