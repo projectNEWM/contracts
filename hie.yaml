@@ -2,9 +2,9 @@ cradle:
   cabal:
     - path: "./locking-contract/src"
       component: "locking-contract:lib:locking-contract"
-    - path: "./locking-contract/pab"
-      component: "plutus-starter:exe:plutus-starter-pab"
     - path: "./minting-contract/src"
       component: "minting-contract:lib:minting-contract"
     - path: "./nft-minting-contract/src"
+      component: "nft-minting-contract:lib:nft-minting-contract"
+    - path: "./nft-locking-contract/src"
       component: "nft-locking-contract:lib:nft-locking-contract"
