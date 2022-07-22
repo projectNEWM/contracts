@@ -12,8 +12,9 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 policy_id=$(cat ../minting-contract/policy.id)
-
-SC_ASSET="1 a896333a052024101cca7218b1ea94d87af763e2b7166bac67a34566.4e65774d5f30"
+#
+SC_ASSET="1 5b970e0d6ab8baa43bab2c2a0c65e0d5cd8f70cff090e86a2c1ec008.4e65774d5f30"
+#
 BURN_ASSET="-100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \

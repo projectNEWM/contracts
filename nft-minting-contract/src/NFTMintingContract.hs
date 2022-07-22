@@ -26,15 +26,12 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-
 module NFTMintingContract
   ( apiExamplePlutusMintingScript
   , mintingScriptShortBs
   ) where
-
-import           Ledger                   hiding (singleton)
-import           PlutusTx.Prelude         hiding (Semigroup (..), unless)
-import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
+import           Ledger                   hiding ( singleton )
+import           PlutusTx.Prelude         hiding ( unless )
 import           Plutus.V1.Ledger.Value   as Value
 import qualified Plutus.V1.Ledger.Ada     as Ada
 import qualified Plutus.V1.Ledger.Address as Address
@@ -42,12 +39,13 @@ import qualified Data.ByteString.Lazy     as LB
 import qualified Data.ByteString.Short    as SBS
 import qualified Ledger.Typed.Scripts     as Scripts
 import qualified PlutusTx
-import           Codec.Serialise
-import           Data.Aeson                ( FromJSON, ToJSON )
-import           Data.OpenApi.Schema       ( ToSchema )
-import           GHC.Generics              ( Generic )
-import           Prelude                   ( Show )
-import TokenHelper
+import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
+import           Codec.Serialise          ( serialise )
+import           Data.Aeson               ( FromJSON, ToJSON )
+import           Data.OpenApi.Schema      ( ToSchema )
+import           GHC.Generics             ( Generic )
+import           Prelude                  ( Show )
+import           TokenHelper              ( nftName )
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -66,19 +64,19 @@ data CustomRedeemerType = CustomRedeemerType
     , crtNumber  :: !Integer
     , crtPrefix  :: !BuiltinByteString
     }
-    deriving stock (Show, Generic)
-    deriving anyclass (FromJSON, ToJSON, ToSchema)
+    deriving stock    ( Show, Generic )
+    deriving anyclass ( FromJSON, ToJSON, ToSchema )
 PlutusTx.unstableMakeIsData ''CustomRedeemerType
 PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: MintParams -> BuiltinData -> ScriptContext -> Bool
 mkPolicy mp redeemer context = do
-      { let a = traceIfFalse "Minting Error"      checkTokenMint && checkIncreasingOutputDatum || checkTokenBurn && checkConstantOutputDatum
-      ; let b = traceIfFalse "Signing Error"      checkSigner
-      ; let c = traceIfFalse "Min ADA Error"      checkVal
-      ; let d = traceIfFalse "Input Datum Error"  checkInputDatum
-      ;         traceIfFalse "Minting Endpoint Error" $ all (==True) [a,b,c,d]
+      { let a = traceIfFalse "Minting Error"     checkTokenMint && checkIncreasingOutputDatum || checkTokenBurn && checkConstantOutputDatum
+      ; let b = traceIfFalse "Signing Error"     checkSigner
+      ; let c = traceIfFalse "Min ADA Error"     checkVal
+      ; let d = traceIfFalse "Input Datum Error" checkInputDatum
+      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]
       }
   where
     info :: TxInfo
@@ -106,7 +104,7 @@ mkPolicy mp redeemer context = do
         Nothing -> traceIfFalse "No Input Datum Hash" False
         Just dh ->
           case findDatumHash (Datum $ PlutusTx.toBuiltinData d) info of
-            Nothing -> traceIfFalse "No Check Datum Hash" False
+            Nothing  -> traceIfFalse "No Input Datum Hash" False
             Just dh' -> dh == dh'
       where
         d :: CustomRedeemerType
@@ -116,6 +114,7 @@ mkPolicy mp redeemer context = do
               , crtPrefix  = crtPrefix  redeemer'
               }
     
+    -- find the value at the validator hash
     valueAtValidator :: Value
     valueAtValidator = snd $ head $ scriptOutputsAt (mpValidatorHash mp) info
 
@@ -126,10 +125,11 @@ mkPolicy mp redeemer context = do
     datumHashAtValidator :: DatumHash
     datumHashAtValidator = fst $ head $ scriptOutputsAt (mpValidatorHash mp) info
 
+    -- the output datum for minting increases the number by one
     checkIncreasingOutputDatum :: Bool
     checkIncreasingOutputDatum =
       case findDatumHash (Datum $ PlutusTx.toBuiltinData d) info of
-        Nothing -> traceIfFalse "No Datum Hash" False
+        Nothing -> traceIfFalse "Datum Not Increasing" False
         Just dh -> dh == datumHashAtValidator
       where
         d :: CustomRedeemerType
@@ -139,10 +139,11 @@ mkPolicy mp redeemer context = do
               , crtPrefix  = crtPrefix  redeemer'
               }
     
+    -- the output datum for burning remains constant
     checkConstantOutputDatum :: Bool
     checkConstantOutputDatum =
       case findDatumHash (Datum $ PlutusTx.toBuiltinData d) info of
-        Nothing -> traceIfFalse "No Datum Hash" False
+        Nothing -> traceIfFalse "Datum Not Constant" False
         Just dh -> dh == datumHashAtValidator
       where
         d :: CustomRedeemerType
@@ -163,7 +164,7 @@ mkPolicy mp redeemer context = do
         [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName tkn && checkMintAmount amt
         _                -> traceIfFalse "Mint/Burn Error" False
     
-    -- check the minting stuff here
+    -- check the burning stuff here
     checkTokenBurn :: Bool
     checkTokenBurn =
       case Value.flattenValue (txInfoMint info) of
@@ -176,8 +177,9 @@ mkPolicy mp redeemer context = do
     checkTokenName :: TokenName -> Bool
     checkTokenName tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix redeemer') (crtNumber redeemer')
       where
+        -- it debugs the required NFT name
         debug :: BuiltinString
-        debug = decodeUtf8 $ nftName (crtPrefix redeemer') (crtNumber redeemer')
+        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (crtPrefix redeemer') (crtNumber redeemer')
 
     checkMintAmount :: Integer -> Bool
     checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
@@ -189,7 +191,7 @@ policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPo
 plutusScript :: Script
 plutusScript = unMintingPolicyScript $ policy params
   where
-    params = MintParams { mpValidatorHash = "f4b38fbbad1937f227e3a59cae26fa3c9eaa6ca89f938f0d02b7d92d" -- locking script
+    params = MintParams { mpValidatorHash = "c94a0f0c5d78556bbfb82a4eeb8ddf0468cfaa46119f70fa9664fc66" -- locking script
                         , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" -- newm pkh
                         }
 

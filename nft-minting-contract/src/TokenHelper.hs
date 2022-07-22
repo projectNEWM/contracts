@@ -72,7 +72,7 @@ integerAsString num = if num == 0 then "0" else convertToString base10 ""
     base10 = baseQ num 10
 
     convertToString :: [Integer] -> BuiltinByteString -> BuiltinByteString
-    convertToString [] str = str
+    convertToString []     str = str
     convertToString (x:xs) str = convertToString xs (str <> integerToStringMapping x)
 -------------------------------------------------------------------------------
 -- | Write an integer in base Q and return a list of integers.

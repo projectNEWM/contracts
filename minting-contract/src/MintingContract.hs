@@ -26,12 +26,10 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-
 module MintingContract
   ( apiExamplePlutusMintingScript
   , mintingScriptShortBs
   ) where
-
 import           Codec.Serialise
 import qualified PlutusTx
 import           Ledger                   hiding (singleton)
@@ -126,7 +124,7 @@ policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPo
 -------------------------------------------------------------------------------
 plutusScript :: Script
 plutusScript = unMintingPolicyScript (policy params)
-  where params = MintParams { mpValidatorHash = "ceb5b477efe434f6e811b6d39531fe7afedf66417f782f9c66e2bd73" -- locking script
+  where params = MintParams { mpValidatorHash = "49cf1d9cb7c80faac818e2e3673f06f381e2e4a9cd40e75e91e4f440" -- locking script
                             , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" -- newm pkh
                             }
 
