@@ -32,28 +32,26 @@ module LockingContract
   , Schema
   , contract
   ) where
-import           Cardano.Api.Shelley       (PlutusScript (..), PlutusScriptV1)
-import           Codec.Serialise           ( serialise )
-import qualified Data.ByteString.Lazy      as LBS
-import qualified Data.ByteString.Short     as SBS
-import           Ledger                    hiding ( singleton )
-import qualified Ledger.Typed.Scripts      as Scripts
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import           Plutus.Contract
-import qualified Plutus.V1.Ledger.Scripts  as Plutus
--- import qualified Plutus.V1.Ledger.Ada as Ada
-import qualified Plutus.V1.Ledger.Value    as Value
-import           Data.Aeson                ( FromJSON, ToJSON )
-import           Data.OpenApi.Schema       ( ToSchema )
-import           GHC.Generics              ( Generic )
-import           Prelude                   ( Show )
-import CheckFuncs
+import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
+import           Codec.Serialise          ( serialise )
+import qualified Data.ByteString.Lazy     as LBS
+import qualified Data.ByteString.Short    as SBS
+import           Ledger                   hiding ( singleton )
+import qualified Ledger.Typed.Scripts     as Scripts
+import qualified Plutus.V1.Ledger.Scripts as Plutus
+import qualified Plutus.V1.Ledger.Value   as Value
+import           Data.Aeson               ( FromJSON, ToJSON )
+import           Data.OpenApi.Schema      ( ToSchema )
+import           GHC.Generics             ( Generic )
+import           Prelude                  ( Show )
+import           CheckFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 0
-  A lightweight smart contract solution for pure ADA group payouts.
+  Version  : Rev 1
 -}
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.

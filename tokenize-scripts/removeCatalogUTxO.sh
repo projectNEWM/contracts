@@ -59,7 +59,7 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${script_tx_in}  \
     --tx-in-script-file ${script_path} \
-    --tx-in-datum-file data/current_datum.json \
+    --tx-in-datum-file data/next_datum.json \
     --tx-in-redeemer-file data/exit_redeemer.json \
     --tx-out="${seller_address_out}" \
     --required-signer-hash ${seller_pkh} \

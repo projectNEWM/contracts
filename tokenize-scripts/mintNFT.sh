@@ -89,7 +89,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
