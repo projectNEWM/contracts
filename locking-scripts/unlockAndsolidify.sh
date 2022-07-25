@@ -7,20 +7,20 @@ script_path="../locking-contract/locking_contract.plutus"
 mint_path="../minting-contract/minting_contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+buyer_address=$(cat /home/westbam/haskell/newm_buyer.payment.addr)
+buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file /home/westbam/haskell/newm_buyer.payment.vkey)
+seller_address=$(cat /home/westbam/haskell/newm_seller.addr)
+seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file /home/westbam/haskell/newm_seller.vkey)
 policy_id=$(cat ../minting-contract/policy.id)
 
-SC_ASSET="1 7470b5d94b828481469f1c1a15edbcc5d23e0326fe60892fcf8dcdeb.455247"
-BURN_ASSET="-100 ${policy_id}.455247"
+SC_ASSET="1 769c4c6e9bc3ba5406b9b89fb7beb6819e638ff2e2de63f008d5bcff.4e45574d31"
+BURN_ASSET="-100 ${policy_id}.4e45574d31"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
 
 script_address_out="${script_address} + 5000000"
-buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${SC_ASSET}"
+buyer_address_out="addr_test1vqd9ncfj57xjsp9cgse7uec9adjgpgerrder4v7cyhcseus5nxwxa + ${UTXO_VALUE} + ${SC_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${buyer_address_out}
 
@@ -70,9 +70,10 @@ FEE=$(${cli} transaction build \
     --invalid-hereafter 99999999 \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
-    --tx-in ${buyer_tx_in} \
-    --tx-in-collateral="${collat}#0" \
-    --tx-in ${script_tx_in} \
+    --tx-in 729dde76f17d493bc3fcb5aaf576c453fa5be9a33da4da77ac0a5a97a1e42aca#1 \
+    --tx-in 729dde76f17d493bc3fcb5aaf576c453fa5be9a33da4da77ac0a5a97a1e42aca#0 \
+    --tx-in-collateral="8176145e8d4f4e2f42b7d2a811722fcd25403155892028c351f83431366c1c32#0" \
+    --tx-in 729dde76f17d493bc3fcb5aaf576c453fa5be9a33da4da77ac0a5a97a1e42aca#2 \
     --tx-in-script-file ${script_path} \
     --tx-in-datum-file data/datum.json \
     --tx-in-redeemer-file data/unlock_redeemer.json \
@@ -95,8 +96,8 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file /home/westbam/haskell/newm_buyer.payment.skey \
+    --signing-key-file /home/westbam/haskell/newm_seller.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

@@ -6,8 +6,8 @@ cli=$(cat path_to_cli.sh)
 script_path="../locking-contract/locking_contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+seller_address=$(cat /home/westbam/haskell/newm_seller.addr)
+seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file /home/westbam/haskell/newm_seller.vkey)
 
 
 seller_address_out="${seller_address} + 5000000"

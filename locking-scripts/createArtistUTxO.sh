@@ -6,7 +6,7 @@ cli=$(cat path_to_cli.sh)
 script_path="../locking-contract/locking_contract.plutus"
 
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+seller_address=$(cat /home/westbam/haskell/newm_seller.addr)
 
 sc_address_out="${SCRIPT_ADDRESS} + 5000000"
 echo "Script OUTPUT: "${sc_address_out}
@@ -14,6 +14,8 @@ echo "Script OUTPUT: "${sc_address_out}
 #
 # exit
 #
+
+${cli} query protocol-parameters --testnet-magic 1097911063 > tmp/protocol.json
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
@@ -53,7 +55,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file /home/westbam/haskell/newm_seller.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063
