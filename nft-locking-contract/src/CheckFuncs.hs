@@ -27,17 +27,15 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module CheckFuncs
   ( isValueContinuing
-  , isPKHGettingPaid
   , isSingleScript
   ) where
-import qualified Plutus.V1.Ledger.Address as Address
 import qualified Plutus.V1.Ledger.Value as Value
-import           Ledger                   hiding (singleton)
+import           Ledger                 hiding ( singleton )
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
+  Version  : Rev 1
 -}
 -------------------------------------------------------------------------------
 -- | Search each TxOut for a value.
@@ -51,28 +49,14 @@ isValueContinuing (x:xs) val
     checkVal :: Bool
     checkVal = Value.geq (txOutValue x) val
 -------------------------------------------------------------------------------
--- | Search each TxOut for an address and value.
--------------------------------------------------------------------------------
-isPKHGettingPaid :: [TxOut] -> PubKeyHash -> Value -> Bool
-isPKHGettingPaid [] _pkh _val = False
-isPKHGettingPaid (x:xs) pkh val
-  | checkAddr && checkVal = True
-  | otherwise             = isPKHGettingPaid xs pkh val
-  where
-    checkAddr :: Bool
-    checkAddr = txOutAddress x == Address.pubKeyHashAddress pkh
-
-    checkVal :: Bool
-    checkVal = Value.geq (txOutValue x) val
--------------------------------------------------------------------------------
 -- | Force a single script utxo input.
 -------------------------------------------------------------------------------
 isSingleScript :: [TxInInfo] -> Bool
 isSingleScript txInputs = loopInputs txInputs 0
   where
     loopInputs :: [TxInInfo] -> Integer -> Bool
-    loopInputs []      counter = counter == 1
-    loopInputs (x:xs) !counter = 
+    loopInputs []     counter = counter == 1
+    loopInputs (x:xs) counter = 
       case txOutDatumHash $ txInInfoResolved x of
-        Nothing -> do counter <= 1 && loopInputs xs counter
-        Just _  -> do counter <= 1 && loopInputs xs (counter + 1)
+        Nothing -> loopInputs xs counter
+        Just _  -> loopInputs xs (counter + 1)

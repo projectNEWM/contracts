@@ -32,7 +32,7 @@ module NFTLockingContract
   , Schema
   , contract
   ) where
-import           Cardano.Api.Shelley       (PlutusScript (..), PlutusScriptV1)
+import           Cardano.Api.Shelley       ( PlutusScript (..), PlutusScriptV1 )
 import           Codec.Serialise           ( serialise )
 import qualified Data.ByteString.Lazy      as LBS
 import qualified Data.ByteString.Short     as SBS
@@ -47,31 +47,45 @@ import           Data.Aeson                ( FromJSON, ToJSON )
 import           Data.OpenApi.Schema       ( ToSchema )
 import           GHC.Generics              ( Generic )
 import           Prelude                   ( Show )
-import CheckFuncs
-import TokenHelper
+import           CheckFuncs                ( isSingleScript, isValueContinuing )
+import           TokenHelper               ( nftName )
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 0
+  Version  : Rev 1
 -}
+-------------------------------------------------------------------------------
+-- | A custom eq class for datum objects.
+-------------------------------------------------------------------------------
+class Equiv a where
+  (===) :: a -> a -> Bool
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
   { cdtNewmPid :: !CurrencySymbol
+  -- ^ The policy id from the minting script.
   , cdtNumber  :: !Integer
+  -- ^ The starting number for the catalog.
   , cdtPrefix  :: !BuiltinByteString
+  -- ^ The prefix for a catalog.
   }
-  deriving stock (Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, ToSchema)
+  deriving stock    ( Show, Generic )
+  deriving anyclass ( FromJSON, ToJSON, ToSchema )
 PlutusTx.unstableMakeIsData ''CustomDatumType
 PlutusTx.makeLift ''CustomDatumType
--- old == new
+-- old == new | minting
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( cdtNewmPid    a == cdtNewmPid b) &&
-           ( cdtNumber a + 1 == cdtNumber  b) &&
-           ( cdtPrefix     a == cdtPrefix  b)
+  a == b = ( cdtNewmPid    a == cdtNewmPid b ) &&
+           ( cdtNumber a + 1 == cdtNumber  b ) &&
+           ( cdtPrefix     a == cdtPrefix  b )
+-- old === new | burning
+instance Equiv CustomDatumType where
+  {-# INLINABLE (===) #-}
+  a === b = ( cdtNewmPid a == cdtNewmPid b ) &&
+            ( cdtNumber  a == cdtNumber  b ) &&
+            ( cdtPrefix  a == cdtPrefix  b )
 -------------------------------------------------------------------------------
 -- | Create the contract parameters data object.
 -------------------------------------------------------------------------------
@@ -81,10 +95,12 @@ PlutusTx.makeLift ''LockingContractParams
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = MintNFT   |
+data CustomRedeemerType = MintNFT |
+                          BurnNFT |
                           Exit
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ('MintNFT, 0)
-                                                , ('Exit,    1)
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'MintNFT, 0 )
+                                                , ( 'BurnNFT, 1 )
+                                                , ( 'Exit,    2 )
                                                 ]
 PlutusTx.makeLift ''CustomRedeemerType
 -------------------------------------------------------------------------------
@@ -95,12 +111,20 @@ mkValidator :: LockingContractParams -> CustomDatumType -> CustomRedeemerType ->
 mkValidator lcp datum redeemer context =
   case redeemer of
     MintNFT -> do
-      { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH
-      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
-      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
-      ; let d = traceIfFalse "NFT Mint Error"      checkMintedAmount
-      ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatum contOutputs
-      ;         traceIfFalse "MintNFT Endpoint Error" $ all (==True) [a,b,c,d,e]
+      { let a = traceIfFalse "Signing Tx Error"           $ txSignedBy info newmPKH
+      ; let b = traceIfFalse "Single Script Error"        $ isSingleScript txInputs
+      ; let c = traceIfFalse "Cont Payin Error"           $ isValueContinuing contOutputs validatingValue
+      ; let d = traceIfFalse "NFT Minting Error"          checkMintedAmount
+      ; let e = traceIfFalse "Datum Not Increasing Error" $ isEmbeddedDatumIncreasing contOutputs
+      ;         traceIfFalse "Locking Contract Mint Endpoint Error" $ all (==True) [a,b,c,d,e]
+      }
+    BurnNFT -> do
+      { let a = traceIfFalse "Signing Tx Error"         $ txSignedBy info newmPKH
+      ; let b = traceIfFalse "Single Script Error"      $ isSingleScript txInputs
+      ; let c = traceIfFalse "Cont Payin Error"         $ isValueContinuing contOutputs validatingValue
+      ; let d = traceIfFalse "NFT Burning Error"        checkBurnedAmount
+      ; let e = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs
+      ;         traceIfFalse "Locking Contract Burn Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Exit -> do
       { let a = traceIfFalse "Signing Tx Error"    $ txSignedBy info newmPKH
@@ -130,12 +154,18 @@ mkValidator lcp datum redeemer context =
       case Value.flattenValue (txInfoMint info) of
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
         _                -> False
+    
+    checkBurnedAmount :: Bool
+    checkBurnedAmount =
+      case Value.flattenValue (txInfoMint info) of
+        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
+        _              -> False
 
-    isEmbeddedDatum :: [TxOut] -> Bool
-    isEmbeddedDatum []     = False
-    isEmbeddedDatum (x:xs) =
+    isEmbeddedDatumIncreasing :: [TxOut] -> Bool
+    isEmbeddedDatumIncreasing []     = False
+    isEmbeddedDatumIncreasing (x:xs) =
       case txOutDatumHash x of
-        Nothing -> isEmbeddedDatum xs
+        Nothing -> isEmbeddedDatumIncreasing xs
         Just dh ->
           case findDatum dh info of
             Nothing        -> False
@@ -143,6 +173,19 @@ mkValidator lcp datum redeemer context =
               case PlutusTx.fromBuiltinData d of
                 Nothing       -> False
                 Just embedded -> datum == embedded
+    
+    isEmbeddedDatumConstant :: [TxOut] -> Bool
+    isEmbeddedDatumConstant []     = False
+    isEmbeddedDatumConstant (x:xs) =
+      case txOutDatumHash x of
+        Nothing -> isEmbeddedDatumConstant xs
+        Just dh ->
+          case findDatum dh info of
+            Nothing        -> False
+            Just (Datum d) ->
+              case PlutusTx.fromBuiltinData d of
+                Nothing       -> False
+                Just embedded -> datum === embedded
 -------------------------------------------------------------------------------
 -- | This determines the data type for Datum and Redeemer.
 -------------------------------------------------------------------------------
@@ -154,8 +197,8 @@ instance Scripts.ValidatorTypes Typed where
 -- | Now we need to compile the Typed Validator.
 -------------------------------------------------------------------------------
 typedValidator :: LockingContractParams -> Scripts.TypedValidator Typed
-typedValidator rpp = Scripts.mkTypedValidator @Typed
-  ($$(PlutusTx.compile [|| mkValidator ||]) `PlutusTx.applyCode` PlutusTx.liftCode rpp)
+typedValidator lcp = Scripts.mkTypedValidator @Typed
+  ($$(PlutusTx.compile [|| mkValidator ||]) `PlutusTx.applyCode` PlutusTx.liftCode lcp)
    $$(PlutusTx.compile [|| wrap        ||])
     where
       wrap = Scripts.wrapValidator @CustomDatumType @CustomRedeemerType  -- @Datum @Redeemer
