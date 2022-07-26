@@ -1,8 +1,8 @@
 cabal-version: 2.4
 
-name:                   locking-contract
+name:                   v2-locking-contract
 version:                1
-description:            A plutus script for locking funds..
+description:            A plutus script for locking funds.
 author:                 Quinn Parkinson
 maintainer:             qparkinson@projectnewm.io
 license:                AGPL-3.0-only
@@ -45,28 +45,23 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      LockingContract
-                        CheckFuncs
+  exposed-modules:      V2LockingContract
+                        V2CheckFuncs
 
   build-depends:        bytestring
                       , cardano-api
-                      , plutus-ledger
                       , plutus-ledger-api
                       , plutus-tx
                       , plutus-tx-plugin
+                      , plutus-script-utils
                       , serialise
-                      , text
-                      , containers
-                      , plutus-contract
-                      , openapi3
-                      , aeson
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable locking-contract
+executable v2-locking-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              locking-contract.hs
+  main-is:              v2-locking-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -74,8 +69,5 @@ executable locking-contract
                         -O2
 
   build-depends:        cardano-api
-                      , cardano-ledger-alonzo
-                      , locking-contract
-                      , plutus-ledger-api
-                      , bytestring
+                      , v2-locking-contract
 
