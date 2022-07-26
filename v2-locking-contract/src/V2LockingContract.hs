@@ -61,8 +61,10 @@ data CustomDatumType = CustomDatumType
     -- ^ The artist's public key hash.
     , cdtArtistSC      :: PlutusV2.PubKeyHash
     -- ^ The artist's staking key hash.
+    , cdtValidatorHash :: PlutusV2.ValidatorHash
+    -- ^ Validator hash of the locking script
     , cdtNewmPKH       :: PlutusV2.PubKeyHash
-    -- ^ The newm's public key hash.
+    -- ^ Official Newm public key hash.
     }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 -- old == new

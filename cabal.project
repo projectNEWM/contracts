@@ -3,6 +3,7 @@ index-state: 2022-05-18T00:00:00Z
 
 packages: 
     v2-locking-contract
+    v2-minting-contract
 
 -- We never, ever, want this.
 write-ghc-environment-files: never
