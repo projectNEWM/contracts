@@ -29,6 +29,7 @@ module V2LockingContract
   ( lockingContractScript
   , lockingContractScriptShortBs
   , CustomDatumType
+  , getPkh
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -41,12 +42,28 @@ import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
+-- import qualified PlutusTx.Builtins.Internal     as Internal
 import           V2CheckFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 2
+
+import binascii
+a="a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
+s=binascii.unhexlify(a)
+[x for x in s]
 -}
+
+{-# INLINABLE flattenBuiltinByteString #-}
+flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+flattenBuiltinByteString [] = emptyByteString 
+flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
+
+{-# INLINABLE getPkh #-}
+getPkh :: PlutusV2.PubKeyHash
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = flattenBuiltinByteString [ consByteString x emptyByteString |x <- [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57]]}
+
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -61,10 +78,6 @@ data CustomDatumType = CustomDatumType
     -- ^ The artist's public key hash.
     , cdtArtistSC      :: PlutusV2.PubKeyHash
     -- ^ The artist's staking key hash.
-    , cdtValidatorHash :: PlutusV2.ValidatorHash
-    -- ^ Validator hash of the locking script
-    , cdtNewmPKH       :: PlutusV2.PubKeyHash
-    -- ^ Official Newm public key hash.
     }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 -- old == new
@@ -74,8 +87,7 @@ instance Eq CustomDatumType where
            ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
            ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
            ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
-           ( cdtArtistSC      a == cdtArtistSC      b ) &&
-           ( cdtNewmPKH       a == cdtNewmPKH       b )
+           ( cdtArtistSC      a == cdtArtistSC      b )
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
@@ -94,7 +106,7 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Lock -> do 
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info newmPKH && ContextsV2.txSignedBy info artistPKH
+      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info artistPKH
       ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs (validatingValue + singularNFT)
       ; let d = traceIfFalse "FT Mint Error"       checkMintedAmount
@@ -102,7 +114,7 @@ mkValidator datum redeemer context =
       ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Unlock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info newmPKH && ContextsV2.txSignedBy info artistPKH
+      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info artistPKH
       ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
       ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr singularNFT
       ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
@@ -111,7 +123,7 @@ mkValidator datum redeemer context =
       ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e,f]
       }
     Exit -> do 
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info newmPKH
+      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
    where
@@ -127,10 +139,6 @@ mkValidator datum redeemer context =
 
     txOutputs :: [PlutusV2.TxOut]
     txOutputs = PlutusV2.txInfoOutputs info
-
-    -- newm info
-    newmPKH :: PlutusV2.PubKeyHash
-    newmPKH = cdtNewmPKH datum
 
     -- artist info
     artistPKH :: PlutusV2.PubKeyHash
@@ -148,7 +156,7 @@ mkValidator datum redeemer context =
       case ContextsV2.findOwnInput context of
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
-
+    
     singularNFT :: PlutusV2.Value
     singularNFT = Value.singleton (cdtTokenizedPid datum) (cdtTokenizedTn datum) (1 :: Integer)
 

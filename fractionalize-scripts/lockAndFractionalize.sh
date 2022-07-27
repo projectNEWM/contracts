@@ -3,8 +3,9 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../locking-contract/locking_contract.plutus"
-mint_path="../minting-contract/minting_contract.plutus"
+#
+script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
+mint_path="../v2-minting-contract/v2-fractional-minting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 #
@@ -14,11 +15,11 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 #
-policy_id=$(cat ../minting-contract/policy.id)
+policy_id=$(cat ../v2-minting-contract/policy.id)
 #
-SC_ASSET="1 5b970e0d6ab8baa43bab2c2a0c65e0d5cd8f70cff090e86a2c1ec008.4e65774d5f30"
+SC_ASSET="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
 #
-MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
+MINT_ASSET="100000000 ${policy_id}.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
@@ -63,7 +64,9 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
+# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
+collat_utxo="93d6d33333c2bfe1a6ae19b80c276c62ef6b365d4275b98bebf760effe09574d"
+script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -75,17 +78,20 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-script-file ${script_path} \
-    --tx-in-datum-file data/datum.json \
-    --tx-in-redeemer-file data/lock_redeemer.json \
+    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-plutus-script-v2 \
+     --spending-reference-tx-in-datum-file data/datum.json \
+    --spending-reference-tx-in-redeemer-file data/lock_redeemer.json \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-datum-embed-file data/datum.json \
     --required-signer-hash ${buyer_pkh} \
     --required-signer-hash ${seller_pkh} \
     --mint="${MINT_ASSET}" \
-    --mint-redeemer-file data/datum.json \
-    --mint-script-file ${mint_path} \
+    --mint-tx-in-reference="${script_ref_utxo}#2" \
+    --mint-plutus-script-v2 \
+    --policy-id="${policy_id}" \
+    --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"

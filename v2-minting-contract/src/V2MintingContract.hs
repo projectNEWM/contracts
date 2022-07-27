@@ -29,6 +29,7 @@
 module V2MintingContract
   ( mintingPlutusScript
   , mintingScriptShortBs
+  , getValidatorHash
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -48,6 +49,18 @@ import           Plutus.Script.Utils.V2.Scripts as Utils
   Copyright: 2022
   Version  : Rev 2
 -}
+{-# INLINABLE flattenBuiltinByteString #-}
+flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+flattenBuiltinByteString [] = emptyByteString 
+flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
+
+{-# INLINABLE getPkh #-}
+getPkh :: PlutusV2.PubKeyHash
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = flattenBuiltinByteString [ consByteString x emptyByteString |x <- [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57]]}
+
+
+getValidatorHash :: PlutusV2.ValidatorHash
+getValidatorHash = PlutusV2.ValidatorHash $ flattenBuiltinByteString [ consByteString x emptyByteString |x <- [54, 115, 246, 120, 231, 231, 81, 103, 156, 81, 112, 43, 213, 120, 240, 10, 170, 240, 99, 250, 173, 62, 47, 123, 11, 251, 99, 217]]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -62,10 +75,6 @@ data CustomRedeemerType = CustomRedeemerType
     -- ^ The artist's public key hash.
     , cdtArtistSC      :: PlutusV2.PubKeyHash
     -- ^ The artist's staking key hash.
-    , cdtValidatorHash :: PlutusV2.ValidatorHash
-    -- ^ Validator hash of the locking script
-    , cdtNewmPKH       :: PlutusV2.PubKeyHash
-    -- ^ Official Newm public key hash.
     }
 PlutusTx.unstableMakeIsData ''CustomRedeemerType
 -------------------------------------------------------------------------------
@@ -111,8 +120,8 @@ mkPolicy _ context = checkMintedAmount && checkSigner
           case isEmbeddedDatum x of
             Nothing     -> signerFromTxOut xs
             Just datum' -> 
-              if PlutusV2.txOutAddress x == Addr.scriptHashAddress (cdtValidatorHash datum')
-                then traceIfFalse "Incorrect Signer"  $ ContextsV2.txSignedBy info (cdtNewmPKH datum') && ContextsV2.txSignedBy info (cdtArtistPKH datum')
+              if PlutusV2.txOutAddress x == Addr.scriptHashAddress getValidatorHash --(cdtValidatorHash datum')
+                then traceIfFalse "Incorrect Signer"  $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info (cdtArtistPKH datum')
                 else signerFromTxOut xs
 
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
