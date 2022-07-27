@@ -5,6 +5,7 @@ packages:
     v2-locking-contract
     v2-minting-contract
     v2-nft-locking-contract
+    v2-nft-minting-contract
 
 -- We never, ever, want this.
 write-ghc-environment-files: never

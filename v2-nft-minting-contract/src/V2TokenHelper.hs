@@ -25,31 +25,28 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module TokenHelper
+module V2TokenHelper
   ( nftName
   ) where
-import PlutusTx.Prelude
-    ( otherwise,
-      Integer,
-      BuiltinByteString,
-      Eq((==)),
-      Semigroup((<>)) )
+
+import           PlutusTx.Prelude
+import qualified Plutus.V2.Ledger.Api       as PlutusV2
 import qualified PlutusTx.Builtins.Internal as Internal
 
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 1
+  Version  : Rev 2
 -}
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
-nftName :: BuiltinByteString -> Integer -> BuiltinByteString
+nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
 nftName prefix num = prefix <> integerAsString num
 -------------------------------------------------------------------------------
 -- | The Mapping for converting an integer into a stringed version.
 -------------------------------------------------------------------------------
-integerToStringMapping :: Integer -> BuiltinByteString
+integerToStringMapping :: Integer -> PlutusV2.BuiltinByteString
 integerToStringMapping ch
   | ch == 0   = "0"
   | ch == 1   = "1"
@@ -65,7 +62,7 @@ integerToStringMapping ch
 -------------------------------------------------------------------------------
 -- | Convert an integer into a string.
 -------------------------------------------------------------------------------
-integerAsString :: Integer -> BuiltinByteString
+integerAsString :: Integer -> PlutusV2.BuiltinByteString
 integerAsString num = if num == 0 then "0" else convertToString base10 ""
   where
     base10 :: [Integer]

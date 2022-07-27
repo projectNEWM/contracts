@@ -36,7 +36,7 @@ import qualified PlutusTx.Builtins.Internal as Internal
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 1
+  Version  : Rev 2
 -}
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
