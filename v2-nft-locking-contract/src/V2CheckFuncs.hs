@@ -25,38 +25,51 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module CheckFuncs
+module V2CheckFuncs
   ( isValueContinuing
   , isSingleScript
+  , createBuiltinByteString
   ) where
-import qualified Plutus.V1.Ledger.Value as Value
-import           Ledger                 hiding ( singleton )
+import qualified Plutus.V1.Ledger.Value      as Value
+import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 1
 -}
+-------------------------------------------------------------------------
+-- | Appends two bytestrings together from a list, element by element
+-------------------------------------------------------------------------
+flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+flattenBuiltinByteString [] = emptyByteString 
+flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
+-------------------------------------------------------------------------
+-- | Creates a proper BuiltinByteString.
+-------------------------------------------------------------------------
+createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
+createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 -------------------------------------------------------------------------------
 -- | Search each TxOut for a value.
 -------------------------------------------------------------------------------
-isValueContinuing :: [TxOut] -> Value -> Bool
+isValueContinuing :: [PlutusV2.TxOut] -> PlutusV2.Value -> Bool
 isValueContinuing [] _ = False
 isValueContinuing (x:xs) val
   | checkVal  = True
   | otherwise = isValueContinuing xs val
   where
     checkVal :: Bool
-    checkVal = Value.geq (txOutValue x) val
+    checkVal = Value.geq (PlutusV2.txOutValue x) val
 -------------------------------------------------------------------------------
 -- | Force a single script utxo input.
 -------------------------------------------------------------------------------
-isSingleScript :: [TxInInfo] -> Bool
+isSingleScript :: [PlutusV2.TxInInfo] -> Bool
 isSingleScript txInputs = loopInputs txInputs 0
   where
-    loopInputs :: [TxInInfo] -> Integer -> Bool
+    loopInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
     loopInputs []     counter = counter == 1
     loopInputs (x:xs) counter = 
-      case txOutDatumHash $ txInInfoResolved x of
-        Nothing -> loopInputs xs counter
-        Just _  -> loopInputs xs (counter + 1)
+      case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        PlutusV2.NoOutputDatum       -> loopInputs xs counter
+        (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
+        (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
