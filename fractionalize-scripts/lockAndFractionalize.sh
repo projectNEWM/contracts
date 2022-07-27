@@ -21,6 +21,7 @@ SC_ASSET="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.61737570657
 #
 MINT_ASSET="100000000 ${policy_id}.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+    --alonzo-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
 #
@@ -65,7 +66,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 # collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-collat_utxo="93d6d33333c2bfe1a6ae19b80c276c62ef6b365d4275b98bebf760effe09574d"
+collat_utxo="41df065af60008949b8db726eceebd1aac47338b7c753915d2ec7d88fd5cccfc"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
 # exit
@@ -80,11 +81,11 @@ FEE=$(${cli} transaction build \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
-     --spending-reference-tx-in-datum-file data/datum.json \
+    --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/lock_redeemer.json \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
-    --tx-out-datum-embed-file data/datum.json \
+    --tx-out-inline-datum-file data/datum.json \
     --required-signer-hash ${buyer_pkh} \
     --required-signer-hash ${seller_pkh} \
     --mint="${MINT_ASSET}" \
@@ -94,6 +95,8 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic 1097911063)
 
+    # --tx-out-datum-embed-file data/datum.json \
+    # --spending-reference-tx-in-datum-file data/datum.json \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}

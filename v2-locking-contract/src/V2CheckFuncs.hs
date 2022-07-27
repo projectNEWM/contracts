@@ -30,6 +30,7 @@ module V2CheckFuncs
   , isAddrGettingPaid
   , isSingleScript
   , createAddress
+  , createBuiltinByteString
   ) where
 import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
@@ -40,6 +41,17 @@ import           PlutusTx.Prelude
   Copyright: 2022
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------
+-- | Appends two bytestrings together from a list, element by element
+-------------------------------------------------------------------------
+flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+flattenBuiltinByteString [] = emptyByteString 
+flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
+-------------------------------------------------------------------------
+-- | Creates a proper BuiltinByteString.
+-------------------------------------------------------------------------
+createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
+createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 -------------------------------------------------------------------------
 -- | Create a proper Address Type.
 -------------------------------------------------------------------------

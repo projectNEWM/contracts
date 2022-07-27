@@ -14,16 +14,25 @@ mint_script_path="../v2-minting-contract/v2-fractional-minting-contract.plutus"
 sender_address=$(cat wallets/seller-wallet/payment.addr)
 receiver_address=$(cat wallets/reference-wallet/payment.addr)
 
-min_utxo=$(${cli} transaction calculate-min-required-utxo \
+lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
-# echo $min_utxo
-lock_script_reference_utxo="${receiver_address} + 23381750"
-mint_script_reference_utxo="${receiver_address} + 15317740"
+echo "Locking Min Fee" ${lock_min_utxo}
 
-echo -e "\nCreating Reference:\n" ${lock_script_reference_utxo}
-echo -e "\nCreating Reference:\n" ${mint_script_reference_utxo}
+mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out-reference-script-file ${mint_script_path} \
+    --tx-out="${receiver_address} 0" | tr -dc '0-9')
+echo "Minting Min Fee" ${mint_min_utxo}
+
+lock_script_reference_utxo="${receiver_address} + 22597330"
+mint_script_reference_utxo="${receiver_address} + 15141030"
+
+echo -e "\nCreating Locking Reference:\n" ${lock_script_reference_utxo}
+echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}
 #
 # exit
 #

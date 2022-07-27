@@ -40,9 +40,10 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
     --tx-out="${sc_address_out}" \
-    --tx-out-datum-embed-file data/datum.json  \
+    --tx-out-inline-datum-file data/datum.json  \
     --testnet-magic 1097911063)
 
+    # --tx-out-datum-embed-file data/datum.json  \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}

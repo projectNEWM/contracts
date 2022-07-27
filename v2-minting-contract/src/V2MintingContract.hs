@@ -43,7 +43,6 @@ import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -54,13 +53,15 @@ flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByte
 flattenBuiltinByteString [] = emptyByteString 
 flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
 
-{-# INLINABLE getPkh #-}
-getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = flattenBuiltinByteString [ consByteString x emptyByteString |x <- [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57]]}
+{-# INLINABLE createBuiltinByteString #-}
+createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
+createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
+getPkh :: PlutusV2.PubKeyHash
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ flattenBuiltinByteString [ consByteString x emptyByteString |x <- [54, 115, 246, 120, 231, 231, 81, 103, 156, 81, 112, 43, 213, 120, 240, 10, 170, 240, 99, 250, 173, 62, 47, 123, 11, 251, 99, 217]]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [175, 23, 118, 192, 232, 156, 188, 1, 68, 164, 183, 98, 229, 72, 5, 107, 141, 149, 228, 146, 3, 10, 208, 14, 160, 175, 167, 83]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -68,9 +69,9 @@ data CustomRedeemerType = CustomRedeemerType
     { cdtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
     , cdtTokenizedPid  :: PlutusV2.CurrencySymbol
-    -- ^ The artist's tokenized policy id
+    -- ^ The Newm tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
-    -- ^ the artist's tokenized token name.
+    -- ^ the tokenized token name.
     , cdtArtistPKH     :: PlutusV2.PubKeyHash
     -- ^ The artist's public key hash.
     , cdtArtistSC      :: PlutusV2.PubKeyHash
@@ -102,7 +103,7 @@ mkPolicy _ context = checkMintedAmount && checkSigner
             Nothing     -> Nothing
             Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
         -- embedded datum
-        (PlutusV2.OutputDatumHash dh)             -> 
+        (PlutusV2.OutputDatumHash dh) -> 
           case ContextsV2.findDatum dh info of
             Nothing                  -> Nothing
             Just (PlutusV2.Datum d') -> 
@@ -120,8 +121,8 @@ mkPolicy _ context = checkMintedAmount && checkSigner
           case isEmbeddedDatum x of
             Nothing     -> signerFromTxOut xs
             Just datum' -> 
-              if PlutusV2.txOutAddress x == Addr.scriptHashAddress getValidatorHash --(cdtValidatorHash datum')
-                then traceIfFalse "Incorrect Signer"  $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info (cdtArtistPKH datum')
+              if PlutusV2.txOutAddress x == Addr.scriptHashAddress getValidatorHash
+                then traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info (cdtArtistPKH datum')
                 else signerFromTxOut xs
 
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
@@ -140,8 +141,8 @@ mkPolicy _ context = checkMintedAmount && checkSigner
 -------------------------------------------------------------------------------
 policy :: PlutusV2.MintingPolicy
 policy = PlutusV2.mkMintingPolicyScript $$(PlutusTx.compile [|| wrap ||])
- where
-  wrap = Utils.mkUntypedMintingPolicy mkPolicy
+  where
+    wrap = Utils.mkUntypedMintingPolicy mkPolicy
 
 plutusScript :: Scripts.Script
 plutusScript = PlutusV2.unMintingPolicyScript policy

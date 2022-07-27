@@ -64,12 +64,13 @@ FEE=$(${cli} transaction build \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
-    --spending-reference-tx-in-datum-file data/datum.json \
+    --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/exit_redeemer.json \
     --tx-out="${seller_address_out}" \
     --required-signer-hash ${seller_pkh} \
     --testnet-magic 1097911063)
 
+    # --spending-reference-tx-in-datum-file data/datum.json \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}

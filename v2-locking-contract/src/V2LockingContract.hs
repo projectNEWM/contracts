@@ -42,7 +42,6 @@ import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
--- import qualified PlutusTx.Builtins.Internal     as Internal
 import           V2CheckFuncs
 {- |
   Author   : The Ancient Kraken
@@ -55,14 +54,9 @@ s=binascii.unhexlify(a)
 [x for x in s]
 -}
 
-{-# INLINABLE flattenBuiltinByteString #-}
-flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-flattenBuiltinByteString [] = emptyByteString 
-flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
-
 {-# INLINABLE getPkh #-}
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = flattenBuiltinByteString [ consByteString x emptyByteString |x <- [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57]]}
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
