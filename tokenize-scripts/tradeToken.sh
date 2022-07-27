@@ -11,7 +11,7 @@ sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
 # Define Asset to be printed here
-asset="1 66d46e19ee741b10a39a11aaf60a2283723cb1fa8fa0989afda54c50.4e65774d5f31"
+asset="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
@@ -39,9 +39,8 @@ HEXTXIN=${TXIN::-8}
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
-    --alonzo-era \
+    --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --invalid-hereafter 99999999 \
     --out-file tmp/tx.draft \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \

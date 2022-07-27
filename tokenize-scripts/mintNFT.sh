@@ -3,8 +3,9 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../nft-locking-contract/nft_locking_contract.plutus"
-mint_path="../nft-minting-contract/nft_minting_contract.plutus"
+script_path="../v2-nft-locking-contract/v2-tokenized-locking-contract.plutus"
+mint_path="../v2-nft-minting-contract/v2-tokenized-minting-contract.plutus"
+
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 #
@@ -14,7 +15,7 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 #
-policy_id=$(cat ../nft-minting-contract/policy.id)
+policy_id=$(cat ../v2-nft-minting-contract/policy.id)
 #
 name=$(echo -n "NewM_0" | xxd -ps)
 MINT_ASSET="1 ${policy_id}.${name}"
@@ -62,6 +63,9 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
+script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+
+
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -72,16 +76,19 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
-    --tx-in-script-file ${script_path} \
-    --tx-in-datum-file data/current_datum.json \
-    --tx-in-redeemer-file data/mint_redeemer.json \
+    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-plutus-script-v2 \
+    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-redeemer-file data/mint_redeemer.json \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
-    --tx-out-datum-embed-file data/next_datum.json \
+    --tx-out-inline-datum-file data/next_datum.json \
     --required-signer-hash ${seller_pkh} \
     --mint="${MINT_ASSET}" \
-    --mint-redeemer-file data/current_datum.json \
-    --mint-script-file ${mint_path} \
+    --mint-tx-in-reference="${script_ref_utxo}#2" \
+    --mint-plutus-script-v2 \
+    --policy-id="${policy_id}" \
+    --mint-reference-tx-in-redeemer-file data/current_datum.json \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
