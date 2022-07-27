@@ -105,7 +105,7 @@ mkValidator datum redeemer context =
   case redeemer of
     MintNFT -> do
       { let a = traceIfFalse "Signing Tx Error"           $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error"        $ isSingleScript txInputs
+      ; let b = traceIfFalse "Single Script Error"        $ isNScripts txInputs 1
       ; let c = traceIfFalse "Cont Payin Error"           $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Minting Error"          checkMintedAmount
       ; let e = traceIfFalse "Datum Not Increasing Error" $ isEmbeddedDatumIncreasing contOutputs
@@ -113,7 +113,7 @@ mkValidator datum redeemer context =
       }
     BurnNFT -> do
       { let a = traceIfFalse "Signing Tx Error"         $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error"      $ isSingleScript txInputs
+      ; let b = traceIfFalse "Single Script Error"      $ isNScripts txInputs 1
       ; let c = traceIfFalse "Cont Payin Error"         $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Burning Error"        checkBurnedAmount
       ; let e = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs

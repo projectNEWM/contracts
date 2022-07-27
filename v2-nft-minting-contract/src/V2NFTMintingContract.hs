@@ -68,14 +68,24 @@ getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [175, 23, 118, 192, 232, 156, 188, 1, 68, 164, 183, 98, 229, 72, 5, 107, 141, 149, 228, 146, 3, 10, 208, 14, 160, 175, 167, 83]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [26, 150, 186, 230, 81, 141, 131, 39, 14, 190, 49, 98, 137, 222, 147, 99, 33, 138, 157, 111, 62, 52, 28, 198, 190, 129, 251, 6]
 
 data CustomRedeemerType = CustomRedeemerType
-    { crtNewmPid :: PlutusV2.CurrencySymbol
-    , crtNumber  :: Integer
-    , crtPrefix  :: PlutusV2.BuiltinByteString
-    }
+  { crtNewmPid :: PlutusV2.CurrencySymbol
+  -- ^ The policy id from the minting script.
+  , crtNumber  :: Integer
+  -- ^ The starting number for the catalog.
+  , crtPrefix  :: PlutusV2.BuiltinByteString
+  -- ^ The prefix for a catalog.
+  }
 PlutusTx.unstableMakeIsData ''CustomRedeemerType
+
+-- old == new | minting
+instance Eq CustomRedeemerType where
+  {-# INLINABLE (==) #-}
+  a == b = ( crtNewmPid a == crtNewmPid b ) &&
+           ( crtNumber  a == crtNumber  b ) &&
+           ( crtPrefix  a == crtPrefix  b )
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
@@ -84,8 +94,7 @@ mkPolicy redeemer' context = do
       ; let b = traceIfFalse "Signing Error"     checkSigner
       ; let c = traceIfFalse "Input Datum Error" checkInputDatum
       ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
-      ; let e = traceIfFalse "Too Many Script Input" $ isSingleScript txInputs
-      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d,e]
+      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]
       }
   where
     info :: PlutusV2.TxInfo
@@ -97,17 +106,6 @@ mkPolicy redeemer' context = do
     -- the redeemer is the datum of the locking script
     redeemer :: CustomRedeemerType
     redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
-    
-    isSingleScript :: [PlutusV2.TxInInfo] -> Bool
-    isSingleScript txInputs' = loopInputs txInputs' 0
-      where
-        loopInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
-        loopInputs []     counter = counter == 1
-        loopInputs (x:xs) counter = 
-          case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
-            PlutusV2.NoOutputDatum       -> loopInputs xs counter
-            (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
-            (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
     
     -- check if the incoming datum is the correct form.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
@@ -142,13 +140,7 @@ mkPolicy redeemer' context = do
     checkInputDatum =
       case checkInputs txInputs of
         Nothing -> traceIfFalse "No Input Datum Hash" False
-        Just inputDatum -> 
-          case ContextsV2.findDatumHash (PlutusV2.Datum $ PlutusTx.toBuiltinData inputDatum) info of
-            Nothing -> traceIfFalse "No Input Datum Hash" False
-            Just dh ->
-              case ContextsV2.findDatumHash (PlutusV2.Datum $ PlutusTx.toBuiltinData d) info of
-                Nothing  -> traceIfFalse "No Input Datum Hash" False
-                Just dh' -> dh == dh'
+        Just inputDatum -> inputDatum == d
       where
         d :: CustomRedeemerType
         d = CustomRedeemerType
@@ -187,16 +179,10 @@ mkPolicy redeemer' context = do
 
     -- the output datum for minting increases the number by one
     checkOutputDatum :: Integer -> Bool
-    checkOutputDatum increment =
-      case ContextsV2.findDatumHash (PlutusV2.Datum $ PlutusTx.toBuiltinData d) info of
-        Nothing -> traceIfFalse "Datum Not Increasing" False
-        Just dh' -> 
-          case datumAtValidator of
-            Nothing -> False
-            Just datum'' ->
-              case ContextsV2.findDatumHash (PlutusV2.Datum $ PlutusTx.toBuiltinData datum'') info of
-                Nothing -> traceIfFalse "No Input Datum Hash" False
-                Just dh -> dh == dh'
+    checkOutputDatum increment = 
+      case datumAtValidator of
+        Nothing -> traceIfFalse "No Datum At Validator" False
+        Just datum'' -> datum'' == d
       where
         d :: CustomRedeemerType
         d = CustomRedeemerType
@@ -204,7 +190,6 @@ mkPolicy redeemer' context = do
               , crtNumber  = crtNumber  redeemer + increment
               , crtPrefix  = crtPrefix  redeemer
               }
-
 
     -- only newm can mint it
     checkSigner :: Bool

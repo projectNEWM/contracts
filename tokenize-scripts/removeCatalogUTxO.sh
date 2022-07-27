@@ -3,7 +3,7 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../nft-locking-contract/nft_locking_contract.plutus"
+script_path="../v2-nft-locking-contract/v2-tokenized-locking-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
@@ -49,6 +49,9 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
+script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+
+
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
@@ -58,9 +61,10 @@ FEE=$(${cli} transaction build \
     --tx-in ${seller_tx_in} \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${script_tx_in}  \
-    --tx-in-script-file ${script_path} \
-    --tx-in-datum-file data/next_datum.json \
-    --tx-in-redeemer-file data/exit_redeemer.json \
+    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-plutus-script-v2 \
+    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-redeemer-file data/exit_redeemer.json \
     --tx-out="${seller_address_out}" \
     --required-signer-hash ${seller_pkh} \
     --testnet-magic 1097911063)

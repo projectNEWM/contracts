@@ -27,7 +27,7 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module V2CheckFuncs
   ( isValueContinuing
-  , isSingleScript
+  , isNScripts
   , createBuiltinByteString
   ) where
 import qualified Plutus.V1.Ledger.Value      as Value
@@ -63,11 +63,11 @@ isValueContinuing (x:xs) val
 -------------------------------------------------------------------------------
 -- | Force a single script utxo input.
 -------------------------------------------------------------------------------
-isSingleScript :: [PlutusV2.TxInInfo] -> Bool
-isSingleScript txInputs = loopInputs txInputs 0
+isNScripts :: [PlutusV2.TxInInfo] -> Integer -> Bool
+isNScripts txInputs value' = loopInputs txInputs 0
   where
     loopInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
-    loopInputs []     counter = counter == 1
+    loopInputs []     counter = counter == value'
     loopInputs (x:xs) counter = 
       case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
         PlutusV2.NoOutputDatum       -> loopInputs xs counter
