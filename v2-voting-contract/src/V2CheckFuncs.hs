@@ -27,20 +27,30 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module V2CheckFuncs
   ( isValueContinuing
-  , isAddrGettingPaid
   , isSingleScript
-  , createAddress
+  , isVoteComplete
   , createBuiltinByteString
   ) where
-import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
+import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------
+-- | Check if the total value contains the threshold value of a token.
+-------------------------------------------------------------------------
+isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
+isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+  where
+    totalValue :: PlutusV2.Value
+    totalValue = ContextsV2.valueSpent info
+
+    thresholdValue :: PlutusV2.Value
+    thresholdValue = Value.singleton pid tkn amt
 -------------------------------------------------------------------------
 -- | Appends two bytestrings together from a list, element by element
 -------------------------------------------------------------------------
@@ -52,11 +62,6 @@ flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString x
 -------------------------------------------------------------------------
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
--------------------------------------------------------------------------
--- | Create a proper Address Type.
--------------------------------------------------------------------------
-createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
-createAddress pkh sc = if PlutusV2.getPubKeyHash sc == emptyByteString then PlutusV2.Address (PubKeyCredential pkh) Nothing else PlutusV2.Address (PubKeyCredential pkh) (Just $ StakingHash $ PubKeyCredential sc)
 -------------------------------------------------------------------------------
 -- | Search each TxOut for a value.
 -------------------------------------------------------------------------------
@@ -66,20 +71,6 @@ isValueContinuing (x:xs) val
   | checkVal  = True
   | otherwise = isValueContinuing xs val
   where
-    checkVal :: Bool
-    checkVal = Value.geq (PlutusV2.txOutValue x) val
--------------------------------------------------------------------------------
--- | Search each TxOut for an pkh and value.
--------------------------------------------------------------------------------
-isAddrGettingPaid :: [PlutusV2.TxOut] -> PlutusV2.Address -> PlutusV2.Value -> Bool
-isAddrGettingPaid []     _    _ = False
-isAddrGettingPaid (x:xs) addr val
-  | checkAddr && checkVal = True
-  | otherwise             = isAddrGettingPaid xs addr val
-  where
-    checkAddr :: Bool
-    checkAddr = PlutusV2.txOutAddress x == addr
-
     checkVal :: Bool
     checkVal = Value.geq (PlutusV2.txOutValue x) val
 -------------------------------------------------------------------------------

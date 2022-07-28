@@ -119,7 +119,7 @@ mkValidator datum redeemer context =
       ; let e = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs
       ;         traceIfFalse "Locking Contract Burn Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
-    Exit -> do
+    Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
