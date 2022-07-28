@@ -28,7 +28,7 @@ mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
 echo "Minting Min Fee" ${mint_min_utxo}
 
-lock_script_reference_utxo="${receiver_address} + 22903340"
+lock_script_reference_utxo="${receiver_address} + 26079810"
 mint_script_reference_utxo="${receiver_address} + 22700770"
 
 echo -e "\nCreating Locking Reference:\n" ${lock_script_reference_utxo}

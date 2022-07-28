@@ -7,16 +7,19 @@ cli=$(cat path_to_cli.sh)
 
 # Addresses
 sender_address=$(cat wallets/buyer-wallet/payment.addr)
-# receiver_address=$(cat wallets/buyer-wallet/payment.addr)
-receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
+receiver_address=$(cat wallets/seller-wallet/payment.addr)
+# receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
+
+seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 
 # Define Asset to be printed here
-asset="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
+asset=0
 
-min_utxo=$(${cli} transaction calculate-min-required-utxo \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
-token_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
+# min_utxo=$(${cli} transaction calculate-min-required-utxo \
+#     --protocol-params-file tmp/protocol.json \
+#     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
+token_to_be_traded="${receiver_address} + 148520862"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 #
@@ -45,6 +48,8 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${token_to_be_traded}" \
+    --required-signer-hash ${seller_pkh} \
+    --required-signer-hash ${buyer_pkh} \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -56,6 +61,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \

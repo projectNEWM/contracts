@@ -6,7 +6,7 @@ cli=$(cat path_to_cli.sh)
 script_path="../v2-voting-contract/v2-voting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+seller_address=$(cat wallets/buyer-wallet/payment.addr)
 
 
 script_address_out="${script_address} + 5000000"
@@ -77,7 +77,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

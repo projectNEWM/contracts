@@ -64,11 +64,11 @@ flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString x
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
-getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+-- getPkh :: PlutusV2.PubKeyHash
+-- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [26, 150, 186, 230, 81, 141, 131, 39, 14, 190, 49, 98, 137, 222, 147, 99, 33, 138, 157, 111, 62, 52, 28, 198, 190, 129, 251, 6]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [201, 79, 135, 185, 87, 230, 82, 115, 57, 168, 167, 108, 38, 210, 100, 47, 0, 179, 89, 108, 9, 62, 221, 200, 209, 208, 221, 48]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -91,10 +91,10 @@ instance Eq CustomRedeemerType where
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
-      ; let b = traceIfFalse "Signing Error"     checkSigner
-      ; let c = traceIfFalse "Input Datum Error" checkInputDatum
-      ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
-      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]
+      -- ; let b = traceIfFalse "Signing Error"     checkSigner
+      ; let b = traceIfFalse "Input Datum Error" checkInputDatum
+      ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
+      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c]
       }
   where
     info :: PlutusV2.TxInfo
@@ -192,8 +192,8 @@ mkPolicy redeemer' context = do
               }
 
     -- only newm can mint it
-    checkSigner :: Bool
-    checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
+    -- checkSigner :: Bool
+    -- checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
 
     -- check the minting stuff here
     checkTokenMint :: Bool

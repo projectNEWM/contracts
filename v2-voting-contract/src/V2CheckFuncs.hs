@@ -32,8 +32,8 @@ module V2CheckFuncs
   , createBuiltinByteString
   ) where
 import qualified Plutus.V1.Ledger.Value      as Value
-import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
+import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken

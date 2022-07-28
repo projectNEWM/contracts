@@ -21,24 +21,24 @@ name=$(echo -n "NewM_0" | xxd -ps)
 MINT_ASSET="1 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
-    --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
+    --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000"
-buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
+seller_address_out="${seller_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
-echo "Mint OUTPUT: "${buyer_address_out}
+echo "Mint OUTPUT: "${seller_address_out}
 #
 # exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
-    --address ${buyer_address} \
+    --address ${seller_address} \
     --out-file tmp/buyer_utxo.json
 
 TXNS=$(jq length tmp/buyer_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
    exit;
 fi
 alltxin=""
@@ -72,15 +72,16 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${buyer_address} \
+    --change-address ${seller_address} \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${buyer_tx_in} \
+    --read-only-tx-in-reference 4c273272357641a0183d1bbf2baa69def47b6aa458e5ebb28f8fbf70270c4263#1 \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/mint_redeemer.json \
-    --tx-out="${buyer_address_out}" \
+    --tx-out="${seller_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
     --required-signer-hash ${seller_pkh} \
@@ -96,7 +97,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

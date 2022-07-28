@@ -28,9 +28,13 @@
 module V2CheckFuncs
   ( isValueContinuing
   , isNScripts
+  , isVoteComplete
   , createBuiltinByteString
+  , createAddress
   ) where
+import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
+import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import           PlutusTx.Prelude 
 {- |
@@ -38,6 +42,22 @@ import           PlutusTx.Prelude
   Copyright: 2022
   Version  : Rev 1
 -}
+-------------------------------------------------------------------------
+-- | Create a proper Address Type.
+-------------------------------------------------------------------------
+createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
+createAddress pkh sc = if PlutusV2.getPubKeyHash sc == emptyByteString then PlutusV2.Address (PubKeyCredential pkh) Nothing else PlutusV2.Address (PubKeyCredential pkh) (Just $ StakingHash $ PubKeyCredential sc)
+-------------------------------------------------------------------------
+-- | Check if the total value contains the threshold value of a token.
+-------------------------------------------------------------------------
+isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
+isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+  where
+    totalValue :: PlutusV2.Value
+    totalValue = ContextsV2.valueSpent info
+
+    thresholdValue :: PlutusV2.Value
+    thresholdValue = Value.singleton pid tkn amt
 -------------------------------------------------------------------------
 -- | Appends two bytestrings together from a list, element by element
 -------------------------------------------------------------------------
