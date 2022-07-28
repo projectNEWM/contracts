@@ -1,5 +1,7 @@
 cradle:
   cabal:
+    - path: "./v2-voting-contract/src"
+      component: "v2-voting-contract:lib:v2-voting-contract"
     - path: "./v2-locking-contract/src"
       component: "v2-locking-contract:lib:v2-locking-contract"
     - path: "./v2-minting-contract/src"
