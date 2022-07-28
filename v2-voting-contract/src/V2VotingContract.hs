@@ -47,16 +47,13 @@ import           V2CheckFuncs
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 2
-
-import binascii
-a="a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
-s=binascii.unhexlify(a)
-[x for x in s]
 -}
 
 getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
+
+-- starter nft
 startPid :: PlutusV2.CurrencySymbol
 startPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
 
@@ -80,7 +77,7 @@ instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtPid a == cdtPid b ) &&
            ( cdtTkn a == cdtTkn b ) &&
-           ( cdtAmt a /= cdtAmt b ) -- should this be greater than?
+           ( cdtAmt a /= cdtAmt b ) -- should this be greater than or some bound function?
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
@@ -98,13 +95,13 @@ mkValidator datum redeemer context =
   case redeemer of
     Vote -> do 
       { let a = traceIfFalse "Vote Has Failed"           $ isVoteComplete (cdtPid datum) (cdtTkn datum) (cdtAmt datum) info 
-      ; let b = traceIfFalse "Value Not Continuing"      $ isValueContinuing contOutputs validatingValue -- should this be removed so it can be voted into a new version?
-      ; let c = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
+      ; let b = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
+      ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
       ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
-      ; let e = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
-      ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
+      ; let e = traceIfFalse "Value Not Continuing"      $ isValueContinuing contOutputs validatingValue
+      ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d]
       }
-    Exit -> do -- remove in production
+    Exit -> do -- remove in production or make into an update endpoint
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
@@ -112,7 +109,7 @@ mkValidator datum redeemer context =
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
 
-    -- inputs / outputs
+    -- continue / inputs
     contOutputs :: [PlutusV2.TxOut]
     contOutputs = ContextsV2.getContinuingOutputs context
 
@@ -130,7 +127,7 @@ mkValidator datum redeemer context =
     starterNFT :: PlutusV2.Value
     starterNFT = Value.singleton startPid startTkn (1 :: Integer)
     
-    -- check if the incoming datum is the correct form.
+    -- check if the outgoing datum has the correct form.
     isEmbeddedDatum :: [PlutusV2.TxOut] -> Bool
     isEmbeddedDatum []     = False
     isEmbeddedDatum (x:xs) = 

@@ -65,7 +65,7 @@ script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
-voting_ref_utxo="e31689367250c8fa66cb9be2ff358330b923ae33b2fdbcc4194a561674114764"
+voting_ref_utxo="cc9599064979336d5ab6b7759c4f8bf1677da632c04336962c46e0fbe0d054d5"
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"

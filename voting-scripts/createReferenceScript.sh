@@ -19,8 +19,8 @@ vote_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-reference-script-file ${vote_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
 echo "Voting Min Fee" ${vote_min_utxo}
-
-vote_script_reference_utxo="${receiver_address} + 19640670"
+vote_value=$((${vote_min_utxo} + 1000000))
+vote_script_reference_utxo="${receiver_address} + ${vote_value}"
 
 echo -e "\nCreating Voting Reference:\n" ${vote_script_reference_utxo}
 #

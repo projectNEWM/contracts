@@ -20,6 +20,8 @@ lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
 echo "Locking Min Fee" ${lock_min_utxo}
+lock_value=$((${lock_min_utxo} + 1000000))
+
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -27,9 +29,11 @@ mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-reference-script-file ${mint_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
 echo "Minting Min Fee" ${mint_min_utxo}
+mint_value=$((${mint_min_utxo} + 1000000))
 
-lock_script_reference_utxo="${receiver_address} + 26079810"
-mint_script_reference_utxo="${receiver_address} + 22700770"
+
+lock_script_reference_utxo="${receiver_address} + ${lock_value}"
+mint_script_reference_utxo="${receiver_address} + ${mint_value}"
 
 echo -e "\nCreating Locking Reference:\n" ${lock_script_reference_utxo}
 echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}

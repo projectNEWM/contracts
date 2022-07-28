@@ -51,7 +51,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-collat_utxo="0b5820bc20231d389fb8c8d9f073bb5dbfe859dfc1b9627021251bf1430ef0ed"
+collat_utxo="8f025e7981d812fd2e40b6026ae8fedd7e26b00a25c701b1769f88d3417c97d3"
 
 
 echo -e "\033[0;36m Building Tx \033[0m"
