@@ -52,7 +52,6 @@ import           V2CheckFuncs
 getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
-
 -- starter nft
 startPid :: PlutusV2.CurrencySymbol
 startPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
@@ -99,7 +98,7 @@ mkValidator datum redeemer context =
       ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
       ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
       ; let e = traceIfFalse "Value Not Continuing"      $ isValueContinuing contOutputs validatingValue
-      ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d]
+      ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
       }
     Exit -> do -- remove in production or make into an update endpoint
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh

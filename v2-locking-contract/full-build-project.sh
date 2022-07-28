@@ -5,4 +5,5 @@ cabal run v2-locking-contract
 cardano-cli transaction policyid --script-file v2-fractional-locking-contract.plutus > validator.hash
 echo "Validator Hash:" $(cat validator.hash)
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
+echo "Validator Bytes:" $(cat validator.bytes)
 echo "DONE"

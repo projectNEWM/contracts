@@ -58,7 +58,7 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [148, 154, 115, 197, 187, 91, 4, 45, 232, 163, 31, 24, 141, 210, 124, 120, 248, 246, 126, 96, 139, 8, 144, 139, 180, 54, 238, 205]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [31, 131, 188, 9, 24, 237, 241, 98, 89, 16, 41, 70, 80, 10, 200, 130, 38, 131, 111, 159, 43, 29, 31, 196, 150, 146, 180, 143]
 
 lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}

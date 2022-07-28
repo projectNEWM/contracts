@@ -12,6 +12,7 @@ SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --tes
 SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
 BUYER_ADDRESS=$(cat wallets/buyer-wallet/payment.addr)
 REFERENCE_ADDRESS=$(cat wallets/reference-wallet/payment.addr)
+CC_ADDRESS=$(cat wallets/cc-wallet/payment.addr)
 
 #
 ${cli} query protocol-parameters --testnet-magic 1097911063 --out-file tmp/protocol.json
