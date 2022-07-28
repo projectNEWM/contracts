@@ -20,24 +20,24 @@ name=$(echo -n "NewM_0" | xxd -ps)
 MINT_ASSET="-1 ${policy_id}.${name}"
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 #     --protocol-params-file tmp/protocol.json \
-#     --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
+#     --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000"
-# buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
+# seller_address_out="${seller_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
-# echo "Mint OUTPUT: "${buyer_address_out}
+# echo "Mint OUTPUT: "${seller_address_out}
 #
 # exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
-    --address ${buyer_address} \
+    --address ${seller_address} \
     --out-file tmp/buyer_utxo.json
 
 TXNS=$(jq length tmp/buyer_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
    exit;
 fi
 alltxin=""
@@ -62,11 +62,11 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
+# utxos
 collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
+collat_utxo="2b44b4ec9cd6fdd44211f49e02c7e1667c5545a7be65b6800bbec6a46ba8b919"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+voting_ref_utxo="e31689367250c8fa66cb9be2ff358330b923ae33b2fdbcc4194a561674114764"
 
 
 # exit
@@ -75,9 +75,10 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${buyer_address} \
+    --change-address ${seller_address} \
     --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${buyer_tx_in} \
+    --read-only-tx-in-reference="${voting_ref_utxo}#1" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -85,7 +86,6 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file data/burn_redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
-    --required-signer-hash ${seller_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
@@ -102,7 +102,6 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \

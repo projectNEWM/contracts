@@ -11,7 +11,7 @@ lock_script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
 mint_script_path="../v2-minting-contract/v2-fractional-minting-contract.plutus"
 
 # Addresses
-sender_address=$(cat wallets/seller-wallet/payment.addr)
+sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address=$(cat wallets/reference-wallet/payment.addr)
 
 lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -19,20 +19,23 @@ lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
-echo "Locking Min Fee" ${lock_min_utxo}
+lock_value=$((${lock_min_utxo} + 1000000))
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${mint_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
-echo "Minting Min Fee" ${mint_min_utxo}
+mint_value=$((${mint_min_utxo} + 1000000))
 
-lock_script_reference_utxo="${receiver_address} + 22597330"
-mint_script_reference_utxo="${receiver_address} + 15141030"
 
-echo -e "\nCreating Locking Reference:\n" ${lock_script_reference_utxo}
-echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}
+lock_script_reference_utxo="${receiver_address} + ${lock_value}"
+mint_script_reference_utxo="${receiver_address} + ${mint_value}"
+
+echo "Locking Min Fee" ${lock_value}
+echo -e "Creating Locking Reference:\n" ${lock_script_reference_utxo}
+echo -e "\nMinting Min Fee" ${mint_value}
+echo -e "Creating Minting Reference:\n" ${mint_script_reference_utxo}
 #
 # exit
 #
@@ -74,7 +77,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-reference-utxo.signed \
     --testnet-magic ${TESTNET_MAGIC}

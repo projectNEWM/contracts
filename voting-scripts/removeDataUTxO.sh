@@ -51,6 +51,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+collat_utxo="0b5820bc20231d389fb8c8d9f073bb5dbfe859dfc1b9627021251bf1430ef0ed"
 
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -60,7 +61,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
-    --tx-in-collateral ${collateral_tx_in} \
+    --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \

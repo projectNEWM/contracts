@@ -6,7 +6,7 @@ cli=$(cat path_to_cli.sh)
 #
 script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 
 sc_address_out="${script_address} + 5000000"
 echo "Script OUTPUT: "${sc_address_out}
@@ -19,26 +19,26 @@ echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
 ${cli} query utxo \
     --testnet-magic 1097911063 \
-    --address ${seller_address} \
-    --out-file tmp/seller_utxo.json
+    --address ${buyer_address} \
+    --out-file tmp/buyer_utxo.json
 
 # transaction variables
-TXNS=$(jq length tmp/seller_utxo.json)
+TXNS=$(jq length tmp/buyer_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-seller_tx_in=${TXIN::-8}
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
+buyer_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
-    --tx-in ${seller_tx_in} \
+    --change-address ${buyer_address} \
+    --tx-in ${buyer_tx_in} \
     --tx-out="${sc_address_out}" \
     --tx-out-inline-datum-file data/datum.json  \
     --testnet-magic 1097911063)
@@ -53,7 +53,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

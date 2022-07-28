@@ -67,7 +67,7 @@ votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByte
 voteTkn :: PlutusV2.TokenName
 voteTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
 -------------------------------------------------------------------------------
--- | Create the datum parameters data object.
+-- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
 data VoteDatumType = VoteDatumType
     { vdtPid :: PlutusV2.CurrencySymbol
@@ -177,7 +177,7 @@ mkValidator datum redeemer context =
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
         _              -> False
     
-    -- check for nft here
+    -- check for vote nft here
     voteStartValue :: PlutusV2.Value
     voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
 

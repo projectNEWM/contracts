@@ -65,6 +65,7 @@ script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
+voting_ref_utxo="e31689367250c8fa66cb9be2ff358330b923ae33b2fdbcc4194a561674114764"
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -75,7 +76,7 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${buyer_tx_in} \
-    --read-only-tx-in-reference 4c273272357641a0183d1bbf2baa69def47b6aa458e5ebb28f8fbf70270c4263#1 \
+    --read-only-tx-in-reference="${voting_ref_utxo}#1" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -84,7 +85,6 @@ FEE=$(${cli} transaction build \
     --tx-out="${seller_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
-    --required-signer-hash ${seller_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
@@ -97,11 +97,10 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \

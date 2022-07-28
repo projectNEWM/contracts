@@ -39,6 +39,7 @@ import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V1.Ledger.Value         as Value
+import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
@@ -58,14 +59,33 @@ s=binascii.unhexlify(a)
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
+voteValidatorHash :: PlutusV2.ValidatorHash
+voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [27, 79, 242, 191, 4, 88, 154, 76, 11, 184, 105, 186, 126, 43, 231, 160, 120, 222, 119, 14, 131, 127, 130, 144, 1, 72, 56, 198]
 
+votePid :: PlutusV2.CurrencySymbol
+votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+
+voteTkn :: PlutusV2.TokenName
+voteTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+-------------------------------------------------------------------------------
+-- | Create the voting datum parameters data object.
+-------------------------------------------------------------------------------
+data VoteDatumType = VoteDatumType
+    { vdtPid :: PlutusV2.CurrencySymbol
+    -- ^ The voting token's policy id
+    , vdtTkn :: PlutusV2.TokenName
+    -- ^ The voting token's token name.
+    , vdtAmt :: Integer
+    -- ^ The voting token's threshold amount.
+    }
+PlutusTx.unstableMakeIsData ''VoteDatumType
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
     { cdtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
-    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol
+    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol -- this may need to be hardcoded
     -- ^ The artist's tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the artist's tokenized token name.
@@ -101,16 +121,16 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Lock -> do 
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info artistPKH
-      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs
+      { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
+      ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs && isSingleScript txRefInputs
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs (validatingValue + singularNFT)
       ; let d = traceIfFalse "FT Mint Error"       checkMintedAmount
       ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatum contOutputs
       ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Unlock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info artistPKH
-      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs
+      { let a = traceIfFalse "Vote Has Failed"       $ checkVoteFromDatum txRefInputs
+      ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs && isSingleScript txRefInputs
       ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr singularNFT
       ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
       ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
@@ -134,6 +154,9 @@ mkValidator datum redeemer context =
 
     txOutputs :: [PlutusV2.TxOut]
     txOutputs = PlutusV2.txInfoOutputs info
+
+    txRefInputs :: [PlutusV2.TxInInfo]
+    txRefInputs = PlutusV2.txInfoReferenceInputs info
 
     -- artist info
     artistPKH :: PlutusV2.PubKeyHash
@@ -162,6 +185,43 @@ mkValidator datum redeemer context =
         [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
         _             -> False
     
+    -- check for vote nft here
+    getReferenceDatum :: PlutusV2.TxOut -> Maybe VoteDatumType
+    getReferenceDatum x =
+      case PlutusV2.txOutDatum x of
+        -- datumless
+        PlutusV2.NoOutputDatum -> Nothing
+        -- inline datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> --Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType d
+          case PlutusTx.fromBuiltinData d of
+            Nothing     -> Nothing
+            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType inline
+        -- embedded datum
+        (PlutusV2.OutputDatumHash dh) -> 
+          case ContextsV2.findDatum dh info of
+            Nothing                  -> Nothing
+            Just (PlutusV2.Datum d') -> --Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType d'
+              case PlutusTx.fromBuiltinData d' of
+                Nothing       -> Nothing
+                Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType embedded
+    
+    voteStartValue :: PlutusV2.Value
+    voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
+
+    checkVoteFromDatum :: [PlutusV2.TxInInfo] -> Bool
+    checkVoteFromDatum []     = traceIfFalse "No Datum Found on Reference Input" False
+    checkVoteFromDatum (x:xs) =
+      if traceIfFalse "Incorrect Validator Address" $ (PlutusV2.txOutAddress $ PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress voteValidatorHash
+        then
+          if traceIfFalse "Incorrect Starter Value" $ Value.geq (PlutusV2.txOutValue $ PlutusV2.txInInfoResolved x) voteStartValue
+            then
+              case getReferenceDatum $ PlutusV2.txInInfoResolved x of
+                Nothing -> checkVoteFromDatum xs
+                Just voteDatum -> isVoteComplete (vdtPid voteDatum) (vdtTkn voteDatum) (vdtAmt voteDatum) info
+            else checkVoteFromDatum xs
+        else checkVoteFromDatum xs
+    
+
     -- check if the incoming datum is the correct form.
     isEmbeddedDatum :: [PlutusV2.TxOut] -> Bool
     isEmbeddedDatum []     = False

@@ -31,16 +31,29 @@ module V2CheckFuncs
   , isSingleScript
   , createAddress
   , createBuiltinByteString
+  , isVoteComplete
   ) where
 import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
+import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------
+-- | Check if the total value contains the threshold value of a token.
+-------------------------------------------------------------------------
+isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
+isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+  where
+    totalValue :: PlutusV2.Value
+    totalValue = ContextsV2.valueSpent info
+
+    thresholdValue :: PlutusV2.Value
+    thresholdValue = Value.singleton pid tkn amt
 -------------------------------------------------------------------------
 -- | Appends two bytestrings together from a list, element by element
 -------------------------------------------------------------------------

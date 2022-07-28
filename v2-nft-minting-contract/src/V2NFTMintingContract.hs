@@ -48,13 +48,6 @@ import           V2TokenHelper
   Copyright: 2022
   Version  : Rev 2
 -}
-lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
-
-lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
-
-
 {-# INLINABLE flattenBuiltinByteString #-}
 flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
 flattenBuiltinByteString [] = emptyByteString 
@@ -67,6 +60,12 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 lockValidatorHash :: PlutusV2.ValidatorHash
 lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [163, 93, 49, 5, 80, 60, 54, 128, 130, 1, 4, 40, 57, 226, 161, 42, 86, 228, 218, 90, 27, 160, 112, 123, 248, 184, 52, 91]
 
+lockPid :: PlutusV2.CurrencySymbol
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+
+lockTkn :: PlutusV2.TokenName
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+-- 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
   -- ^ The policy id from the minting script.
@@ -89,7 +88,7 @@ mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
       ; let b = traceIfFalse "Input Datum Error" checkInputDatum
-      ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
+      ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator starterValue
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c]
       }
   where
@@ -150,8 +149,8 @@ mkPolicy redeemer' context = do
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt lockValidatorHash info
 
     -- check for nft here
-    tokenValue :: PlutusV2.Value
-    tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
+    starterValue :: PlutusV2.Value
+    starterValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 
@@ -177,7 +176,7 @@ mkPolicy redeemer' context = do
     checkOutputDatum :: Integer -> Bool
     checkOutputDatum increment = 
       case datumAtValidator of
-        Nothing -> traceIfFalse "No Datum At Validator" False
+        Nothing      -> traceIfFalse "No Datum At Validator" False
         Just datum'' -> datum'' == d
       where
         d :: CustomRedeemerType

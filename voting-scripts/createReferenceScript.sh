@@ -10,7 +10,7 @@ TESTNET_MAGIC=1097911063
 vote_script_path="../v2-voting-contract/v2-voting-contract.plutus"
 
 # Addresses
-sender_address=$(cat wallets/seller-wallet/payment.addr)
+sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address=$(cat wallets/reference-wallet/payment.addr)
 
 vote_min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -62,7 +62,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-reference-utxo.signed \
     --testnet-magic ${TESTNET_MAGIC}
