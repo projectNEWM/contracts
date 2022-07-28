@@ -64,11 +64,8 @@ flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString x
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
--- getPkh :: PlutusV2.PubKeyHash
--- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
-
-getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [201, 79, 135, 185, 87, 230, 82, 115, 57, 168, 167, 108, 38, 210, 100, 47, 0, 179, 89, 108, 9, 62, 221, 200, 209, 208, 221, 48]
+lockValidatorHash :: PlutusV2.ValidatorHash
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [163, 93, 49, 5, 80, 60, 54, 128, 130, 1, 4, 40, 57, 226, 161, 42, 86, 228, 218, 90, 27, 160, 112, 123, 248, 184, 52, 91]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -91,7 +88,6 @@ instance Eq CustomRedeemerType where
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
-      -- ; let b = traceIfFalse "Signing Error"     checkSigner
       ; let b = traceIfFalse "Input Datum Error" checkInputDatum
       ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c]
@@ -131,7 +127,7 @@ mkPolicy redeemer' context = do
     checkInputs :: [PlutusV2.TxInInfo] -> Maybe CustomRedeemerType
     checkInputs [] = Nothing
     checkInputs (x:xs) =
-      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress getValidatorHash
+      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress lockValidatorHash
       then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
       else checkInputs xs
 
@@ -151,7 +147,7 @@ mkPolicy redeemer' context = do
     
     -- find the value at the validator hash
     valueAtValidator :: PlutusV2.Value
-    valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
+    valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt lockValidatorHash info
 
     -- check for nft here
     tokenValue :: PlutusV2.Value
@@ -175,7 +171,7 @@ mkPolicy redeemer' context = do
               case PlutusTx.fromBuiltinData d' of
                 Nothing       -> Nothing
                 Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType embedded
-      where datumAtValidator' = fst $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
+      where datumAtValidator' = fst $ head $ ContextsV2.scriptOutputsAt lockValidatorHash info
 
     -- the output datum for minting increases the number by one
     checkOutputDatum :: Integer -> Bool
@@ -190,10 +186,6 @@ mkPolicy redeemer' context = do
               , crtNumber  = crtNumber  redeemer + increment
               , crtPrefix  = crtPrefix  redeemer
               }
-
-    -- only newm can mint it
-    -- checkSigner :: Bool
-    -- checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
 
     -- check the minting stuff here
     checkTokenMint :: Bool

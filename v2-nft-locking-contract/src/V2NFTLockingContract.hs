@@ -59,7 +59,7 @@ getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 voteValidatorHash :: PlutusV2.ValidatorHash
-voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [219, 86, 62, 255, 32, 206, 47, 101, 6, 30, 203, 98, 144, 37, 92, 85, 71, 12, 57, 76, 63, 69, 147, 89, 196, 76, 126, 72]
+voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [27, 79, 242, 191, 4, 88, 154, 76, 11, 184, 105, 186, 126, 43, 231, 160, 120, 222, 119, 14, 131, 127, 130, 144, 1, 72, 56, 198]
 
 votePid :: PlutusV2.CurrencySymbol
 votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
@@ -126,20 +126,20 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     MintNFT -> do
-      { let a = traceIfFalse "Vote Has Failed"            $ checkVoteFromDatum txRefInputs
-      ; let b = traceIfFalse "Single Script Error"        $ isNScripts txInputs 1 && isNScripts txRefInputs 1
-      ; let c = traceIfFalse "Cont Payin Error"           $ isValueContinuing contOutputs validatingValue
-      ; let d = traceIfFalse "NFT Minting Error"          checkMintedAmount
-      ; let e = traceIfFalse "Datum Not Increasing Error" $ isEmbeddedDatumIncreasing contOutputs
-      ;         traceIfFalse "Locking Contract Mint Endpoint Error" $ all (==True) [a,b,c,d,e]
+      { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
+      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1 && isNScripts txRefInputs 1
+      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
+      ; let d = traceIfFalse "NFT Minting Error"   checkMintedAmount
+      ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumIncreasing contOutputs
+      ;         traceIfFalse "Locking Mint Error"  $ all (==True) [a,b,c,d,e]
       }
     BurnNFT -> do
-      { let a = traceIfFalse "Vote Has Failed"          $ checkVoteFromDatum txRefInputs
-      ; let b = traceIfFalse "Single Script Error"      $ isNScripts txInputs 1 && isNScripts txRefInputs 1
-      ; let c = traceIfFalse "Cont Payin Error"         $ isValueContinuing contOutputs validatingValue
-      ; let d = traceIfFalse "NFT Burning Error"        checkBurnedAmount
-      ; let e = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs
-      ;         traceIfFalse "Locking Contract Burn Endpoint Error" $ all (==True) [a,b,c,d,e]
+      { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
+      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1 && isNScripts txRefInputs 1
+      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
+      ; let d = traceIfFalse "NFT Burning Error"   checkBurnedAmount
+      ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumConstant contOutputs
+      ;         traceIfFalse "Locking Burn Error"  $ all (==True) [a,b,c,d,e]
       }
     Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
@@ -214,6 +214,7 @@ mkValidator datum redeemer context =
                 Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType embedded
 
 
+    -- get the equality instances
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
     isEmbeddedDatumIncreasing []     = False
     isEmbeddedDatumIncreasing (x:xs) =
