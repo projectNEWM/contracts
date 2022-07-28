@@ -3,12 +3,12 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../v2-voting-contract/v2-voting-contract.plutus"
+script_path="../v2-did-contract/v2-did-contract.plutus"
 
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-sc_address_out="${SCRIPT_ADDRESS} + 5000000"
+sc_address_out="${SCRIPT_ADDRESS} + 2000000"
 echo "Script OUTPUT: "${sc_address_out}
 #
 # exit
@@ -38,7 +38,7 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
     --tx-out="${sc_address_out}" \
-    --tx-out-inline-datum-file data/current_datum.json  \
+    --tx-out-inline-datum-file data/datum.json  \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"

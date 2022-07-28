@@ -7,7 +7,7 @@ cli=$(cat path_to_cli.sh)
 
 TESTNET_MAGIC=1097911063
 
-vote_script_path="../v2-voting-contract/v2-voting-contract.plutus"
+did_script_path="../v2-did-contract/v2-did-contract.plutus"
 
 # Addresses
 sender_address=$(cat wallets/seller-wallet/payment.addr)
@@ -16,11 +16,11 @@ receiver_address=$(cat wallets/reference-wallet/payment.addr)
 vote_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${vote_script_path} \
+    --tx-out-reference-script-file ${did_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
 echo "Voting Min Fee" ${vote_min_utxo}
 
-vote_script_reference_utxo="${receiver_address} + 19511370"
+vote_script_reference_utxo="${receiver_address} + 10680180"
 
 echo -e "\nCreating Voting Reference:\n" ${vote_script_reference_utxo}
 #
@@ -50,7 +50,7 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${vote_script_reference_utxo}" \
-    --tx-out-reference-script-file ${vote_script_path} \
+    --tx-out-reference-script-file ${did_script_path} \
     --testnet-magic ${TESTNET_MAGIC})
 
 IFS=':' read -ra VALUE <<< "${FEE}"

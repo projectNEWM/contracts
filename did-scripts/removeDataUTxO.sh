@@ -3,7 +3,7 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../v2-voting-contract/v2-voting-contract.plutus"
+script_path="../v2-did-contract/v2-did-contract.plutus"
 
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
@@ -11,7 +11,7 @@ seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
 
-seller_address_out="${seller_address} + 5000000"
+seller_address_out="${seller_address} + 2000000"
 echo "Exit OUTPUT: "${seller_address_out}
 
 #

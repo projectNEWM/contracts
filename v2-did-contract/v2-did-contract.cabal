@@ -46,7 +46,6 @@ library
   hs-source-dirs:       src
 
   exposed-modules:      V2DidContract
-                        V2CheckFuncs
 
   build-depends:        bytestring
                       , cardano-api

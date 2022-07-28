@@ -1,6 +1,6 @@
 import Prelude
 import Cardano.Api
-import V2didContract ( didContractScript)
+import V2DidContract ( didContractScript)
 
 main :: IO ()
 main = do
