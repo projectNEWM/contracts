@@ -62,11 +62,16 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 voteValidatorHash :: PlutusV2.ValidatorHash
 voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [27, 79, 242, 191, 4, 88, 154, 76, 11, 184, 105, 186, 126, 43, 231, 160, 120, 222, 119, 14, 131, 127, 130, 144, 1, 72, 56, 198]
 
+-- tokenization minting policy
+tokenizedPid :: PlutusV2.CurrencySymbol
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [253, 63, 144, 198, 87, 183, 254, 248, 62, 136, 180, 96, 199, 74, 109, 175, 197, 61, 181, 212, 173, 197, 7, 123, 27, 80, 110, 52] }
+
+-- voting starter nft
 votePid :: PlutusV2.CurrencySymbol
-votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+votePid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [] }
 
 voteTkn :: PlutusV2.TokenName
-voteTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+voteTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [] }
 -------------------------------------------------------------------------------
 -- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
@@ -85,8 +90,6 @@ PlutusTx.unstableMakeIsData ''VoteDatumType
 data CustomDatumType = CustomDatumType
     { cdtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
-    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol -- this may need to be hardcoded
-    -- ^ The artist's tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the artist's tokenized token name.
     , cdtArtistPKH     :: PlutusV2.PubKeyHash
@@ -99,7 +102,6 @@ PlutusTx.unstableMakeIsData ''CustomDatumType
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
-           ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
            ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
            ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
            ( cdtArtistSC      a == cdtArtistSC      b )
@@ -131,11 +133,10 @@ mkValidator datum redeemer context =
     Unlock -> do 
       { let a = traceIfFalse "Vote Has Failed"       $ checkVoteFromDatum txRefInputs
       ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs && isSingleScript txRefInputs
-      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr singularNFT
-      ; let d = traceIfFalse "Cont Payin Error"      $ isValueContinuing contOutputs (validatingValue - singularNFT)
-      ; let e = traceIfFalse "FT Burn Error"         checkMintedAmount
-      ; let f = traceIfFalse "Datum Error"           $ isEmbeddedDatum contOutputs
-      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e,f]
+      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue
+      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount
+      ; let e = traceIfFalse "Datum Error"           $ isEmbeddedDatum contOutputs
+      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Exit -> do 
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
@@ -176,7 +177,7 @@ mkValidator datum redeemer context =
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
     singularNFT :: PlutusV2.Value
-    singularNFT = Value.singleton (cdtTokenizedPid datum) (cdtTokenizedTn datum) (1 :: Integer)
+    singularNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
 
     -- minting
     checkMintedAmount :: Bool

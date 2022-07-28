@@ -58,7 +58,7 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [163, 93, 49, 5, 80, 60, 54, 128, 130, 1, 4, 40, 57, 226, 161, 42, 86, 228, 218, 90, 27, 160, 112, 123, 248, 184, 52, 91]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [148, 154, 115, 197, 187, 91, 4, 45, 232, 163, 31, 24, 141, 210, 124, 120, 248, 246, 126, 96, 139, 8, 144, 139, 180, 54, 238, 205]
 
 lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
@@ -88,7 +88,7 @@ mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
       ; let b = traceIfFalse "Input Datum Error" checkInputDatum
-      ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator starterValue
+      ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator lockStarterValue
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c]
       }
   where
@@ -149,8 +149,8 @@ mkPolicy redeemer' context = do
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt lockValidatorHash info
 
     -- check for nft here
-    starterValue :: PlutusV2.Value
-    starterValue = Value.singleton lockPid lockTkn (1 :: Integer)
+    lockStarterValue :: PlutusV2.Value
+    lockStarterValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 

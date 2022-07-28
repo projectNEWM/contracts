@@ -60,7 +60,7 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 -- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [90, 32, 86, 239, 185, 144, 40, 135, 199, 208, 247, 17, 144, 91, 129, 124, 170, 55, 195, 181, 158, 85, 116, 221, 114, 238, 234, 22]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [164, 128, 156, 27, 197, 112, 168, 86, 58, 83, 207, 208, 159, 120, 58, 205, 114, 175, 236, 194, 222, 241, 204, 168, 181, 118, 112, 217]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------

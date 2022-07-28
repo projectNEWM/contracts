@@ -61,11 +61,19 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 voteValidatorHash :: PlutusV2.ValidatorHash
 voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [27, 79, 242, 191, 4, 88, 154, 76, 11, 184, 105, 186, 126, 43, 231, 160, 120, 222, 119, 14, 131, 127, 130, 144, 1, 72, 56, 198]
 
+-- voting starter token
 votePid :: PlutusV2.CurrencySymbol
 votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
 
 voteTkn :: PlutusV2.TokenName
 voteTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+
+-- incoming token to start the contract
+lockPid :: PlutusV2.CurrencySymbol
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+
+lockTkn :: PlutusV2.TokenName
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
 -------------------------------------------------------------------------------
 -- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
@@ -131,7 +139,8 @@ mkValidator datum redeemer context =
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Minting Error"   checkMintedAmount
       ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumIncreasing contOutputs
-      ;         traceIfFalse "Locking Mint Error"  $ all (==True) [a,b,c,d,e]
+      ; let f = traceIfFalse "Wrong Starter Error" $ Value.geq validatingValue lockStartValue
+      ;         traceIfFalse "Locking Mint Error"  $ all (==True) [a,b,c,d,e,f]
       }
     BurnNFT -> do
       { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
@@ -139,7 +148,8 @@ mkValidator datum redeemer context =
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Burning Error"   checkBurnedAmount
       ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumConstant contOutputs
-      ;         traceIfFalse "Locking Burn Error"  $ all (==True) [a,b,c,d,e]
+      ; let f = traceIfFalse "Wrong Starter Error" $ Value.geq validatingValue lockStartValue
+      ;         traceIfFalse "Locking Burn Error"  $ all (==True) [a,b,c,d,e,f]
       }
     Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
@@ -178,6 +188,9 @@ mkValidator datum redeemer context =
         _              -> False
     
     -- check for vote nft here
+    lockStartValue :: PlutusV2.Value
+    lockStartValue = Value.singleton lockPid lockTkn (1 :: Integer)
+
     voteStartValue :: PlutusV2.Value
     voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
 
