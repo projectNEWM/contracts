@@ -52,7 +52,7 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx.signed \
+    --out-file tmp/vote-tx.signed \
     --testnet-magic 1097911063
 #
 # exit
@@ -60,4 +60,4 @@ ${cli} transaction sign \
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic 1097911063 \
-    --tx-file tmp/tx.signed
+    --tx-file tmp/vote-tx.signed

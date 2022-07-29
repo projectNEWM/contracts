@@ -64,8 +64,9 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 
-voting_ref_utxo="40ad59b9786cfa827cc9a2dd3b174be3df0b31d60a931818f5495660bb061329"
+# voting_ref_utxo="40ad59b9786cfa827cc9a2dd3b174be3df0b31d60a931818f5495660bb061329"
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -85,9 +86,9 @@ FEE=$(${cli} transaction build \
     --tx-out="${seller_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
-    --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
+    --mint="${MINT_ASSET}" \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/current_datum.json \
     --testnet-magic 1097911063)

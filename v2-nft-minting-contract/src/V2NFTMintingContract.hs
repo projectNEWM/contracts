@@ -86,7 +86,7 @@ instance Eq CustomRedeemerType where
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
-      { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
+      { let a = traceIfFalse "Mint/Burn Error" ((checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0))
       ; let b = traceIfFalse "Input Datum Error" checkInputDatum
       ; let c = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator lockStarterValue
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c]
@@ -186,19 +186,19 @@ mkPolicy redeemer' context = do
               , crtPrefix  = crtPrefix  redeemer
               }
 
-    -- check the minting stuff here
+    -- check the minting stuff here, only the current token can be minted
     checkTokenMint :: Bool
     checkTokenMint =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName tkn && checkMintAmount amt
-        _                -> traceIfFalse "Mint/Burn Error" False
+        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName tkn && (traceIfFalse "Mint Amount Error" $ amt == (1 :: Integer))
+        _                -> traceIfFalse "Nothing Is Minted" False
     
-    -- check the burning stuff here
+    -- check the burning stuff here, any token name from the policy can be burned
     checkTokenBurn :: Bool
     checkTokenBurn =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, _, amt)] -> checkPolicyId cs && amt == (-1 :: Integer)
-        _                -> traceIfFalse "Mint/Burn Error" False
+        [(cs, _, amt)] -> checkPolicyId cs && (traceIfFalse "Burn Amount Error" $ amt == (-1 :: Integer))
+        _              -> traceIfFalse "Nothing Is Burned" False
     
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
@@ -210,8 +210,6 @@ mkPolicy redeemer' context = do
         debug :: BuiltinString
         debug = decodeUtf8 $ "Required Token Name: " <>  nftName (crtPrefix redeemer) (crtNumber redeemer)
 
-    checkMintAmount :: Integer -> Bool
-    checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
 
 -------------------------------------------------------------------------------
 policy :: PlutusV2.MintingPolicy

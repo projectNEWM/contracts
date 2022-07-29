@@ -12,18 +12,15 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 policy_id=$(cat ../v2-minting-contract/policy.id)
+token_pid=$(cat ../v2-nft-minting-contract/policy.id)
 
 #
-SC_ASSET="1 19bf064e88ba8c16195af25144cb6c5a98680bf7d8541c7f9985e9db.4e65774d5f30"
+SC_ASSET="1 ${token_pid}.4e65774d5f30"
 #
 BURN_ASSET="-100000000 ${policy_id}.4e65774d5f30"
-UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-    --alonzo-era \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out="${seller_address} ${SC_ASSET}" | tr -dc '0-9')
 
 script_address_out="${script_address} + 5000000"
-seller_address_out="${seller_address} + ${UTXO_VALUE} + ${SC_ASSET}"
+seller_address_out="${seller_address} + 5000000 + ${SC_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${seller_address_out}
 
@@ -67,7 +64,7 @@ script_tx_in=${TXIN::-8}
 # exit
 collat=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-voting_ref_utxo="e31689367250c8fa66cb9be2ff358330b923ae33b2fdbcc4194a561674114764"
+voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -84,15 +81,15 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/unlock_redeemer.json \
     --tx-out="${seller_address_out}" \
-    --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/datum.json \
-    --mint="${BURN_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
+    --mint="${BURN_ASSET}" \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic 1097911063)
 
+    # --tx-out="${script_address_out}" \
+    # --tx-out-inline-datum-file data/datum.json \
     # --tx-out-datum-embed-file data/datum.json \
     # --spending-reference-tx-in-datum-file data/datum.json \
 IFS=':' read -ra VALUE <<< "${FEE}"

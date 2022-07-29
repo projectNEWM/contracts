@@ -64,7 +64,7 @@ voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [112, 114, 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [109, 5, 146, 99, 103, 162, 50, 55, 88, 168, 16, 4, 114, 124, 206, 67, 94, 76, 230, 126, 65, 254, 132, 139, 243, 133, 239, 45] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [240, 205, 45, 233, 51, 97, 24, 14, 147, 14, 130, 45, 228, 195, 145, 167, 112, 161, 183, 189, 204, 62, 123, 233, 38, 123, 168, 19] }
 
 -- voting starter nft
 votePid :: PlutusV2.CurrencySymbol
@@ -125,8 +125,8 @@ mkValidator datum redeemer context =
     Lock -> do 
       { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
       ; let b = traceIfFalse "Single Script Error" $ isSingleScript txInputs && isSingleScript txRefInputs
-      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs (validatingValue + singularNFT)
-      ; let d = traceIfFalse "FT Mint Error"       checkMintedAmount
+      ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs (validatingValue + tokenizedNFT)
+      ; let d = traceIfFalse "FT Mint Error"       checkMintingProcess
       ; let e = traceIfFalse "Datum Error"         $ isEmbeddedDatum contOutputs
       ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
@@ -134,11 +134,10 @@ mkValidator datum redeemer context =
       { let a = traceIfFalse "Vote Has Failed"       $ checkVoteFromDatum txRefInputs
       ; let b = traceIfFalse "Single Script Error"   $ isSingleScript txInputs && isSingleScript txRefInputs
       ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue
-      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount
-      ; let e = traceIfFalse "Datum Error"           $ isEmbeddedDatum contOutputs
-      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d,e]
+      ; let d = traceIfFalse "FT Burn Error"         checkMintingProcess
+      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
       }
-    Exit -> do 
+    Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
@@ -176,12 +175,12 @@ mkValidator datum redeemer context =
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
-    singularNFT :: PlutusV2.Value
-    singularNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
+    tokenizedNFT :: PlutusV2.Value
+    tokenizedNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
 
     -- minting
-    checkMintedAmount :: Bool
-    checkMintedAmount = 
+    checkMintingProcess :: Bool
+    checkMintingProcess = 
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
         _             -> False

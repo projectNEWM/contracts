@@ -16,8 +16,9 @@ seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 #
 policy_id=$(cat ../v2-minting-contract/policy.id)
+token_pid=$(cat ../v2-nft-minting-contract/policy.id)
 #
-SC_ASSET="1 19bf064e88ba8c16195af25144cb6c5a98680bf7d8541c7f9985e9db.4e65774d5f30"
+SC_ASSET="1 ${token_pid}.4e65774d5f30"
 #
 MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
@@ -64,11 +65,11 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
-
+# 
 # collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-collat_utxo="7ede8c8ab77767f62809364ce21b6235cc9f1d48fea99c301a0b52394cb98624"
+collat_utxo="0a0cfbf9b7d077d4e5cfc09b5c59b68a109b11e11e0bcede8612536716b7590a"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-voting_ref_utxo="e31689367250c8fa66cb9be2ff358330b923ae33b2fdbcc4194a561674114764"
+voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
