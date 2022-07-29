@@ -40,7 +40,7 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/sender_utxo.json)
 HEXTXIN=${TXIN::-8}
-echo $HEXTXIN
+# echo $HEXTXIN
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
