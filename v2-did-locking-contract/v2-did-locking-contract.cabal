@@ -1,6 +1,6 @@
 cabal-version: 2.4
 
-name:                   v2-did-contract
+name:                   v2-did-locking-contract
 version:                1
 description:            A plutus script for did funds.
 author:                 Quinn Parkinson
@@ -45,7 +45,8 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      V2DidContract
+  exposed-modules:      V2DidLockingContract
+                        V2CheckFuncs
 
   build-depends:        bytestring
                       , cardano-api
@@ -57,10 +58,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable v2-did-contract
+executable v2-did-locking-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              v2-did-contract.hs
+  main-is:              v2-did-locking-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -68,5 +69,5 @@ executable v2-did-contract
                         -O2
 
   build-depends:        cardano-api
-                      , v2-did-contract
+                      , v2-did-locking-contract
 

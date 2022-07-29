@@ -30,7 +30,10 @@ module V2CheckFuncs
   , isSingleScript
   , isVoteComplete
   , createBuiltinByteString
+  , isAddrGettingPaid
+  , createAddress
   ) where
+import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
@@ -40,6 +43,11 @@ import           PlutusTx.Prelude
   Copyright: 2022
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------
+-- | Create a proper Address Type.
+-------------------------------------------------------------------------
+createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
+createAddress pkh sc = if PlutusV2.getPubKeyHash sc == emptyByteString then PlutusV2.Address (PubKeyCredential pkh) Nothing else PlutusV2.Address (PubKeyCredential pkh) (Just $ StakingHash $ PubKeyCredential sc)
 -------------------------------------------------------------------------
 -- | Check if the total value contains the threshold value of a token.
 -------------------------------------------------------------------------
@@ -71,6 +79,20 @@ isValueContinuing (x:xs) val
   | checkVal  = True
   | otherwise = isValueContinuing xs val
   where
+    checkVal :: Bool
+    checkVal = PlutusV2.txOutValue x == val
+-------------------------------------------------------------------------------
+-- | Search each TxOut for an pkh and value.
+-------------------------------------------------------------------------------
+isAddrGettingPaid :: [PlutusV2.TxOut] -> PlutusV2.Address -> PlutusV2.Value -> Bool
+isAddrGettingPaid []     _    _ = False
+isAddrGettingPaid (x:xs) addr val
+  | checkAddr && checkVal = True
+  | otherwise             = isAddrGettingPaid xs addr val
+  where
+    checkAddr :: Bool
+    checkAddr = PlutusV2.txOutAddress x == addr
+
     checkVal :: Bool
     checkVal = Value.geq (PlutusV2.txOutValue x) val
 -------------------------------------------------------------------------------

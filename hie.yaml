@@ -10,3 +10,7 @@ cradle:
       component: "v2-nft-minting-contract:lib:v2-nft-minting-contract"
     - path: "./v2-nft-locking-contract/src"
       component: "v2-nft-locking-contract:lib:v2-nft-locking-contract"
+    - path: "./v2-did-locking-contract/src"
+      component: "v2-did-locking-contract:lib:v2-did-locking-contract"
+    - path: "./v2-did-minting-contract/src"
+      component: "v2-did-minting-contract:lib:v2-did-minting-contract"
