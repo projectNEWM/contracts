@@ -56,12 +56,15 @@ flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString x
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList ]
 
+-- the hash of the locking script
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [132, 245, 16, 53, 163, 133, 18, 206, 16, 195, 115, 226, 239, 119, 6, 169, 36, 238, 242, 124, 155, 77, 37, 126, 129, 209, 56, 127]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [115, 164, 56, 226, 128, 13, 53, 211, 159, 154, 146, 97, 232, 133, 78, 251, 19, 210, 246, 171, 61, 24, 149, 68, 26, 68, 235, 42]
 
+-- must match a specific pkh
 delegatorPkh :: PlutusV2.PubKeyHash
 delegatorPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
+-- constant token name
 iouTkn :: PlutusV2.TokenName
 iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105, 111, 117]}
 -------------------------------------------------------------------------------
@@ -81,7 +84,7 @@ instance Eq CustomRedeemerType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy redeemer' context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && checkInputDatum && checkOutputDatum
+mkPolicy _ context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && checkInputDatum && checkOutputDatum
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -90,8 +93,8 @@ mkPolicy redeemer' context = traceIfFalse "Mint/Burn Error" $ checkMintingProces
     txInputs = ContextsV2.txInfoInputs info
 
     -- the redeemer is the datum of the locking script
-    redeemer :: CustomRedeemerType
-    redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
+    -- redeemer :: CustomRedeemerType
+    -- redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
 
     -- check if the incoming datum is the correct form.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType

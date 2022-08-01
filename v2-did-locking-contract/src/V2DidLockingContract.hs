@@ -54,11 +54,12 @@ iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105
 voteValidatorHash :: PlutusV2.ValidatorHash
 voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [112, 114, 91, 248, 205, 110, 153, 135, 62, 53, 238, 253, 34, 243, 234, 142, 249, 183, 217, 106, 81, 230, 70, 15, 247, 36, 164, 69]
 
-votePid :: PlutusV2.CurrencySymbol
-votePid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+-- the token that starts the voting script
+voteStartPid :: PlutusV2.CurrencySymbol
+voteStartPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
 
-voteTkn :: PlutusV2.TokenName
-voteTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+voteStartTkn :: PlutusV2.TokenName
+voteStartTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
 
 voteStartValue :: PlutusV2.Value
 voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
@@ -78,10 +79,10 @@ PlutusTx.unstableMakeIsData ''VoteDatumType
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-    { cdtPKH :: PlutusV2.PubKeyHash
+    { cdtPKH    :: PlutusV2.PubKeyHash
     -- ^ The did public key hash.
-    , iouPid :: PlutusV2.CurrencySymbol
-    -- ^ The dids iou.
+    , cdtIouPid :: PlutusV2.CurrencySymbol
+    -- ^ The dids iou policy id.
     }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 -- old == new
@@ -125,19 +126,25 @@ mkValidator datum redeemer context =
       }
     (Increase ut)-> do 
       { let increase = updateAmt ut
-      ; let a = traceIfFalse "Single Script Error" $ isSingleScript txInputs && isSingleScript txRefInputs
-      ; let b = traceIfFalse "Cont Payin Error"    $ isValueIncreasing increase
-      ; let c = traceIfFalse "Wrong Datum Error"   $ isDatumConstant contOutputs
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b,c]
+      ; let outboundAddr = createAddress (updaterPkh ut) (updaterSc ut)
+      ; let a = traceIfFalse "Single Script Error"  $ isSingleScript txInputs && isSingleScript txRefInputs
+      ; let b = traceIfFalse "Cont Payin Error"     $ isValueIncreasing increase
+      ; let c = traceIfFalse "Wrong Datum Error"    $ isDatumConstant contOutputs
+      ; let d = traceIfFalse "Minting Error"        $ checkMintingProcess increase
+      ; let e = traceIfFalse "Minting Payout Error" $ isAddrGettingPaid txOutputs outboundAddr (Value.singleton (cdtIouPid datum) iouTkn increase)
+      ; let f = traceIfFalse "Signing Tx Error"     $ ContextsV2.txSignedBy info (updaterPkh ut)
+      ;         traceIfFalse "Exit Endpoint Error"  $ all (==True) [a,b,c,d,e,f]
       }
     (Decrease ut)-> do 
       { let decrease = updateAmt ut
       ; let outboundAddr = createAddress (updaterPkh ut) (updaterSc ut)
       ; let a = traceIfFalse "Single Script Error" $ isSingleScript txInputs && isSingleScript txRefInputs
       ; let b = traceIfFalse "Cont Payin Error"    $ isValueDecreasing decrease
-      ; let c = traceIfFalse "FT Payout Error"     $ isNewValueReturning outboundAddr decrease
-      ; let d = traceIfFalse "Wrong Datum Error"   $ isDatumConstant contOutputs
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b,c,d]
+      ; let c = traceIfFalse "Wrong Datum Error"   $ isDatumConstant contOutputs
+      ; let d = traceIfFalse "Burning Error"       $ checkMintingProcess ((-1 :: Integer) * decrease)
+      ; let e = traceIfFalse "FT Payout Error"     $ isVotingTokenReturning outboundAddr decrease
+      ; let f = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info (updaterPkh ut)
+      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b,c,d,e,f]
       }
    where
     info :: PlutusV2.TxInfo
@@ -155,18 +162,12 @@ mkValidator datum redeemer context =
     txRefInputs :: [PlutusV2.TxInInfo]
     txRefInputs = PlutusV2.txInfoReferenceInputs info
 
-    checkMintedAmount :: Bool
-    checkMintedAmount =
+    -- handles mint and burn
+    checkMintingProcess :: Integer -> Bool
+    checkMintingProcess amt =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
-        _                -> False
-    
-    checkBurnedAmount :: Bool
-    checkBurnedAmount =
-      case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> False
-    
+        [(cs, tkn, amt')] -> (cs == cdtIouPid datum) && (tkn == iouTkn) && (amt' == amt)
+        _                 -> False
     
     isDatumConstant :: [PlutusV2.TxOut] -> Bool
     isDatumConstant []     = False
@@ -194,8 +195,8 @@ mkValidator datum redeemer context =
     createNewValue :: (PlutusV2.CurrencySymbol, PlutusV2.TokenName, Integer) -> Integer -> PlutusV2.Value
     createNewValue (cs, tkn, _) amt = Value.singleton cs tkn amt
 
-    isNewValueReturning :: PlutusV2.Address -> Integer -> Bool
-    isNewValueReturning addr amt = 
+    isVotingTokenReturning :: PlutusV2.Address -> Integer -> Bool
+    isVotingTokenReturning addr amt = 
       case checkForVoteTokens txRefInputs of
         Nothing        -> False
         Just tokenInfo -> isAddrGettingPaid txOutputs addr (createNewValue tokenInfo amt)
