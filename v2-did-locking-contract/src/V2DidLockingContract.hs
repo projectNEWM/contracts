@@ -50,7 +50,7 @@ import V2CheckFuncs
 iouTkn :: PlutusV2.TokenName
 iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105, 111, 117]}
 
--- voting stuff
+-- voting validator hash
 voteValidatorHash :: PlutusV2.ValidatorHash
 voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [112, 114, 91, 248, 205, 110, 153, 135, 62, 53, 238, 253, 34, 243, 234, 142, 249, 183, 217, 106, 81, 230, 70, 15, 247, 36, 164, 69]
 
@@ -62,7 +62,7 @@ voteStartTkn :: PlutusV2.TokenName
 voteStartTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
 
 voteStartValue :: PlutusV2.Value
-voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
+voteStartValue = Value.singleton voteStartPid voteStartTkn (1 :: Integer)
 -------------------------------------------------------------------------------
 -- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ mkValidator datum redeemer context =
       ; let b = traceIfFalse "Cont Payin Error"     $ isValueIncreasing increase
       ; let c = traceIfFalse "Wrong Datum Error"    $ isDatumConstant contOutputs
       ; let d = traceIfFalse "Minting Error"        $ checkMintingProcess increase
-      ; let e = traceIfFalse "Minting Payout Error" $ isAddrGettingPaid txOutputs outboundAddr (Value.singleton (cdtIouPid datum) iouTkn increase)
+      ; let e = traceIfFalse "Minting Payout Error" $ isAddrGettingPaid txOutputs outboundAddr (Value.singleton (cdtIouPid datum) iouTkn increase) -- can allow ada too
       ; let f = traceIfFalse "Signing Tx Error"     $ ContextsV2.txSignedBy info (updaterPkh ut)
       ;         traceIfFalse "Exit Endpoint Error"  $ all (==True) [a,b,c,d,e,f]
       }
@@ -142,7 +142,7 @@ mkValidator datum redeemer context =
       ; let b = traceIfFalse "Cont Payin Error"    $ isValueDecreasing decrease
       ; let c = traceIfFalse "Wrong Datum Error"   $ isDatumConstant contOutputs
       ; let d = traceIfFalse "Burning Error"       $ checkMintingProcess ((-1 :: Integer) * decrease)
-      ; let e = traceIfFalse "FT Payout Error"     $ isVotingTokenReturning outboundAddr decrease
+      ; let e = traceIfFalse "FT Payout Error"     $ isVotingTokenReturning outboundAddr decrease -- can allow ada too
       ; let f = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info (updaterPkh ut)
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b,c,d,e,f]
       }

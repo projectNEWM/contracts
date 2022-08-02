@@ -52,13 +52,15 @@ import           V2CheckFuncs
 getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
--- starter nft
+-- the intialization nft to ensure uniqueness
 startPid :: PlutusV2.CurrencySymbol
 startPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
 
 startTkn :: PlutusV2.TokenName
 startTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
 
+starterNFT :: PlutusV2.Value
+starterNFT = Value.singleton startPid startTkn (1 :: Integer)
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -100,7 +102,7 @@ mkValidator datum redeemer context =
       ; let e = traceIfFalse "Value Not Continuing"      $ isValueContinuing contOutputs validatingValue
       ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
       }
-    Exit -> do -- remove in production or make into an update endpoint
+    Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
@@ -108,23 +110,20 @@ mkValidator datum redeemer context =
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
 
-    -- continue / inputs
+    -- continuing ouputs
     contOutputs :: [PlutusV2.TxOut]
     contOutputs = ContextsV2.getContinuingOutputs context
 
+    -- tx inputs
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = PlutusV2.txInfoInputs  info
 
-    -- token info
+    -- token that is being validated
     validatingValue :: PlutusV2.Value
     validatingValue =
       case ContextsV2.findOwnInput context of
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
-    
-    -- the intialization nft to ensure uniqueness
-    starterNFT :: PlutusV2.Value
-    starterNFT = Value.singleton startPid startTkn (1 :: Integer)
     
     -- check if the outgoing datum has the correct form.
     isEmbeddedDatum :: [PlutusV2.TxOut] -> Bool
