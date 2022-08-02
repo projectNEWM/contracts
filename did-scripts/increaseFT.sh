@@ -11,13 +11,14 @@ script_address=$(${cli} address build --payment-script-file ${script_path} --tes
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 policy_id=$(cat ../v2-did-minting-contract/policy.id)
 #
 name=$(echo -n "iou" | xxd -ps)
-SC_ASSET="1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+SC_ASSET="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
-MINT_ASSET="1000000 ${policy_id}.${name}"
+MINT_ASSET="20000000 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')
@@ -62,9 +63,10 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo="acd5858909239a269025c3436a4dd7b76b3c60d65322a2d48c4059d6b6c6e86b"
+collat_utxo="309c82fc52b6ab872db6fadb56fddc636667c3ab145d541cc96adc5a937dec6c"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
+echo ${script_ref_utxo}
 
 # voting_ref_utxo="40ad59b9786cfa827cc9a2dd3b174be3df0b31d60a931818f5495660bb061329"
 
@@ -75,8 +77,8 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
-    --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${buyer_tx_in} \
+    --tx-in-collateral="${collat_utxo}#0" \
     --read-only-tx-in-reference="${voting_ref_utxo}#1" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
@@ -87,6 +89,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json \
     --required-signer-hash ${seller_pkh} \
+    --required-signer-hash ${buyer_pkh} \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
     --mint="${MINT_ASSET}" \
@@ -99,7 +102,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

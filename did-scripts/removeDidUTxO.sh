@@ -7,11 +7,12 @@ script_path="../v2-did-locking-contract/v2-did-locking-contract.plutus"
 #
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
+seller_address=$(cat wallets/seller-wallet/payment.addr)
 #
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
-buyer_address_out="${buyer_address} + 3000000"
+buyer_address_out="${seller_address} + 3000000"
 echo "Exit OUTPUT: "${buyer_address_out}
 #
 # exit
@@ -59,7 +60,6 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in-collateral ${collateral_tx_in} \
     --tx-in ${buyer_tx_in} \
-    --read-only-tx-in-reference="${voting_ref_utxo}#1" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -70,6 +70,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${buyer_pkh} \
     --testnet-magic 1097911063)
 
+    # --read-only-tx-in-reference="${voting_ref_utxo}#1" \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}

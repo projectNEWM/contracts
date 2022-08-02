@@ -62,7 +62,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo="732e3fca26b3cdd59ee25c96c93a71cd2736dd8279760cf71119ed67744cc9e6"
+collat_utxo="45c5d68e08bd0958549023d96b5a3cae77673d903becee59f87911b1336ca963"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 

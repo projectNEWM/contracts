@@ -58,7 +58,7 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 
 -- the hash of the locking script
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [115, 164, 56, 226, 128, 13, 53, 211, 159, 154, 146, 97, 232, 133, 78, 251, 19, 210, 246, 171, 61, 24, 149, 68, 26, 68, 235, 42]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [238, 156, 179, 191, 244, 109, 196, 132, 106, 178, 129, 210, 72, 136, 122, 149, 223, 227, 46, 153, 72, 144, 151, 108, 83, 95, 233, 81]
 
 -- must match a specific pkh
 delegatorPkh :: PlutusV2.PubKeyHash
@@ -73,6 +73,10 @@ iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105
 data CustomRedeemerType = CustomRedeemerType
     { crtPkh :: PlutusV2.PubKeyHash
     -- ^ The did public key hash.
+    , crtIouPid :: PlutusV2.CurrencySymbol
+    -- ^ The dids iou policy id.
+    , crtHash   :: PlutusV2.ValidatorHash
+    -- ^ The dids iou policy id.
     }
 PlutusTx.unstableMakeIsData ''CustomRedeemerType
 -- old == new
@@ -129,7 +133,7 @@ mkPolicy _ context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && che
     checkInputDatum =
       case checkInputs txInputs of
         Nothing         -> traceIfFalse "No Input Datum Error" False
-        Just inputDatum -> traceIfFalse "Input Datum Equality Error" $ crtPkh inputDatum == delegatorPkh
+        Just inputDatum -> traceIfFalse "Input Datum Equality Error" $ crtPkh inputDatum == delegatorPkh && crtHash inputDatum == lockValidatorHash -- change this with tx sign from redeemer
     
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator =
@@ -168,7 +172,7 @@ mkPolicy _ context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && che
     checkOutputDatum = 
       case datumAtValidator of
         Nothing      -> traceIfFalse "No Datum At Validator" False
-        Just datum'' -> traceIfFalse "Output Datum Equality Error" $ crtPkh datum'' == delegatorPkh
+        Just datum'' -> traceIfFalse "Output Datum Equality Error" $ crtPkh datum'' == delegatorPkh && crtHash datum'' == lockValidatorHash
 
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context

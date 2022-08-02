@@ -6,11 +6,18 @@ cli=$(cat path_to_cli.sh)
 script_path="../v2-voting-contract/v2-voting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-seller_address=$(cat wallets/buyer-wallet/payment.addr)
+seller_address=$(cat wallets/seller-wallet/payment.addr)
+
+SC_ASSET="100000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${seller_address} ${SC_ASSET}" | tr -dc '0-9')
 
 
 script_address_out="${script_address} + 5000000"
+seller_address_out="${seller_address} + ${UTXO_VALUE} + ${SC_ASSET}"
 echo "Exit OUTPUT: "${script_address_out}
+echo "Exit OUTPUT: "${seller_address_out}
 
 #
 # exit
@@ -49,6 +56,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+collat_utxo="7647a4ac1dd15c8514ec19dad3627c7330e9dc142ebbf2cc5bcbe96245fe29f3"
 
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -58,14 +66,15 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
-    --tx-in-collateral ${collateral_tx_in} \
+    --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/vote_redeemer.json \
+    --tx-out="${seller_address_out}" \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/current_datum.json  \
+    --tx-out-inline-datum-file data/next_datum.json  \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -77,7 +86,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

@@ -39,6 +39,7 @@ import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V1.Ledger.Value         as Value
+import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
@@ -61,6 +62,18 @@ startTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []
 
 starterNFT :: PlutusV2.Value
 starterNFT = Value.singleton startPid startTkn (1 :: Integer)
+-------------------------------------------------------------------------------
+-- | Create the datum parameters data object.
+-------------------------------------------------------------------------------
+data DelegationType = DelegationType
+    { dtPkh    :: PlutusV2.PubKeyHash
+    -- ^ The did public key hash.
+    , dtIouPid :: PlutusV2.CurrencySymbol
+    -- ^ The dids iou policy id.
+    , dtHash   :: PlutusV2.ValidatorHash
+    -- ^ The dids iou policy id.
+    }
+PlutusTx.unstableMakeIsData ''DelegationType
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -95,7 +108,7 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Vote -> do 
-      { let a = traceIfFalse "Vote Has Failed"           $ isVoteComplete (cdtPid datum) (cdtTkn datum) (cdtAmt datum) info 
+      { let a = traceIfFalse "Vote Has Failed"           $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
       ; let b = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
       ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
       ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
@@ -118,13 +131,17 @@ mkValidator datum redeemer context =
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = PlutusV2.txInfoInputs  info
 
+    -- tx inputs
+    txRefInputs :: [PlutusV2.TxInInfo]
+    txRefInputs = PlutusV2.txInfoReferenceInputs  info
+
     -- token that is being validated
     validatingValue :: PlutusV2.Value
     validatingValue =
       case ContextsV2.findOwnInput context of
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
-    
+
     -- check if the outgoing datum has the correct form.
     isEmbeddedDatum :: [PlutusV2.TxOut] -> Bool
     isEmbeddedDatum []     = False
@@ -145,6 +162,34 @@ mkValidator datum redeemer context =
               case PlutusTx.fromBuiltinData d' of
                 Nothing       -> isEmbeddedDatum xs
                 Just embedded -> datum == embedded
+    
+    -- check if the outgoing datum has the correct form.
+    checkReferenceSigners :: [PlutusV2.TxInInfo] -> PlutusV2.Value -> Bool
+    checkReferenceSigners []     val = isVoteComplete (cdtPid datum) (cdtTkn datum) (cdtAmt datum) info val
+    checkReferenceSigners (x:xs) val = 
+      case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        -- datumless
+        PlutusV2.NoOutputDatum -> checkReferenceSigners xs val
+        -- inline datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+          case PlutusTx.fromBuiltinData @DelegationType d of
+            Nothing     -> checkReferenceSigners xs val
+            Just inline -> 
+              if traceIfFalse "Incorrect Validator Address" $ (PlutusV2.txOutAddress $ PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress (dtHash inline)
+              then ContextsV2.txSignedBy info (dtPkh inline) && checkReferenceSigners xs (val + (PlutusV2.txOutValue $ PlutusV2.txInInfoResolved x))
+              else checkReferenceSigners xs val
+        -- embedded datum
+        (PlutusV2.OutputDatumHash dh) ->
+          case ContextsV2.findDatum dh info of
+            Nothing                  -> checkReferenceSigners xs val
+            Just (PlutusV2.Datum d') -> 
+              case PlutusTx.fromBuiltinData @DelegationType d' of
+                Nothing       -> checkReferenceSigners xs val
+                Just embedded -> 
+                  if traceIfFalse "Incorrect Validator Address" $ (PlutusV2.txOutAddress $ PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress (dtHash embedded)
+                  then ContextsV2.txSignedBy info (dtPkh embedded) && checkReferenceSigners xs (val + (PlutusV2.txOutValue $ PlutusV2.txInInfoResolved x))
+                  else checkReferenceSigners xs val
+                  
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

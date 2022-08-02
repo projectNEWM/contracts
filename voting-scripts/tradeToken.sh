@@ -15,11 +15,14 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 
 # Define Asset to be printed here
 asset=0
+asset="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+return_asset="80000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
-# min_utxo=$(${cli} transaction calculate-min-required-utxo \
-#     --protocol-params-file tmp/protocol.json \
-#     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
-token_to_be_traded="${receiver_address} + 148520862"
+min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
+token_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
+token_to_be_changed="${sender_address} + ${min_utxo} + ${return_asset}"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 #
@@ -48,6 +51,7 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${token_to_be_traded}" \
+    --tx-out="${token_to_be_changed}" \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${buyer_pkh} \
     --testnet-magic 1097911063)

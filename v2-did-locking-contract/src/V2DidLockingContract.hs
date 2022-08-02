@@ -52,7 +52,7 @@ iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105
 
 -- voting validator hash
 voteValidatorHash :: PlutusV2.ValidatorHash
-voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [112, 114, 91, 248, 205, 110, 153, 135, 62, 53, 238, 253, 34, 243, 234, 142, 249, 183, 217, 106, 81, 230, 70, 15, 247, 36, 164, 69]
+voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [10, 224, 112, 79, 173, 15, 216, 41, 161, 178, 251, 105, 198, 48, 40, 254, 233, 208, 239, 68, 76, 182, 206, 179, 8, 188, 67, 128]
 
 -- the token that starts the voting script
 voteStartPid :: PlutusV2.CurrencySymbol
@@ -79,16 +79,18 @@ PlutusTx.unstableMakeIsData ''VoteDatumType
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-    { cdtPKH    :: PlutusV2.PubKeyHash
+    { cdtPkh    :: PlutusV2.PubKeyHash
     -- ^ The did public key hash.
     , cdtIouPid :: PlutusV2.CurrencySymbol
+    -- ^ The dids iou policy id.
+    , cdtHash   :: PlutusV2.ValidatorHash
     -- ^ The dids iou policy id.
     }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 -- old == new
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( cdtPKH a == cdtPKH b )
+  a == b = ( cdtPkh a == cdtPkh b )
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -119,7 +121,7 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Exit -> do 
-      { let a = traceIfFalse "Signing Tx Error"     $ ContextsV2.txSignedBy info (cdtPKH datum)
+      { let a = traceIfFalse "Signing Tx Error"     $ ContextsV2.txSignedBy info (cdtPkh datum)
       ; let b = traceIfFalse "Voters Are Delegated" $ hasVotngTokens
       ; let c = traceIfFalse "Single Script Error"  $ isSingleScript txInputs && isSingleScript txRefInputs
       ;         traceIfFalse "Exit Endpoint Error"  $ all (==True) [a,b,c]
