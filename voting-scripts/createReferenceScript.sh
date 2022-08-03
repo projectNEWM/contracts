@@ -18,6 +18,7 @@ vote_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${vote_script_path} \
     --tx-out="${receiver_address} 0" | tr -dc '0-9')
+
 echo "Voting Min Fee" ${vote_min_utxo}
 vote_value=$((${vote_min_utxo} + 1000000))
 vote_script_reference_utxo="${receiver_address} + ${vote_value}"
@@ -40,8 +41,9 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/sender_utxo.json)
 HEXTXIN=${TXIN::-8}
-# echo $HEXTXIN
+#
 # exit
+#
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \

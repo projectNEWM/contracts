@@ -49,7 +49,6 @@ import           V2CheckFuncs
   Copyright: 2022
   Version  : Rev 2
 -}
-
 getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
@@ -63,7 +62,7 @@ startTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []
 starterNFT :: PlutusV2.Value
 starterNFT = Value.singleton startPid startTkn (1 :: Integer)
 -------------------------------------------------------------------------------
--- | Create the datum parameters data object.
+-- | Create the delegation parameters data object.
 -------------------------------------------------------------------------------
 data DelegationType = DelegationType
     { dtPkh    :: PlutusV2.PubKeyHash
@@ -108,11 +107,11 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Vote -> do 
-      { let a = traceIfFalse "Vote Has Failed"           $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
+      { let a = traceIfFalse "Voting Has Failed"         $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
       ; let b = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
       ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
       ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
-      ; let e = traceIfFalse "Value Not Continuing"      $ isValueContinuing contOutputs validatingValue
+      ; let e = traceIfFalse "Value Not Cont Error"      $ isValueContinuing contOutputs validatingValue
       ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
       }
     Exit -> do -- remove in production

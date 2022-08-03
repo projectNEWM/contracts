@@ -11,15 +11,12 @@ buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 #
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
-
-
+#
 buyer_address_out="${buyer_address} + 5000000"
 echo "Exit OUTPUT: "${buyer_address_out}
-
 #
 # exit
 #
-
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
@@ -53,8 +50,8 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/vote-tx.signed)
-collat_utxo="4e240e2c1ee12882af7fee54c913a72bb197ba7006f17434db286b74dfe47726"
+collat_utxo=$(cardano-cli transaction txid --tx-file tmp/vote-tx.signed)
+# collat_utxo="d0438cc16524cafe3066388689ffd51ff07114940fc08ae00f812630301cf3ec"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \

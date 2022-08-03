@@ -1,3 +1,5 @@
+rm validator.bytes
+rm validator.hash
 cabal clean
 cabal update
 cabal build -w ghc-8.10.7 -O2

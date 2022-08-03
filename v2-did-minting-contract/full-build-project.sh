@@ -1,3 +1,5 @@
+rm policy.bytes
+rm policy.id
 cabal clean
 cabal update
 cabal build -w ghc-8.10.7 -O2

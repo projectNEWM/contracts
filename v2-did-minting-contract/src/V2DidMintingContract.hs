@@ -58,7 +58,7 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 
 -- the hash of the locking script
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [238, 156, 179, 191, 244, 109, 196, 132, 106, 178, 129, 210, 72, 136, 122, 149, 223, 227, 46, 153, 72, 144, 151, 108, 83, 95, 233, 81]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [236, 92, 196, 42, 250, 28, 201, 188, 245, 40, 14, 12, 164, 93, 235, 7, 48, 109, 208, 53, 194, 48, 229, 45, 243, 161, 112, 244]
 
 -- must match a specific pkh
 delegatorPkh :: PlutusV2.PubKeyHash
