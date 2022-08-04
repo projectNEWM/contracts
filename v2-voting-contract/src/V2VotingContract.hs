@@ -53,14 +53,14 @@ getPkh :: PlutusV2.PubKeyHash -- remove in production
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 -- the intialization nft to ensure uniqueness
-startPid :: PlutusV2.CurrencySymbol
-startPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+voteStartPid :: PlutusV2.CurrencySymbol
+voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
 
-startTkn :: PlutusV2.TokenName
-startTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+voteStartTkn :: PlutusV2.TokenName
+voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
 
-starterNFT :: PlutusV2.Value
-starterNFT = Value.singleton startPid startTkn (1 :: Integer)
+voteStartValue :: PlutusV2.Value
+voteStartValue = Value.singleton voteStartPid voteStartTkn (1 :: Integer)
 -------------------------------------------------------------------------------
 -- | Create the delegation parameters data object.
 -------------------------------------------------------------------------------
@@ -107,11 +107,11 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Vote -> do 
-      { let a = traceIfFalse "Voting Has Failed"         $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
+      { let a = traceIfFalse "Voting Has Failed Error"   $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
       ; let b = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
-      ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue starterNFT
+      ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue voteStartValue
       ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
-      ; let e = traceIfFalse "Value Not Cont Error"      $ isValueContinuing contOutputs validatingValue
+      ; let e = traceIfFalse "Value Continue Error"      $ isValueContinuing contOutputs validatingValue
       ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
       }
     Exit -> do -- remove in production

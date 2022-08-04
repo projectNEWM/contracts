@@ -3,41 +3,36 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../v2-did-locking-contract/v2-did-locking-contract.plutus"
-mint_path="../v2-did-minting-contract/v2-did-minting-contract.plutus"
-
+script_path="../v2-voting-contract/v2-voting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-#
-seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-#
-policy_id=$(cat ../v2-did-minting-contract/policy.id)
-#
-name=$(echo -n "iou" | xxd -ps)
-SC_ASSET="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+buyer_address=$(cat wallets/buyer-wallet/payment.addr)
+delegator_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
-MINT_ASSET="-20000000 ${policy_id}.${name}"
+SC_ASSET="10000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
-    --tx-out="${seller_address} ${SC_ASSET}" | tr -dc '0-9')
-#
-script_address_out="${script_address} + 5000000"
-seller_address_out="${seller_address} + ${UTXO_VALUE} + ${SC_ASSET}"
-echo "Script OUTPUT: "${script_address_out}
-echo "Mint OUTPUT: "${seller_address_out}
+    --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
+
+
+script_address_out="${script_address} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
+buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${SC_ASSET}"
+echo "Vote Script OUTPUT: "${script_address_out}
+echo "Vote Self OUTPUT: "${buyer_address_out}
+
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
+
+echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
-    --address ${seller_address} \
+    --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
 TXNS=$(jq length tmp/buyer_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
    exit;
 fi
 alltxin=""
@@ -51,7 +46,6 @@ ${cli} query utxo \
     --address ${script_address} \
     --testnet-magic 1097911063 \
     --out-file tmp/script_utxo.json
-
 # transaction variables
 TXNS=$(jq length tmp/script_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
@@ -62,36 +56,29 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo="03a7367f13b509b2fec936b4a77167c858635ff761513909c61a0fe5649c42e8"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
+did_ref_utxo=$(cardano-cli transaction txid --tx-file ../did-scripts/tmp/delegation-tx.signed)
+collat_utxo="25a6a6e80e0874cbb2cc4d9a2dcb8d33c6b3b05ed429c67cd1d681f74f737972"
 
-# voting_ref_utxo="40ad59b9786cfa827cc9a2dd3b174be3df0b31d60a931818f5495660bb061329"
 
-# exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
-    --tx-in-collateral="${collat_utxo}#0" \
+    --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
-    --read-only-tx-in-reference="${voting_ref_utxo}#2" \
-    --tx-in ${script_tx_in} \
+    --tx-in-collateral="${collat_utxo}#0" \
+    --read-only-tx-in-reference="${did_ref_utxo}#2" \
+    --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/decrease_redeemer.json \
-    --tx-out="${seller_address_out}" \
+    --spending-reference-tx-in-redeemer-file data/vote_redeemer.json \
+    --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/datum.json \
-    --required-signer-hash ${seller_pkh} \
-    --mint-tx-in-reference="${script_ref_utxo}#2" \
-    --mint-plutus-script-v2 \
-    --mint="${MINT_ASSET}" \
-    --policy-id="${policy_id}" \
-    --mint-reference-tx-in-redeemer-file data/datum.json \
+    --required-signer-hash ${delegator_pkh} \
+    --tx-out-inline-datum-file data/current_datum.json  \
     --testnet-magic 1097911063)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -103,14 +90,15 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/delegator-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/delegation-tx.signed \
+    --out-file tmp/vote-tx.signed \
     --testnet-magic 1097911063
-#    
+#
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic 1097911063 \
-    --tx-file tmp/delegation-tx.signed
+    --tx-file tmp/vote-tx.signed

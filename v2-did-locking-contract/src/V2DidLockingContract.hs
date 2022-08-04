@@ -52,13 +52,13 @@ iouTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [105
 
 -- voting validator hash
 voteValidatorHash :: PlutusV2.ValidatorHash
-voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [236, 92, 196, 42, 250, 28, 201, 188, 245, 40, 14, 12, 164, 93, 235, 7, 48, 109, 208, 53, 194, 48, 229, 45, 243, 161, 112, 244]
+voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [45, 120, 123, 140, 75, 245, 182, 82, 209, 137, 32, 129, 200, 229, 84, 212, 13, 59, 140, 156, 7, 94, 119, 178, 248, 236, 19, 215]
 
 voteStartPid :: PlutusV2.CurrencySymbol
-voteStartPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
 
 voteStartTkn :: PlutusV2.TokenName
-voteStartTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
 
 voteStartValue :: PlutusV2.Value
 voteStartValue = Value.singleton voteStartPid voteStartTkn (1 :: Integer)
@@ -134,7 +134,7 @@ mkValidator datum redeemer context =
       ; let d = traceIfFalse "Minting Error"        $ checkMintingProcess increase
       ; let e = traceIfFalse "Minting Payout Error" $ isAddrGettingPaid txOutputs outboundAddr (Value.singleton (cdtIouPid datum) iouTkn increase) -- can allow ada too
       ; let f = traceIfFalse "Signing Tx Error"     $ ContextsV2.txSignedBy info (updaterPkh ut)
-      ;         traceIfFalse "Exit Endpoint Error"  $ all (==True) [a,b,c,d,e,f]
+      ;         traceIfFalse "Increase Endpoint Error"  $ all (==True) [a,b,c,d,e,f]
       }
     (Decrease ut)-> do 
       { let decrease = updateAmt ut
@@ -145,7 +145,7 @@ mkValidator datum redeemer context =
       ; let d = traceIfFalse "Burning Error"       $ checkMintingProcess ((-1 :: Integer) * decrease)
       ; let e = traceIfFalse "FT Payout Error"     $ isVotingTokenReturning outboundAddr decrease -- can allow ada too
       ; let f = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info (updaterPkh ut)
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a,b,c,d,e,f]
+      ;         traceIfFalse "Decrease Endpoint Error" $ all (==True) [a,b,c,d,e,f]
       }
    where
     info :: PlutusV2.TxInfo
@@ -168,7 +168,7 @@ mkValidator datum redeemer context =
     checkMintingProcess amt =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tkn, amt')] -> (cs == cdtIouPid datum) && (tkn == iouTkn) && (amt' == amt)
-        _                 -> False
+        _                 -> traceIfFalse "Nothing is Minting" False
     
     isDatumConstant :: [PlutusV2.TxOut] -> Bool
     isDatumConstant []     = False

@@ -60,18 +60,21 @@ getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 voteValidatorHash :: PlutusV2.ValidatorHash
-voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [112, 114, 91, 248, 205, 110, 153, 135, 62, 53, 238, 253, 34, 243, 234, 142, 249, 183, 217, 106, 81, 230, 70, 15, 247, 36, 164, 69]
+voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [45, 120, 123, 140, 75, 245, 182, 82, 209, 137, 32, 129, 200, 229, 84, 212, 13, 59, 140, 156, 7, 94, 119, 178, 248, 236, 19, 215]
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
 tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [240, 205, 45, 233, 51, 97, 24, 14, 147, 14, 130, 45, 228, 195, 145, 167, 112, 161, 183, 189, 204, 62, 123, 233, 38, 123, 168, 19] }
 
 -- voting starter nft
-votePid :: PlutusV2.CurrencySymbol
-votePid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [] }
+voteStartPid :: PlutusV2.CurrencySymbol
+voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
 
-voteTkn :: PlutusV2.TokenName
-voteTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [] }
+voteStartTkn :: PlutusV2.TokenName
+voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
+
+voteStartValue :: PlutusV2.Value
+voteStartValue = Value.singleton voteStartPid voteStartTkn (1 :: Integer)
 -------------------------------------------------------------------------------
 -- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
@@ -205,8 +208,8 @@ mkValidator datum redeemer context =
                 Nothing       -> Nothing
                 Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @VoteDatumType embedded
     
-    voteStartValue :: PlutusV2.Value
-    voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
+    -- voteStartValue :: PlutusV2.Value
+    -- voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
 
     checkVoteFromDatum :: [PlutusV2.TxInInfo] -> Bool
     checkVoteFromDatum []     = traceIfFalse "No Datum Found on Reference Input" False

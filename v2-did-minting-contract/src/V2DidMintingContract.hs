@@ -58,11 +58,11 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 
 -- the hash of the locking script
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [236, 92, 196, 42, 250, 28, 201, 188, 245, 40, 14, 12, 164, 93, 235, 7, 48, 109, 208, 53, 194, 48, 229, 45, 243, 161, 112, 244]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [215, 119, 151, 3, 77, 67, 240, 240, 55, 103, 73, 190, 220, 247, 68, 114, 233, 165, 168, 139, 184, 68, 37, 188, 184, 55, 82, 119]
 
 -- must match a specific pkh
 delegatorPkh :: PlutusV2.PubKeyHash
-delegatorPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+delegatorPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 -- constant token name
 iouTkn :: PlutusV2.TokenName
@@ -95,10 +95,6 @@ mkPolicy _ context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && che
 
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = ContextsV2.txInfoInputs info
-
-    -- the redeemer is the datum of the locking script
-    -- redeemer :: CustomRedeemerType
-    -- redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
 
     -- check if the incoming datum is the correct form.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
@@ -184,7 +180,7 @@ mkPolicy _ context = traceIfFalse "Mint/Burn Error" $ checkMintingProcess && che
     checkMintingProcess =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tn, _)] -> checkPolicyId cs && checkTokenName tn
-        _               -> traceIfFalse "Nothing Is Minting" False
+        _             -> traceIfFalse "Nothing Is Minting" False
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

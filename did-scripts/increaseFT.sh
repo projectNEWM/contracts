@@ -23,7 +23,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
-script_address_out="${script_address} + 3000000 + ${SC_ASSET}"
+script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
 seller_address_out="${seller_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${seller_address_out}
@@ -63,7 +63,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo="309c82fc52b6ab872db6fadb56fddc636667c3ab145d541cc96adc5a937dec6c"
+collat_utxo="a424708e686216b26190878e9cd90bb59a72b897d640c1999df78fe0bc30d9dd"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 echo ${script_ref_utxo}
@@ -79,7 +79,7 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${buyer_tx_in} \
     --tx-in-collateral="${collat_utxo}#0" \
-    --read-only-tx-in-reference="${voting_ref_utxo}#1" \
+    --read-only-tx-in-reference="${voting_ref_utxo}#2" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -89,7 +89,6 @@ FEE=$(${cli} transaction build \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json \
     --required-signer-hash ${seller_pkh} \
-    --required-signer-hash ${buyer_pkh} \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
     --mint="${MINT_ASSET}" \
@@ -97,18 +96,19 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic 1097911063)
 
+    # --required-signer-hash ${buyer_pkh} \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx.signed \
+    --out-file tmp/delegation-tx.signed \
     --testnet-magic 1097911063
 #    
 # exit
@@ -116,4 +116,4 @@ ${cli} transaction sign \
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic 1097911063 \
-    --tx-file tmp/tx.signed
+    --tx-file tmp/delegation-tx.signed

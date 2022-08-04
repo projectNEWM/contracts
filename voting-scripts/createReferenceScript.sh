@@ -10,18 +10,17 @@ TESTNET_MAGIC=1097911063
 vote_script_path="../v2-voting-contract/v2-voting-contract.plutus"
 
 # Addresses
-sender_address=$(cat wallets/buyer-wallet/payment.addr)
-receiver_address=$(cat wallets/reference-wallet/payment.addr)
+reference_address=$(cat wallets/reference-wallet/payment.addr)
 
 vote_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${vote_script_path} \
-    --tx-out="${receiver_address} 0" | tr -dc '0-9')
+    --tx-out="${reference_address} 0" | tr -dc '0-9')
 
 echo "Voting Min Fee" ${vote_min_utxo}
 vote_value=$((${vote_min_utxo} + 1000000))
-vote_script_reference_utxo="${receiver_address} + ${vote_value}"
+vote_script_reference_utxo="${reference_address} + ${vote_value}"
 
 echo -e "\nCreating Voting Reference:\n" ${vote_script_reference_utxo}
 #
@@ -30,16 +29,16 @@ echo -e "\nCreating Voting Reference:\n" ${vote_script_reference_utxo}
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${TESTNET_MAGIC} \
-    --address ${sender_address} \
-    --out-file tmp/sender_utxo.json
+    --address ${reference_address} \
+    --out-file tmp/reference_utxo.json
 
-TXNS=$(jq length tmp/sender_utxo.json)
+TXNS=$(jq length tmp/reference_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${sender_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${reference_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/sender_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/reference_utxo.json)
 HEXTXIN=${TXIN::-8}
 #
 # exit
@@ -49,7 +48,7 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${sender_address} \
+    --change-address ${reference_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${vote_script_reference_utxo}" \
     --tx-out-reference-script-file ${vote_script_path} \
@@ -64,7 +63,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-reference-utxo.signed \
     --testnet-magic ${TESTNET_MAGIC}

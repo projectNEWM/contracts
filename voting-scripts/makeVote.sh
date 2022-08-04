@@ -8,16 +8,16 @@ script_path="../v2-voting-contract/v2-voting-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-SC_ASSET="100000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+SC_ASSET="30000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${seller_address} ${SC_ASSET}" | tr -dc '0-9')
 
 
-script_address_out="${script_address} + 5000000"
+script_address_out="${script_address} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
 seller_address_out="${seller_address} + ${UTXO_VALUE} + ${SC_ASSET}"
-echo "Exit OUTPUT: "${script_address_out}
-echo "Exit OUTPUT: "${seller_address_out}
+echo "Vote Script OUTPUT: "${script_address_out}
+echo "Vote Self OUTPUT: "${seller_address_out}
 
 #
 # exit
@@ -56,7 +56,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-collat_utxo="7647a4ac1dd15c8514ec19dad3627c7330e9dc142ebbf2cc5bcbe96245fe29f3"
+collat_utxo="cda1278d68009926f59e67ed8e950fdd43ab4e52069ff22bfe240c9b503981a1"
 
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -88,7 +88,7 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx.signed \
+    --out-file tmp/vote-tx.signed \
     --testnet-magic 1097911063
 #
 # exit
@@ -96,4 +96,4 @@ ${cli} transaction sign \
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic 1097911063 \
-    --tx-file tmp/tx.signed
+    --tx-file tmp/vote-tx.signed
