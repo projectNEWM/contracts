@@ -4,7 +4,7 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 #
-script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
+script_path="../v2-locking-contract/v2-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
@@ -51,7 +51,9 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-
+# collat info
+collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -60,7 +62,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
-    --tx-in-collateral ${collateral_tx_in} \
+    --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -68,6 +70,7 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file data/exit_redeemer.json \
     --tx-out="${buyer_address_out}" \
     --required-signer-hash ${seller_pkh} \
+    --required-signer-hash ${collat_pkh} \
     --testnet-magic 1097911063)
 
     # --spending-reference-tx-in-datum-file data/datum.json \
@@ -82,6 +85,7 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

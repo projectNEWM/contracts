@@ -6,9 +6,9 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 
 # Addresses
-sender_address=$(cat wallets/buyer-wallet/payment.addr)
-# receiver_address=$(cat wallets/buyer-wallet/payment.addr)
-receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
+sender_address=$(cat wallets/seller-wallet/payment.addr)
+receiver_address=$(cat wallets/buyer-wallet/payment.addr)
+# receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
 # Define Asset to be printed here
 asset="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"

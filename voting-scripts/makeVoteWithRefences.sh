@@ -58,7 +58,9 @@ script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 did_ref_utxo=$(cardano-cli transaction txid --tx-file ../did-scripts/tmp/delegation-tx.signed)
-collat_utxo="25a6a6e80e0874cbb2cc4d9a2dcb8d33c6b3b05ed429c67cd1d681f74f737972"
+# collat info
+collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
 
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -78,6 +80,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --required-signer-hash ${delegator_pkh} \
+    --required-signer-hash ${collat_pkh} \
     --tx-out-inline-datum-file data/current_datum.json  \
     --testnet-magic 1097911063)
 
@@ -92,6 +95,7 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/delegator-wallet/payment.skey \
+    --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/vote-tx.signed \
     --testnet-magic 1097911063

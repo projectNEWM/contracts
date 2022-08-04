@@ -63,12 +63,12 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-collat_utxo="a424708e686216b26190878e9cd90bb59a72b897d640c1999df78fe0bc30d9dd"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
 echo ${script_ref_utxo}
-
-# voting_ref_utxo="40ad59b9786cfa827cc9a2dd3b174be3df0b31d60a931818f5495660bb061329"
+# collat info
+collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -89,6 +89,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json \
     --required-signer-hash ${seller_pkh} \
+    --required-signer-hash ${collat_pkh} \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
     --mint="${MINT_ASSET}" \
@@ -107,6 +108,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/delegation-tx.signed \
     --testnet-magic 1097911063

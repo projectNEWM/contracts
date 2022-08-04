@@ -4,13 +4,10 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 #
-script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
-mint_path="../v2-minting-contract/v2-fractional-minting-contract.plutus"
+script_path="../v2-locking-contract/v2-locking-contract.plutus"
+mint_path="../v2-minting-contract/v2-minting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-#
-buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
@@ -18,6 +15,11 @@ seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallet
 policy_id=$(cat ../v2-minting-contract/policy.id)
 token_pid=$(cat ../v2-nft-minting-contract/policy.id)
 #
+PAY_ASSET="30000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+PAY_VALUE=$(${cli} transaction calculate-min-required-utxo \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${seller_address} ${PAY_ASSET}" | tr -dc '0-9')
+
 SC_ASSET="1 ${token_pid}.4e65774d5f30"
 #
 MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
@@ -26,10 +28,12 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${seller_address} ${SC_ASSET}" | tr -dc '0-9')
 #
+seller_pay_out="${seller_address} + ${PAY_VALUE} + ${PAY_ASSET}"
 script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
 seller_address_out="${seller_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${seller_address_out}
+echo "Pay OUTPUT: "${seller_pay_out}
 #
 # exit
 #
@@ -66,12 +70,14 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 # 
-# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-collat_utxo="0a0cfbf9b7d077d4e5cfc09b5c59b68a109b11e11e0bcede8612536716b7590a"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 voting_ref_utxo=$(cardano-cli transaction txid --tx-file ../voting-scripts/tmp/vote-tx.signed)
-
+# collat info
+collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
+#
 # exit
+#
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
@@ -80,15 +86,17 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${buyer_tx_in} \
-    --read-only-tx-in-reference="${voting_ref_utxo}#1" \
+    --read-only-tx-in-reference="${voting_ref_utxo}#2" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/lock_redeemer.json \
+    --tx-out="${seller_pay_out}" \
     --tx-out="${seller_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json \
+    --required-signer-hash ${collat_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
@@ -106,6 +114,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

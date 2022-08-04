@@ -21,6 +21,7 @@ return_asset="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
+# token_to_be_traded="${receiver_address} + 333333333"
 token_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
 token_to_be_changed="${sender_address} + ${min_utxo} + ${return_asset}"
 
