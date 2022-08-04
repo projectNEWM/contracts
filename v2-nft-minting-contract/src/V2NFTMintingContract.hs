@@ -58,13 +58,17 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [31, 131, 188, 9, 24, 237, 241, 98, 89, 16, 41, 70, 80, 10, 200, 130, 38, 131, 111, 159, 43, 29, 31, 196, 150, 146, 180, 143]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [33, 37, 182, 28, 174, 60, 52, 222, 151, 249, 58, 87, 96, 21, 54, 198, 181, 41, 78, 216, 106, 36, 151, 50, 225, 33, 180, 65]
 
-lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+lockStartPid :: PlutusV2.CurrencySymbol
+lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [172, 171] }
 
-lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+lockStartTkn :: PlutusV2.TokenName
+lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [172, 171] }
+
+-- check for nft here
+lockStarterValue :: PlutusV2.Value
+lockStarterValue = Value.singleton lockStartPid lockStartTkn (1 :: Integer)
 -- 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -148,9 +152,7 @@ mkPolicy redeemer' context = do
     valueAtValidator :: PlutusV2.Value
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt lockValidatorHash info
 
-    -- check for nft here
-    lockStarterValue :: PlutusV2.Value
-    lockStarterValue = Value.singleton lockPid lockTkn (1 :: Integer)
+    
 
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 

@@ -4,7 +4,7 @@ import V2LockingContract ( lockingContractScript )
 
 main :: IO ()
 main = do
-  result <- writeFileTextEnvelope "v2-fractional-locking-contract.plutus" Nothing lockingContractScript 
+  result <- writeFileTextEnvelope "v2-locking-contract.plutus" Nothing lockingContractScript 
   case result of
     Left err -> print $ displayError err
     Right () -> return ()

@@ -20,7 +20,27 @@ def changeLockHash(oldPath,newPath,newText):
                     line = pattern + " " + str(newText) + "\n"
                 file2.write(line)
 
-def changeStartPid(oldPath,newPath,newText):
+def changeStartLockPid(oldPath,newPath,newText):
+    pattern = 'lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString'
+    with open(oldPath, 'r') as file1:
+        with open(newPath, 'w+') as file2:
+            for line in file1:
+                if pattern in line:
+                    # create teh new addition
+                    line = pattern + " " + str(newText) + " }\n"
+                file2.write(line)
+
+def changeStartLockTkn(oldPath,newPath,newText):
+    pattern = 'lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString'
+    with open(oldPath, 'r') as file1:
+        with open(newPath, 'w+') as file2:
+            for line in file1:
+                if pattern in line:
+                    # create teh new addition
+                    line = pattern + " " + str(newText) + " }\n"
+                file2.write(line)
+
+def changeStartVotePid(oldPath,newPath,newText):
     pattern = 'voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
@@ -30,8 +50,18 @@ def changeStartPid(oldPath,newPath,newText):
                     line = pattern + " " + str(newText) + " }\n"
                 file2.write(line)
 
-def changeStartTkn(oldPath,newPath,newText):
+def changeStartVoteTkn(oldPath,newPath,newText):
     pattern = 'voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString'
+    with open(oldPath, 'r') as file1:
+        with open(newPath, 'w+') as file2:
+            for line in file1:
+                if pattern in line:
+                    # create teh new addition
+                    line = pattern + " " + str(newText) + " }\n"
+                file2.write(line)
+
+def changeTokenizedPid(oldPath,newPath,newText):
+    pattern = 'tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:

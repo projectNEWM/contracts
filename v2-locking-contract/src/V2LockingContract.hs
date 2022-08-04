@@ -64,7 +64,7 @@ voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [45, 120, 1
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [240, 205, 45, 233, 51, 97, 24, 14, 147, 14, 130, 45, 228, 195, 145, 167, 112, 161, 183, 189, 204, 62, 123, 233, 38, 123, 168, 19] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [246, 26, 175, 238, 253, 60, 80, 238, 2, 237, 140, 2, 16, 38, 109, 164, 95, 229, 135, 205, 146, 24, 240, 159, 86, 26, 23, 44] }
 
 -- voting starter nft
 voteStartPid :: PlutusV2.CurrencySymbol
