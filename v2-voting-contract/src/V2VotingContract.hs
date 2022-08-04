@@ -164,7 +164,7 @@ mkValidator datum redeemer context =
     
     -- check if the outgoing datum has the correct form.
     checkReferenceSigners :: [PlutusV2.TxInInfo] -> PlutusV2.Value -> Bool
-    checkReferenceSigners []     val = isVoteComplete (cdtPid datum) (cdtTkn datum) (cdtAmt datum) info val
+    checkReferenceSigners []     val = isVoteComplete (cdtPid datum) (cdtTkn datum) (cdtAmt datum) info val -- input the voting token info
     checkReferenceSigners (x:xs) val = 
       case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
         -- datumless

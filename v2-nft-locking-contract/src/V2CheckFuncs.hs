@@ -49,15 +49,34 @@ createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
 createAddress pkh sc = if PlutusV2.getPubKeyHash sc == emptyByteString then PlutusV2.Address (PubKeyCredential pkh) Nothing else PlutusV2.Address (PubKeyCredential pkh) (Just $ StakingHash $ PubKeyCredential sc)
 -------------------------------------------------------------------------
 -- | Check if the total value contains the threshold value of a token.
+-- Add in a way to account for value on the reference inputs that someone signed for.
 -------------------------------------------------------------------------
-isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
-isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+
+isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> PlutusV2.Value -> Bool
+isVoteComplete pid tkn amt info val = do -- remove in production
+      { let a = traceIfFalse "Not Enough Vote Tokens"    $ Value.geq totalValue thresholdValue
+      ;         traceIfFalse "Vote Audit Endpoint Error" $ all (==True) [a]
+      }
   where
+    valueSpentTxInputs' :: PlutusV2.TxInfo -> PlutusV2.Value
+    valueSpentTxInputs' = (foldMap (PlutusV2.txOutValue . PlutusV2.txInInfoResolved) . PlutusV2.txInfoInputs)
+
     totalValue :: PlutusV2.Value
-    totalValue = ContextsV2.valueSpent info
+    totalValue = (valueSpentTxInputs' info) + val -- total value of inputs and ref inputs
 
     thresholdValue :: PlutusV2.Value
     thresholdValue = Value.singleton pid tkn amt
+-- -------------------------------------------------------------------------
+-- -- | Check if the total value contains the threshold value of a token.
+-- -------------------------------------------------------------------------
+-- isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
+-- isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+--   where
+--     totalValue :: PlutusV2.Value
+--     totalValue = ContextsV2.valueSpent info
+
+--     thresholdValue :: PlutusV2.Value
+--     thresholdValue = Value.singleton pid tkn amt
 -------------------------------------------------------------------------
 -- | Appends two bytestrings together from a list, element by element
 -------------------------------------------------------------------------

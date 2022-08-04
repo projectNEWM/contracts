@@ -16,9 +16,9 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 policy_id=$(cat ../v2-did-minting-contract/policy.id)
 #
 name=$(echo -n "iou" | xxd -ps)
-SC_ASSET="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+SC_ASSET="30000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
-MINT_ASSET="20000000 ${policy_id}.${name}"
+MINT_ASSET="30000000 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')

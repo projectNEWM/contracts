@@ -81,6 +81,18 @@ lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteStri
 lockStartValue :: PlutusV2.Value
 lockStartValue = Value.singleton lockStartPid lockStartTkn (1 :: Integer)
 -------------------------------------------------------------------------------
+-- | Create the delegation parameters data object.
+-------------------------------------------------------------------------------
+data DelegationType = DelegationType
+    { dtPkh    :: PlutusV2.PubKeyHash
+    -- ^ The did public key hash.
+    , dtIouPid :: PlutusV2.CurrencySymbol
+    -- ^ The dids iou policy id.
+    , dtHash   :: PlutusV2.ValidatorHash
+    -- ^ The dids iou policy id.
+    }
+PlutusTx.unstableMakeIsData ''DelegationType
+-------------------------------------------------------------------------------
 -- | Create the voting datum parameters data object.
 -------------------------------------------------------------------------------
 data VoteDatumType = VoteDatumType
@@ -141,7 +153,7 @@ mkValidator datum redeemer context =
   case redeemer of
     MintNFT -> do
       { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
-      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1 && isNScripts txRefInputs 1
+      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Minting Error"   checkMintedAmount
       ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumIncreasing contOutputs
@@ -150,7 +162,7 @@ mkValidator datum redeemer context =
       }
     BurnNFT -> do
       { let a = traceIfFalse "Vote Has Failed"     $ checkVoteFromDatum txRefInputs
-      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1 && isNScripts txRefInputs 1
+      ; let b = traceIfFalse "Single Script Error" $ isNScripts txInputs 1
       ; let c = traceIfFalse "Cont Payin Error"    $ isValueContinuing contOutputs validatingValue
       ; let d = traceIfFalse "NFT Burning Error"   checkBurnedAmount
       ; let e = traceIfFalse "Wrong Datum Error"   $ isEmbeddedDatumConstant contOutputs
@@ -202,9 +214,37 @@ mkValidator datum redeemer context =
             then
               case getReferenceDatum $ PlutusV2.txInInfoResolved x of
                 Nothing -> checkVoteFromDatum xs
-                Just voteDatum -> isVoteComplete (vdtPid voteDatum) (vdtTkn voteDatum) (vdtAmt voteDatum) info
+                Just voteDatum' -> checkReferenceSigners voteDatum' txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer)) -- isVoteComplete (vdtPid voteDatum) (vdtTkn voteDatum) (vdtAmt voteDatum) info -- this becomes the ref call
             else checkVoteFromDatum xs
         else checkVoteFromDatum xs
+
+    -- check if the outgoing datum has the correct form.
+    checkReferenceSigners :: VoteDatumType -> [PlutusV2.TxInInfo] -> PlutusV2.Value -> Bool
+    checkReferenceSigners voteDatum []     val = isVoteComplete (vdtPid voteDatum) (vdtTkn voteDatum) (vdtAmt voteDatum) info val -- input the voting token info
+    checkReferenceSigners voteDatum (x:xs) val = 
+      case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        -- datumless
+        PlutusV2.NoOutputDatum -> checkReferenceSigners voteDatum xs val
+        -- inline datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+          case PlutusTx.fromBuiltinData @DelegationType d of
+            Nothing     -> checkReferenceSigners voteDatum xs val
+            Just inline -> 
+              if traceIfFalse "Incorrect Validator Address" $ (PlutusV2.txOutAddress $ PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress (dtHash inline)
+              then ContextsV2.txSignedBy info (dtPkh inline) && checkReferenceSigners voteDatum xs (val + (PlutusV2.txOutValue $ PlutusV2.txInInfoResolved x))
+              else checkReferenceSigners voteDatum xs val
+        -- embedded datum
+        (PlutusV2.OutputDatumHash dh) ->
+          case ContextsV2.findDatum dh info of
+            Nothing                  -> checkReferenceSigners voteDatum xs val
+            Just (PlutusV2.Datum d') -> 
+              case PlutusTx.fromBuiltinData @DelegationType d' of
+                Nothing       -> checkReferenceSigners voteDatum xs val
+                Just embedded -> 
+                  if traceIfFalse "Incorrect Validator Address" $ (PlutusV2.txOutAddress $ PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress (dtHash embedded)
+                  then ContextsV2.txSignedBy info (dtPkh embedded) && checkReferenceSigners voteDatum xs (val + (PlutusV2.txOutValue $ PlutusV2.txInInfoResolved x))
+                  else checkReferenceSigners voteDatum xs val
+
 
     getReferenceDatum :: PlutusV2.TxOut -> Maybe VoteDatumType
     getReferenceDatum x =
