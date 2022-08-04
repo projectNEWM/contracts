@@ -110,7 +110,7 @@ mkValidator datum redeemer context =
       { let a = traceIfFalse "Voting Has Failed Error"   $ checkReferenceSigners txRefInputs (Value.singleton Value.adaSymbol Value.adaToken (0 :: Integer))
       ; let b = traceIfFalse "Single Script Input Error" $ isSingleScript txInputs
       ; let c = traceIfFalse "Missing Starter NFT Error" $ Value.geq validatingValue voteStartValue
-      ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs
+      ; let d = traceIfFalse "Datum Update Error"        $ isEmbeddedDatum contOutputs -- has to go back to self
       ; let e = traceIfFalse "Value Continue Error"      $ isValueContinuing contOutputs validatingValue
       ;         traceIfFalse "Vote Endpoint Error"       $ all (==True) [a,b,c,d,e]
       }

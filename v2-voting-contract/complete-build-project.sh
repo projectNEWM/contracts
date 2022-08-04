@@ -1,3 +1,4 @@
+# we are in v2-voting-contract
 echo -e "\033[1;35m Update All Contracts With Token Starter NFTs. \033[0m" 
 # starter nft data
 python3 -c "import binascii;a=$(cat start_info.json | jq .startVotePid);s=binascii.unhexlify(a);print([x for x in s])" > start.pid
@@ -10,7 +11,7 @@ python3 -c "import binascii;a=$(cat start_info.json | jq .delegator);s=binascii.
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('../v2-did-minting-contract/src/V2DidMintingContract.hs', '../v2-did-minting-contract/src/V2DidMintingContract-new.hs', $(cat deleg.pkh))"
 mv ../v2-did-minting-contract/src/V2DidMintingContract-new.hs ../v2-did-minting-contract/src/V2DidMintingContract.hs
 
-#Adds the starter nft for the tokenization contracts.
+#Adds the second starter nft for the tokenization contracts.
 python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('../v2-nft-locking-contract/src/V2NFTLockingContract.hs', '../v2-nft-locking-contract/src/V2NFTLockingContract-new.hs', $(cat start2.pid))"
 mv ../v2-nft-locking-contract/src/V2NFTLockingContract-new.hs ../v2-nft-locking-contract/src/V2NFTLockingContract.hs
 python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('../v2-nft-locking-contract/src/V2NFTLockingContract.hs', '../v2-nft-locking-contract/src/V2NFTLockingContract-new.hs', $(cat start2.tkn))"
@@ -22,7 +23,8 @@ python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('
 mv ../v2-nft-minting-contract/src/V2NFTMintingContract-new.hs ../v2-nft-minting-contract/src/V2NFTMintingContract.hs
 # exit
 
-# Adds the starter nft for voting into contracts.
+# Adds the frist starter nft for voting into contracts.
+# vote contract
 python3 -c "from update_contracts import changeStartVotePid;changeStartVotePid('../v2-voting-contract/src/V2VotingContract.hs', '../v2-voting-contract/src/V2VotingContract-new.hs', $(cat start.pid))"
 mv ../v2-voting-contract/src/V2VotingContract-new.hs ../v2-voting-contract/src/V2VotingContract.hs
 python3 -c "from update_contracts import changeStartVoteTkn;changeStartVoteTkn('../v2-voting-contract/src/V2VotingContract.hs', '../v2-voting-contract/src/V2VotingContract-new.hs', $(cat start.tkn))"
@@ -152,7 +154,6 @@ variable=$(cat policy.id); jq --arg variable $variable '.fields[0].bytes=$variab
 mv ../tokenize-scripts/data/next_datum-new.json ../tokenize-scripts/data/next_datum.json
 echo -e "\033[1;36m Next NFT Datum \033[0m"
 cat ../tokenize-scripts/data/next_datum.json | jq
-
 
 cd ../v2-voting-contract
 echo -e "\033[1;35m Updating NFT Minting contract With FT Locking Data \033[0m"

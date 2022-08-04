@@ -192,13 +192,6 @@ mkValidator datum redeemer context =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
         _              -> False
-    
-    -- check for vote nft here
-    -- lockStartValue :: PlutusV2.Value
-    -- lockStartValue = Value.singleton lockPid lockTkn (1 :: Integer)
-
-    -- voteStartValue :: PlutusV2.Value
-    -- voteStartValue = Value.singleton votePid voteTkn (1 :: Integer)
 
     checkVoteFromDatum :: [PlutusV2.TxInInfo] -> Bool
     checkVoteFromDatum []     = traceIfFalse "No Datum Found on Reference Input" False
