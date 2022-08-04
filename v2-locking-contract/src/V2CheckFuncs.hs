@@ -36,7 +36,7 @@ module V2CheckFuncs
 import           Plutus.V1.Ledger.Credential
 import qualified Plutus.V1.Ledger.Value      as Value
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
-import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
+-- import qualified Plutus.V2.Ledger.Contexts   as ContextsV2
 import           PlutusTx.Prelude 
 {- |
   Author   : The Ancient Kraken
@@ -45,12 +45,20 @@ import           PlutusTx.Prelude
 -}
 -------------------------------------------------------------------------
 -- | Check if the total value contains the threshold value of a token.
+-- Add in a way to account for value on the reference inputs that someone signed for.
 -------------------------------------------------------------------------
-isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> Bool
-isVoteComplete pid tkn amt info = Value.geq totalValue thresholdValue
+
+isVoteComplete :: PlutusV2.CurrencySymbol -> PlutusV2.TokenName -> Integer -> PlutusV2.TxInfo -> PlutusV2.Value -> Bool
+isVoteComplete pid tkn amt info val = do -- remove in production
+      { let a = traceIfFalse "Not Enough Vote Tokens"    $ Value.geq totalValue thresholdValue
+      ;         traceIfFalse "Vote Audit Endpoint Error" $ all (==True) [a]
+      }
   where
+    valueSpentTxInputs' :: PlutusV2.TxInfo -> PlutusV2.Value
+    valueSpentTxInputs' = (foldMap (PlutusV2.txOutValue . PlutusV2.txInInfoResolved) . PlutusV2.txInfoInputs)
+
     totalValue :: PlutusV2.Value
-    totalValue = ContextsV2.valueSpent info
+    totalValue = (valueSpentTxInputs' info) + val -- total value of inputs and ref inputs
 
     thresholdValue :: PlutusV2.Value
     thresholdValue = Value.singleton pid tkn amt
