@@ -58,13 +58,13 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 lockValidatorHash :: PlutusV2.ValidatorHash
-lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [184, 5, 129, 101, 153, 35, 171, 75, 58, 27, 251, 12, 69, 128, 59, 45, 248, 2, 235, 99, 201, 219, 81, 123, 41, 10, 77, 54]
+lockValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [220, 49, 167, 250, 98, 219, 63, 112, 122, 29, 248, 178, 183, 229, 203, 21, 21, 54, 57, 174, 146, 59, 8, 150, 115, 231, 150, 229]
 
 lockStartPid :: PlutusV2.CurrencySymbol
-lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [] }
+lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [16, 65, 164, 127, 35, 117, 73, 14, 129, 240, 107, 173, 180, 173, 42, 184, 84, 104, 176, 202, 144, 235, 43, 66, 87, 224, 180, 154] }
 
 lockStartTkn :: PlutusV2.TokenName
-lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [] }
+lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [84, 111, 107, 104, 117, 110, 83, 109, 97, 114, 116, 67, 111, 110, 116, 114, 97, 99, 116, 48, 48, 49] }
 
 -- check for nft here
 lockStarterValue :: PlutusV2.Value

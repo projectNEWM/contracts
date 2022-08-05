@@ -73,10 +73,10 @@ voteStartValue = Value.singleton voteStartPid voteStartTkn (1 :: Integer)
 
 -- incoming token to start the contract
 lockStartPid :: PlutusV2.CurrencySymbol
-lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [] }
+lockStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [16, 65, 164, 127, 35, 117, 73, 14, 129, 240, 107, 173, 180, 173, 42, 184, 84, 104, 176, 202, 144, 235, 43, 66, 87, 224, 180, 154] }
 
 lockStartTkn :: PlutusV2.TokenName
-lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [] }
+lockStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [84, 111, 107, 104, 117, 110, 83, 109, 97, 114, 116, 67, 111, 110, 116, 114, 97, 99, 116, 48, 48, 49] }
 
 lockStartValue :: PlutusV2.Value
 lockStartValue = Value.singleton lockStartPid lockStartTkn (1 :: Integer)

@@ -10,7 +10,7 @@ buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
 
-buyer_address_out="${buyer_address} + 5000000"
+buyer_address_out="${buyer_address} + 5000000 + 1 1041a47f2375490e81f06badb4ad2ab85468b0ca90eb2b4257e0b49a.546f6b68756e536d617274436f6e7472616374303031"
 echo "Exit OUTPUT: "${buyer_address_out}
 
 #

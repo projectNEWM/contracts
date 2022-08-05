@@ -31,7 +31,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${seller_address} ${MINT_ASSET}" | tr -dc '0-9')
 
 # will have starter nft
-script_address_out="${script_address} + 5000000"
+script_address_out="${script_address} + 5000000 + 1 1041a47f2375490e81f06badb4ad2ab85468b0ca90eb2b4257e0b49a.546f6b68756e536d617274436f6e7472616374303031"
 seller_mint_out="${seller_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 seller_address_out="${seller_address} + ${SC_VALUE} + ${SC_ASSET}"
 echo "Script OUTPUT: "${script_address_out}

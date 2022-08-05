@@ -9,6 +9,7 @@ SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --tes
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 
 sc_address_out="${SCRIPT_ADDRESS} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
+buyer_change_out="${buyer_address} + 5000000 + 1 1041a47f2375490e81f06badb4ad2ab85468b0ca90eb2b4257e0b49a.546f6b68756e536d617274436f6e7472616374303031"
 echo "Script OUTPUT: "${sc_address_out}
 #
 # exit
@@ -37,6 +38,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
+    --tx-out="${buyer_change_out}" \
     --tx-out="${sc_address_out}" \
     --tx-out-inline-datum-file data/current_datum.json  \
     --testnet-magic 1097911063)

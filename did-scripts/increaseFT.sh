@@ -11,7 +11,6 @@ script_address=$(${cli} address build --payment-script-file ${script_path} --tes
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 policy_id=$(cat ../v2-did-minting-contract/policy.id)
 #
@@ -34,18 +33,18 @@ echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
     --address ${seller_address} \
-    --out-file tmp/buyer_utxo.json
+    --out-file tmp/seller_utxo.json
 
-TXNS=$(jq length tmp/buyer_utxo.json)
+TXNS=$(jq length tmp/seller_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
 collateral_tx_in=${CTXIN::-19}
-buyer_tx_in=${TXIN::-8}
+seller_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -77,7 +76,7 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
-    --tx-in ${buyer_tx_in} \
+    --tx-in ${seller_tx_in} \
     --tx-in-collateral="${collat_utxo}#0" \
     --read-only-tx-in-reference="${voting_ref_utxo}#2" \
     --tx-in ${script_tx_in} \
@@ -97,7 +96,6 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic 1097911063)
 
-    # --required-signer-hash ${buyer_pkh} \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
