@@ -15,7 +15,7 @@ buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets
 
 # Define Asset to be printed here
 # asset=0
-asset="10000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+asset="1 1041a47f2375490e81f06badb4ad2ab85468b0ca90eb2b4257e0b49a.546f6b68756e536d617274436f6e7472616374303031 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
 return_asset="20000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
