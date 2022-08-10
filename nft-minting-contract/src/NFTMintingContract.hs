@@ -70,8 +70,34 @@ createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x em
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
+-- collat wallet
+multiPkh1 :: PlutusV2.PubKeyHash
+multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [139, 28, 31, 194, 168, 74, 122, 168, 84, 106, 79, 32, 249, 214, 245, 237, 203, 6, 229, 147, 38, 54, 136, 116, 43, 119, 78, 57] }
+-- seller wallet
+multiPkh2 :: PlutusV2.PubKeyHash
+multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+-- reference wallet
+multiPkh3 :: PlutusV2.PubKeyHash
+multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [201, 200, 26, 235, 56, 208, 42, 163, 75, 112, 228, 42, 144, 232, 132, 53, 167, 41, 234, 98, 210, 75, 30, 174, 237, 246, 142, 9] }
+
+-- all possible signers
+listOfPkh :: [PlutusV2.PubKeyHash]
+listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
+-------------------------------------------------------------------------------
+-- | Simple Multisig
+-------------------------------------------------------------------------------
+checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
+checkMultisig txInfo pkhs amt = loopSigs pkhs 0
+  where
+    loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
+    loopSigs []     counter = counter >= amt
+    loopSigs (x:xs) counter = 
+      if ContextsV2.txSignedBy txInfo x
+        then loopSigs xs (counter + 1)
+        else loopSigs xs counter
+
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [40, 17, 145, 5, 237, 60, 42, 35, 203, 80, 206, 249, 32, 89, 207, 207, 9, 37, 110, 151, 196, 51, 186, 218, 52, 106, 140, 136]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [85, 130, 100, 236, 36, 236, 240, 140, 173, 227, 45, 4, 207, 92, 158, 16, 236, 10, 247, 248, 25, 85, 143, 108, 167, 244, 200, 106]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -94,7 +120,7 @@ instance Eq CustomRedeemerType where
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn check
-      ; let b = traceIfFalse "Incorrect Signer"      $ ContextsV2.txSignedBy info getPkh          -- newm signs it
+      ; let b = traceIfFalse "Incorrect Signer"      $ ContextsV2.txSignedBy info getPkh || checkMultisig info listOfPkh 2
       ; let c = traceIfFalse "Input Datum Error"     checkInputDatum                             -- the input datum is equal what is being pass into the redeemer
       ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue -- must contain the starter token
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]

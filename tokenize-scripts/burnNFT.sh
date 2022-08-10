@@ -69,6 +69,11 @@ script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.s
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
 
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+reference_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/reference-wallet/payment.vkey)
+
+
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -85,7 +90,7 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file data/burn_redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
-    --required-signer-hash ${deleg_pkh} \
+    --required-signer-hash ${reference_pkh} \
     --required-signer-hash ${collat_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
@@ -94,6 +99,9 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/next_datum.json \
     --testnet-magic 1097911063)
 
+    # --required-signer-hash ${collat_pkh} \
+    # --required-signer-hash ${seller_pkh} \
+    # --required-signer-hash ${deleg_pkh} \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
@@ -102,10 +110,12 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 # exit
 #
 echo -e "\033[0;36m Signing \033[0m"
+    # --signing-key-file wallets/delegator-wallet/payment.skey \
+    # --signing-key-file wallets/seller-wallet/payment.skey \
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
-    --signing-key-file wallets/delegator-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

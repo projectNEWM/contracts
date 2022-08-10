@@ -6,6 +6,17 @@ python3 -c "import binascii;a=$(cat start_info.json | jq .starterPid);s=binascii
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterTkn);s=binascii.unhexlify(a);print([x for x in s])" > start.tkn
 python3 -c "import binascii;a=$(cat start_info.json | jq .delegator);s=binascii.unhexlify(a);print([x for x in s])" > deleg.pkh
 
+# Add in the 2 out of 3 multisig
+python3 -c "import binascii;a=$(cat start_info.json | jq .multisig1);s=binascii.unhexlify(a);print([x for x in s])" > multisig1.pkh
+python3 -c "import binascii;a=$(cat start_info.json | jq .multisig2);s=binascii.unhexlify(a);print([x for x in s])" > multisig2.pkh
+python3 -c "import binascii;a=$(cat start_info.json | jq .multisig3);s=binascii.unhexlify(a);print([x for x in s])" > multisig3.pkh
+
+python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
+mv ./nft-locking-contract/src/NFTLockingContract.hs-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
+python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
+mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
+
+# exit
 
 # Adds the delegator to the nft locking and minting contracts
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat deleg.pkh))"

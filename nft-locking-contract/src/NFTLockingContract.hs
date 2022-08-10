@@ -63,21 +63,31 @@ lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
--- -- all possible signers
--- listOfPkh :: [PlutusV2.PubKeyHash]
--- listOfPkh = [getPkh]
--- -------------------------------------------------------------------------------
--- -- | Simple Multisig
--- -------------------------------------------------------------------------------
--- checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
--- checkMultisig txInfo pkhs amt = loopSigs pkhs 0
---   where
---     loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
---     loopSigs []     counter = counter >= amt
---     loopSigs (x:xs) counter = 
---       if ContextsV2.txSignedBy txInfo x
---         then loopSigs xs (counter + 1)
---         else loopSigs xs counter
+-- collat wallet
+multiPkh1 :: PlutusV2.PubKeyHash
+multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [139, 28, 31, 194, 168, 74, 122, 168, 84, 106, 79, 32, 249, 214, 245, 237, 203, 6, 229, 147, 38, 54, 136, 116, 43, 119, 78, 57] }
+-- seller wallet
+multiPkh2 :: PlutusV2.PubKeyHash
+multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+-- reference wallet
+multiPkh3 :: PlutusV2.PubKeyHash
+multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [201, 200, 26, 235, 56, 208, 42, 163, 75, 112, 228, 42, 144, 232, 132, 53, 167, 41, 234, 98, 210, 75, 30, 174, 237, 246, 142, 9] }
+
+-- all possible signers
+listOfPkh :: [PlutusV2.PubKeyHash]
+listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
+-------------------------------------------------------------------------------
+-- | Simple Multisig
+-------------------------------------------------------------------------------
+checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
+checkMultisig txInfo pkhs amt = loopSigs pkhs 0
+  where
+    loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
+    loopSigs []     counter = counter >= amt
+    loopSigs (x:xs) counter = 
+      if ContextsV2.txSignedBy txInfo x
+        then loopSigs xs (counter + 1)
+        else loopSigs xs counter
 -------------------------------------------------------------------------------
 -- | A custom eq class for datum objects.
 -------------------------------------------------------------------------------
@@ -134,7 +144,7 @@ mkValidator datum redeemer context =
       ;         traceIfFalse "Locking Contract Mint Endpoint Error" $ all (==True) [a,b,c,d,e]
       }
     Burn -> do
-      { let a = traceIfFalse "Signing Tx Error"         $ ContextsV2.txSignedBy info getPkh                -- newm signs it
+      { let a = traceIfFalse "Signing Tx Error"         $ checkMultisig info listOfPkh 2                   -- newm multisig
       ; let b = traceIfFalse "Single Script Error"      $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
       ; let c = traceIfFalse "NFT Burning Error"        checkBurnedAmount                                  -- burn an nft only
       ; let d = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs              -- value is cont and the datum is correct.

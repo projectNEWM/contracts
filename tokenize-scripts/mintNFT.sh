@@ -91,8 +91,6 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/mint_redeemer.json \
-    --tx-out="${ft_script_address_out}" \
-    --tx-out-inline-datum-file ../fractionalize-scripts/data/datum.json  \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
@@ -105,6 +103,8 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/current_datum.json \
     --testnet-magic 1097911063)
 
+    # --tx-out="${ft_script_address_out}" \
+    # --tx-out-inline-datum-file ../fractionalize-scripts/data/datum.json  \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
