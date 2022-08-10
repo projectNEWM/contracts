@@ -7,6 +7,10 @@ script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_path="../nft-minting-contract/nft-minting-contract.plutus"
 
 
+ft_script_path="../locking-contract/locking-contract.plutus"
+ft_script_address=$(${cli} address build --payment-script-file ${ft_script_path} --testnet-magic 1097911063)
+
+
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
@@ -27,8 +31,10 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
+ft_script_address_out="${ft_script_address} + 5000000"
 buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
+echo "Script OUTPUT: "${ft_script_address_out}
 echo "Mint OUTPUT: "${buyer_address_out}
 #
 # exit
@@ -85,6 +91,8 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/mint_redeemer.json \
+    --tx-out="${ft_script_address_out}" \
+    --tx-out-inline-datum-file ../fractionalize-scripts/data/datum.json  \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
