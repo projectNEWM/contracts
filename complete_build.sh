@@ -7,16 +7,20 @@ python3 -c "import binascii;a=$(cat start_info.json | jq .starterTkn);s=binascii
 python3 -c "import binascii;a=$(cat start_info.json | jq .delegator);s=binascii.unhexlify(a);print([x for x in s])" > deleg.pkh
 
 
-# Adds the delegator to the nft locking and minting contract
+# Adds the delegator to the nft locking and minting contracts
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat deleg.pkh))"
 mv ./nft-locking-contract/src/NFTLockingContract.hs-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
-
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat deleg.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
+# Adds the delegator to the ft locking and minting contracts
+python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./locking-contract/src/LockingContract.hs', './locking-contract/src/LockingContract.hs-new.hs', $(cat deleg.pkh))"
+mv ./locking-contract/src/LockingContract.hs-new.hs ./locking-contract/src/LockingContract.hs
+python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./minting-contract/src/MintingContract.hs', './minting-contract/src/MintingContract.hs-new.hs', $(cat deleg.pkh))"
+mv ./minting-contract/src/MintingContract.hs-new.hs ./minting-contract/src/MintingContract.hs
 
-## Adds in the locking token into the contract.
 
+# Adds in the locking token into the contract.
 python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract-new.hs', $(cat start.pid))"
 mv ./nft-locking-contract/src/NFTLockingContract-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
 python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract-new.hs', $(cat start.tkn))"
@@ -49,7 +53,7 @@ python3 -c "from update_contracts import changeLockHash;changeLockHash('./nft-mi
 mv ./nft-minting-contract/src/NFTMintingContract-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
 
-# build
+# build nft minting
 cd nft-minting-contract
 rm policy.id
 rm policy.bytes
@@ -57,7 +61,6 @@ cabal build -w ghc-8.10.7 -O2
 cabal run nft-minting-contract
 cardano-cli transaction policyid --script-file nft-minting-contract.plutus > policy.id
 python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
-
 
 # nft minting validator hash
 echo -e "\033[1;36m Policy Id: $(cat policy.id) \033[0m"
@@ -70,7 +73,40 @@ mv current_datum-new.json current_datum.json
 variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[0].bytes=$variable' next_datum.json > next_datum-new.json
 mv next_datum-new.json next_datum.json
 
-
 # update fractionalize contracts
+cd ../..
+python3 -c "from update_contracts import changeTokenizedPid;changeTokenizedPid('./locking-contract/src/LockingContract.hs', './locking-contract/src/LockingContract-new.hs', $(cat ./nft-minting-contract/policy.bytes) )"
+mv ./locking-contract/src/LockingContract-new.hs ./locking-contract/src/LockingContract.hs
 
+cd locking-contract
+rm validator.bytes
+rm validator.hash
+cabal build -w ghc-8.10.7 -O2
+cabal run locking-contract
+cardano-cli transaction policyid --script-file locking-contract.plutus > validator.hash
+python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
+echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
+echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
+
+# adds in the locking hash into the script
+cd ..
+python3 -c "from update_contracts import changeLockHash;changeLockHash('./minting-contract/src/MintingContract.hs', './minting-contract/src/MintingContract-new.hs', $(cat ./locking-contract/validator.bytes))"
+mv ./minting-contract/src/MintingContract-new.hs ./minting-contract/src/MintingContract.hs
+
+cd minting-contract
+rm policy.id
+rm policy.bytes
+cabal build -w ghc-8.10.7
+cabal run minting-contract
+cardano-cli transaction policyid --script-file minting-contract.plutus > policy.id
+python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
+
+echo -e "\033[1;36m Policy Id: $(cat policy.id) \033[0m"
+echo -e "\033[1;36m Policy Bytes: $(cat policy.bytes) \033[0m"
+
+cd ../fractionalize-scripts/data
+variable=$(cat ../../minting-contract/policy.id); jq --arg variable "$variable" '.fields[0].bytes=$variable' datum.json > datum-new.json
+mv datum-new.json datum.json
+variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[1].bytes=$variable' datum.json > datum-new.json
+mv datum-new.json datum.json
 # build fractionalize contractsd

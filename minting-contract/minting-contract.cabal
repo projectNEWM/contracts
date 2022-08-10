@@ -1,8 +1,8 @@
 cabal-version: 2.4
 
-name:                   v2-locking-contract
-version:                1
-description:            A plutus script for locking funds.
+name:                   minting-contract
+version:                0
+description:            A plutus script for minting FTs.
 author:                 Quinn Parkinson
 maintainer:             qparkinson@projectnewm.io
 license:                AGPL-3.0-only
@@ -45,8 +45,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      V2LockingContract
-                        V2CheckFuncs
+  exposed-modules:      MintingContract
 
   build-depends:        bytestring
                       , cardano-api
@@ -58,10 +57,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable v2-locking-contract
+executable minting-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              v2-locking-contract.hs
+  main-is:              minting-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -69,5 +68,5 @@ executable v2-locking-contract
                         -O2
 
   build-depends:        cardano-api
-                      , v2-locking-contract
+                      , minting-contract
 

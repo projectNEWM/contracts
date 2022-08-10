@@ -26,7 +26,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2MintingContract
+module MintingContract
   ( mintingPlutusScript
   , mintingScriptShortBs
   , getValidatorHash
@@ -39,7 +39,6 @@ import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V1.Ledger.Value         as Value
-import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
@@ -58,10 +57,10 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [175, 23, 118, 192, 232, 156, 188, 1, 68, 164, 183, 98, 229, 72, 5, 107, 141, 149, 228, 146, 3, 10, 208, 14, 160, 175, 167, 83]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [122, 243, 39, 21, 176, 172, 203, 122, 19, 189, 145, 76, 242, 185, 234, 37, 200, 115, 74, 143, 183, 200, 165, 1, 85, 27, 43, 187]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -88,42 +87,8 @@ mkPolicy _ context = checkMintedAmount && checkSigner
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
 
-    txOutputs :: [PlutusV2.TxOut]
-    txOutputs = ContextsV2.txInfoOutputs info
-
-    -- check if the incoming datum is the correct form.
-    isEmbeddedDatum :: PlutusV2.TxOut -> Maybe CustomRedeemerType
-    isEmbeddedDatum x = 
-      case PlutusV2.txOutDatum x of
-        -- datumless
-        PlutusV2.NoOutputDatum -> Nothing
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
-          case PlutusTx.fromBuiltinData d of
-            Nothing     -> Nothing
-            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
-        -- embedded datum
-        (PlutusV2.OutputDatumHash dh) -> 
-          case ContextsV2.findDatum dh info of
-            Nothing                  -> Nothing
-            Just (PlutusV2.Datum d') -> 
-              case PlutusTx.fromBuiltinData d' of
-                Nothing       -> Nothing
-                Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType embedded
-  
-
     checkSigner :: Bool
-    checkSigner = traceIfFalse "Signer Error" $ signerFromTxOut txOutputs
-      where
-        signerFromTxOut :: [PlutusV2.TxOut] -> Bool
-        signerFromTxOut []     = False
-        signerFromTxOut (x:xs) =
-          case isEmbeddedDatum x of
-            Nothing     -> signerFromTxOut xs
-            Just datum' -> 
-              if PlutusV2.txOutAddress x == Addr.scriptHashAddress getValidatorHash
-                then traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh && ContextsV2.txSignedBy info (cdtArtistPKH datum')
-                else signerFromTxOut xs
+    checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
 
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context

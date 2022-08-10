@@ -25,10 +25,11 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module NFTLockingContract
+module LockingContract
   ( lockingContractScript
   , lockingContractScriptShortBs
   , CustomDatumType
+  , getPkh
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -42,7 +43,6 @@ import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
 import           CheckFuncs
-import           TokenHelper
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -53,48 +53,49 @@ a="a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
 s=binascii.unhexlify(a)
 [x for x in s]
 -}
+
 {-# INLINABLE getPkh #-}
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
--------------------------------------------------------------------------------
--- | A custom eq class for datum objects.
--------------------------------------------------------------------------------
-class Equiv a where
-  (===) :: a -> a -> Bool
+
+-- tokenization minting policy
+tokenizedPid :: PlutusV2.CurrencySymbol
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [249, 53, 233, 120, 58, 60, 119, 165, 234, 123, 221, 24, 231, 194, 12, 246, 98, 146, 119, 1, 34, 191, 232, 111, 170, 88, 58, 253] }
+
+
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
-  { cdtNewmPid :: PlutusV2.CurrencySymbol
-  -- ^ The policy id from the minting script.
-  , cdtNumber  :: Integer
-  -- ^ The starting number for the catalog.
-  , cdtPrefix  :: PlutusV2.BuiltinByteString
-  -- ^ The prefix for a catalog.
-  }
+    { cdtFractionalPid :: PlutusV2.CurrencySymbol
+    -- ^ The Newm fractionalization minting policy
+    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol
+    -- ^ The artist's tokenized policy id
+    , cdtTokenizedTn   :: PlutusV2.TokenName
+    -- ^ the artist's tokenized token name.
+    , cdtArtistPKH     :: PlutusV2.PubKeyHash
+    -- ^ The artist's public key hash.
+    , cdtArtistSC      :: PlutusV2.PubKeyHash
+    -- ^ The artist's staking key hash.
+    }
 PlutusTx.unstableMakeIsData ''CustomDatumType
-
--- old == new | minting
+-- old == new
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( cdtNewmPid    a == cdtNewmPid b ) &&
-           ( cdtNumber a + 1 == cdtNumber  b ) &&
-           ( cdtPrefix     a == cdtPrefix  b )
--- old === new | burning
-instance Equiv CustomDatumType where
-  {-# INLINABLE (===) #-}
-  a === b = ( cdtNewmPid a == cdtNewmPid b ) &&
-            ( cdtNumber  a == cdtNumber  b ) &&
-            ( cdtPrefix  a == cdtPrefix  b )
+  a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
+           ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
+           ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
+           ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
+           ( cdtArtistSC      a == cdtArtistSC      b )
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = MintNFT |
-                          BurnNFT |
+data CustomRedeemerType = Lock   |
+                          Unlock |
                           Exit
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'MintNFT, 0 )
-                                                , ( 'BurnNFT, 1 )
-                                                , ( 'Exit,    2 )
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ('Lock,   0)
+                                                , ('Unlock, 1)
+                                                , ('Exit,   2)
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -103,35 +104,47 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'MintNFT, 0 )
 mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
 mkValidator datum redeemer context =
   case redeemer of
-    MintNFT -> do
-      { let a = traceIfFalse "Signing Tx Error"           $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error"        $ isNScripts txInputs 1
-      ; let c = traceIfFalse "Cont Payin Error"           $ isValueContinuing contOutputs validatingValue
-      ; let d = traceIfFalse "NFT Minting Error"          checkMintedAmount
-      ; let e = traceIfFalse "Datum Not Increasing Error" $ isEmbeddedDatumIncreasing contOutputs
-      ;         traceIfFalse "Locking Contract Mint Endpoint Error" $ all (==True) [a,b,c,d,e]
+    Lock -> do 
+      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
+      ; let b = traceIfFalse "Single Script Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
+      ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- frac pid with tkn name
+      ; let d = traceIfFalse "Datum Error"         $ isEmbeddedDatumIncreasing contOutputs            -- value with correct datum
+      ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d]
       }
-    BurnNFT -> do
-      { let a = traceIfFalse "Signing Tx Error"         $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error"      $ isNScripts txInputs 1
-      ; let c = traceIfFalse "Cont Payin Error"         $ isValueContinuing contOutputs validatingValue
-      ; let d = traceIfFalse "NFT Burning Error"        checkBurnedAmount
-      ; let e = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs
-      ;         traceIfFalse "Locking Contract Burn Endpoint Error" $ all (==True) [a,b,c,d,e]
+    Unlock -> do 
+      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh
+      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0
+      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue
+      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount
+      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
       }
-    Exit -> do
+    Exit -> do 
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
    where
     info :: PlutusV2.TxInfo
-    info = PlutusV2.scriptContextTxInfo  context
+    info = PlutusV2.scriptContextTxInfo context
 
+    -- inputs / outputs
     contOutputs :: [PlutusV2.TxOut]
     contOutputs = ContextsV2.getContinuingOutputs context
 
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = PlutusV2.txInfoInputs  info
+
+    txOutputs :: [PlutusV2.TxOut]
+    txOutputs = PlutusV2.txInfoOutputs info
+
+    -- artist info
+    artistPKH :: PlutusV2.PubKeyHash
+    artistPKH = cdtArtistPKH datum
+
+    artistSC :: PlutusV2.PubKeyHash
+    artistSC = cdtArtistSC datum
+
+    artistAddr :: PlutusV2.Address
+    artistAddr =  createAddress artistPKH artistSC
 
     -- token info
     validatingValue :: PlutusV2.Value
@@ -139,59 +152,40 @@ mkValidator datum redeemer context =
       case ContextsV2.findOwnInput context of
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
-
-    checkMintedAmount :: Bool
-    checkMintedAmount =
-      case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
-        _                -> False
     
-    checkBurnedAmount :: Bool
-    checkBurnedAmount =
-      case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> False
+    singularNFT :: PlutusV2.Value
+    singularNFT = Value.singleton (cdtTokenizedPid datum) (cdtTokenizedTn datum) (1 :: Integer)
 
+    -- minting
+    checkMintedAmount :: Bool
+    checkMintedAmount = 
+      case Value.flattenValue (PlutusV2.txInfoMint info) of
+        [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
+        _             -> False
+    
+    -- datum stuff
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
     isEmbeddedDatumIncreasing []     = False
     isEmbeddedDatumIncreasing (x:xs) =
-      case PlutusV2.txOutDatum x of
-        -- datumless
-        PlutusV2.NoOutputDatum -> isEmbeddedDatumIncreasing xs
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
-          case PlutusTx.fromBuiltinData d of
-            Nothing     -> isEmbeddedDatumIncreasing xs
-            Just inline -> datum == inline
-        -- embedded datum
-        (PlutusV2.OutputDatumHash dh) -> 
-          case ContextsV2.findDatum dh info of
-            Nothing                  -> isEmbeddedDatumIncreasing xs
-            Just (PlutusV2.Datum d') -> 
-              case PlutusTx.fromBuiltinData d' of
-                Nothing       -> isEmbeddedDatumIncreasing xs
-                Just embedded -> datum == embedded
-
-    
-    isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumConstant []     = False
-    isEmbeddedDatumConstant (x:xs) =
-      case PlutusV2.txOutDatum x of
-        -- datumless
-        PlutusV2.NoOutputDatum -> isEmbeddedDatumConstant xs
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
-          case PlutusTx.fromBuiltinData d of
-            Nothing     -> isEmbeddedDatumConstant xs
-            Just inline -> datum === inline
-        -- embedded datum
-        (PlutusV2.OutputDatumHash dh) -> 
-          case ContextsV2.findDatum dh info of
-            Nothing                  -> isEmbeddedDatumConstant xs
-            Just (PlutusV2.Datum d') -> 
-              case PlutusTx.fromBuiltinData d' of
-                Nothing       -> isEmbeddedDatumConstant xs
-                Just embedded -> datum === embedded
+      if PlutusV2.txOutValue x == (validatingValue + singularNFT)-- strict value continue
+        then
+          case PlutusV2.txOutDatum x of
+            -- datumless
+            PlutusV2.NoOutputDatum -> isEmbeddedDatumIncreasing xs
+            -- inline datum
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing     -> isEmbeddedDatumIncreasing xs
+                Just inline -> datum == inline
+            -- embedded datum
+            (PlutusV2.OutputDatumHash dh) -> 
+              case ContextsV2.findDatum dh info of
+                Nothing                  -> isEmbeddedDatumIncreasing xs
+                Just (PlutusV2.Datum d') -> 
+                  case PlutusTx.fromBuiltinData d' of
+                    Nothing       -> isEmbeddedDatumIncreasing xs
+                    Just embedded -> datum == embedded
+        else isEmbeddedDatumIncreasing xs
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

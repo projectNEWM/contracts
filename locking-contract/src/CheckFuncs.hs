@@ -25,8 +25,10 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2CheckFuncs
+module CheckFuncs
   ( isValueContinuing
+  , isNInputs
+  , isNOutputs
   , isAddrGettingPaid
   , isSingleScript
   , createAddress
@@ -92,6 +94,33 @@ isSingleScript txInputs = loopInputs txInputs 0
     loopInputs []     counter = counter == 1
     loopInputs (x:xs) counter = 
       case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        PlutusV2.NoOutputDatum       -> loopInputs xs counter
+        (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
+        (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
+-------------------------------------------------------------------------------
+-- | Force a number of inputs to have datums
+-------------------------------------------------------------------------------
+isNInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
+isNInputs utxos number = loopInputs utxos 0
+  where
+    loopInputs :: [PlutusV2.TxInInfo] -> Integer  -> Bool
+    loopInputs []     counter = counter == number
+    loopInputs (x:xs) counter = 
+      case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        PlutusV2.NoOutputDatum       -> loopInputs xs counter
+        (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
+        (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
+
+-------------------------------------------------------------------------------
+-- | Force a number of outputs to have datums
+-------------------------------------------------------------------------------
+isNOutputs :: [PlutusV2.TxOut] -> Integer -> Bool
+isNOutputs utxos number = loopInputs utxos 0
+  where
+    loopInputs :: [PlutusV2.TxOut] -> Integer  -> Bool
+    loopInputs []     counter = counter == number
+    loopInputs (x:xs) counter = 
+      case PlutusV2.txOutDatum x of
         PlutusV2.NoOutputDatum       -> loopInputs xs counter
         (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
         (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
