@@ -25,7 +25,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2TokenHelper
+module TokenHelper
   ( nftName
   ) where
 

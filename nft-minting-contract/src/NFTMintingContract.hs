@@ -26,7 +26,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2NFTMintingContract
+module NFTMintingContract
   ( mintingPlutusScript
   , mintingScriptShortBs
   ) where
@@ -42,18 +42,21 @@ import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-import           V2TokenHelper
+import           TokenHelper
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 2
 -}
 lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString []}
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString []}
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
 
+-- check for nft here
+tokenValue :: PlutusV2.Value
+tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 {-# INLINABLE flattenBuiltinByteString #-}
 flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
@@ -65,10 +68,10 @@ createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
 
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [26, 150, 186, 230, 81, 141, 131, 39, 14, 190, 49, 98, 137, 222, 147, 99, 33, 138, 157, 111, 62, 52, 28, 198, 190, 129, 251, 6]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [40, 17, 145, 5, 237, 60, 42, 35, 203, 80, 206, 249, 32, 89, 207, 207, 9, 37, 110, 151, 196, 51, 186, 218, 52, 106, 140, 136]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -90,10 +93,10 @@ instance Eq CustomRedeemerType where
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
-      { let a = traceIfFalse "Minting Error"     checkTokenMint && checkOutputDatum 1 || checkTokenBurn && checkOutputDatum 0
-      ; let b = traceIfFalse "Signing Error"     checkSigner
-      ; let c = traceIfFalse "Input Datum Error" checkInputDatum
-      ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue
+      { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn check
+      ; let b = traceIfFalse "Incorrect Signer"      $ ContextsV2.txSignedBy info getPkh          -- newm signs it
+      ; let c = traceIfFalse "Input Datum Error"     checkInputDatum                             -- the input datum is equal what is being pass into the redeemer
+      ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue -- must contain the starter token
       ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]
       }
   where
@@ -153,10 +156,6 @@ mkPolicy redeemer' context = do
     valueAtValidator :: PlutusV2.Value
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
 
-    -- check for nft here
-    tokenValue :: PlutusV2.Value
-    tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
-
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 
       case datumAtValidator' of
@@ -190,10 +189,6 @@ mkPolicy redeemer' context = do
               , crtNumber  = crtNumber  redeemer + increment
               , crtPrefix  = crtPrefix  redeemer
               }
-
-    -- only newm can mint it
-    checkSigner :: Bool
-    checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
 
     -- check the minting stuff here
     checkTokenMint :: Bool

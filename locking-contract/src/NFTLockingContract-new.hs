@@ -25,7 +25,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2NFTLockingContract
+module NFTLockingContract
   ( lockingContractScript
   , lockingContractScriptShortBs
   , CustomDatumType
@@ -41,8 +41,8 @@ import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-import           V2CheckFuncs
-import           V2TokenHelper
+import           CheckFuncs
+import           TokenHelper
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -55,7 +55,7 @@ s=binascii.unhexlify(a)
 -}
 {-# INLINABLE getPkh #-}
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 -------------------------------------------------------------------------------
 -- | A custom eq class for datum objects.
 -------------------------------------------------------------------------------

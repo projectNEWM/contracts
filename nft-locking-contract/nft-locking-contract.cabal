@@ -1,6 +1,6 @@
 cabal-version: 2.4
 
-name:                   v2-nft-locking-contract
+name:                   nft-locking-contract
 version:                1
 description:            A plutus script for locking funds..
 author:                 Quinn Parkinson
@@ -45,9 +45,9 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      V2NFTLockingContract
-                        V2CheckFuncs
-                        V2TokenHelper
+  exposed-modules:      NFTLockingContract
+                        CheckFuncs
+                        TokenHelper
 
   build-depends:        bytestring
                       , cardano-api
@@ -59,10 +59,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable v2-nft-locking-contract
+executable nft-locking-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              v2-nft-locking-contract.hs
+  main-is:              nft-locking-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -70,4 +70,4 @@ executable v2-nft-locking-contract
                         -O2
 
   build-depends:        cardano-api
-                      , v2-nft-locking-contract
+                      , nft-locking-contract

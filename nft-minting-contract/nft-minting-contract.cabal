@@ -1,6 +1,6 @@
 cabal-version: 2.4
 
-name:                   v2-nft-minting-contract
+name:                   nft-minting-contract
 version:                0
 description:            A plutus script for minting FTs.
 author:                 Quinn Parkinson
@@ -45,8 +45,8 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      V2NFTMintingContract
-                        V2TokenHelper
+  exposed-modules:      NFTMintingContract
+                        TokenHelper
 
   build-depends:        bytestring
                       , cardano-api
@@ -58,10 +58,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable v2-nft-minting-contract
+executable nft-minting-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              v2-nft-minting-contract.hs
+  main-is:              nft-minting-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -69,5 +69,5 @@ executable v2-nft-minting-contract
                         -O2
 
   build-depends:        cardano-api
-                      , v2-nft-minting-contract
+                      , nft-minting-contract
 

@@ -25,12 +25,11 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2CheckFuncs
-  ( isValueContinuing
-  , isNScripts
+module CheckFuncs
+  ( isNInputs
+  , isNOutputs
   , createBuiltinByteString
   ) where
-import qualified Plutus.V1.Ledger.Value      as Value
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
 import           PlutusTx.Prelude 
 {- |
@@ -48,28 +47,31 @@ flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString x
 -- | Creates a proper BuiltinByteString.
 -------------------------------------------------------------------------
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
-createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
+createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
 -------------------------------------------------------------------------------
--- | Search each TxOut for a value.
+-- | Force a number of inputs to have datums
 -------------------------------------------------------------------------------
-isValueContinuing :: [PlutusV2.TxOut] -> PlutusV2.Value -> Bool
-isValueContinuing [] _ = False
-isValueContinuing (x:xs) val
-  | checkVal  = True
-  | otherwise = isValueContinuing xs val
+isNInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
+isNInputs utxos number = loopInputs utxos 0
   where
-    checkVal :: Bool
-    checkVal = Value.geq (PlutusV2.txOutValue x) val
--------------------------------------------------------------------------------
--- | Force a single script utxo input.
--------------------------------------------------------------------------------
-isNScripts :: [PlutusV2.TxInInfo] -> Integer -> Bool
-isNScripts txInputs value' = loopInputs txInputs 0
-  where
-    loopInputs :: [PlutusV2.TxInInfo] -> Integer -> Bool
-    loopInputs []     counter = counter == value'
+    loopInputs :: [PlutusV2.TxInInfo] -> Integer  -> Bool
+    loopInputs []     counter = counter == number
     loopInputs (x:xs) counter = 
       case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved x of
+        PlutusV2.NoOutputDatum       -> loopInputs xs counter
+        (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
+        (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)
+
+-------------------------------------------------------------------------------
+-- | Force a number of outputs to have datums
+-------------------------------------------------------------------------------
+isNOutputs :: [PlutusV2.TxOut] -> Integer -> Bool
+isNOutputs utxos number = loopInputs utxos 0
+  where
+    loopInputs :: [PlutusV2.TxOut] -> Integer  -> Bool
+    loopInputs []     counter = counter == number
+    loopInputs (x:xs) counter = 
+      case PlutusV2.txOutDatum x of
         PlutusV2.NoOutputDatum       -> loopInputs xs counter
         (PlutusV2.OutputDatumHash _) -> loopInputs xs (counter + 1)
         (PlutusV2.OutputDatum     _) -> loopInputs xs (counter + 1)

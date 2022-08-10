@@ -25,18 +25,16 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module V2TokenHelper
+module TokenHelper
   ( nftName
   ) where
-
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api       as PlutusV2
 import qualified PlutusTx.Builtins.Internal as Internal
-
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
+  Version  : Rev 1
 -}
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.

@@ -3,18 +3,16 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../v2-nft-locking-contract/v2-tokenized-locking-contract.plutus"
+script_path="../nft-locking-contract/nft-locking-contract.plutus"
 
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-sc_address_out="${SCRIPT_ADDRESS} + 5000000"
+sc_address_out="${SCRIPT_ADDRESS} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
 echo "Script OUTPUT: "${sc_address_out}
-
 #
 # exit
 #
-
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
 ${cli} query utxo \
