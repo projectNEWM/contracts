@@ -59,8 +59,25 @@ lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [11
 lockValue :: PlutusV2.Value
 lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
+-- main key
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+
+-- -- all possible signers
+-- listOfPkh :: [PlutusV2.PubKeyHash]
+-- listOfPkh = [getPkh]
+-- -------------------------------------------------------------------------------
+-- -- | Simple Multisig
+-- -------------------------------------------------------------------------------
+-- checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
+-- checkMultisig txInfo pkhs amt = loopSigs pkhs 0
+--   where
+--     loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
+--     loopSigs []     counter = counter >= amt
+--     loopSigs (x:xs) counter = 
+--       if ContextsV2.txSignedBy txInfo x
+--         then loopSigs xs (counter + 1)
+--         else loopSigs xs counter
 -------------------------------------------------------------------------------
 -- | A custom eq class for datum objects.
 -------------------------------------------------------------------------------

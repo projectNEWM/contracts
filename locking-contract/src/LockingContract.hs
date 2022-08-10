@@ -154,14 +154,14 @@ mkValidator datum redeemer context =
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
     singularNFT :: PlutusV2.Value
-    singularNFT = Value.singleton (cdtTokenizedPid datum) (cdtTokenizedTn datum) (1 :: Integer)
+    singularNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
 
     -- minting
     checkMintedAmount :: Bool
     checkMintedAmount = 
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
-        _             -> False
+        _             -> traceIfFalse "Wrong pid and tkn name" False
     
     -- datum stuff
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
