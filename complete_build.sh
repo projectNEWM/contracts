@@ -1,6 +1,15 @@
 # Complete Build
 echo -e "\033[1;35m Starting... \033[0m" 
 
+# set up start info
+policy_id=$(cat tokenize-scripts/policy/policy.id)
+# It'sTheStarterToken4ProjectNewM
+token_name="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+variable=${policy_id}; jq --arg variable "$variable" '.starterPid=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
+variable=${token_name}; jq --arg variable "$variable" '.starterTkn=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
+
 # starter nft data
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterPid);s=binascii.unhexlify(a);print([x for x in s])" > start.pid
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterTkn);s=binascii.unhexlify(a);print([x for x in s])" > start.tkn
@@ -15,8 +24,6 @@ python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-lo
 mv ./nft-locking-contract/src/NFTLockingContract.hs-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
 python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
-
-# exit
 
 # Adds the delegator to the nft locking and minting contracts
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat deleg.pkh))"

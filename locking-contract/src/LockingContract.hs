@@ -60,7 +60,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [0, 22, 152, 226, 11, 219, 222, 78, 124, 42, 41, 182, 218, 155, 139, 113, 24, 128, 126, 137, 115, 149, 151, 28, 111, 203, 112, 58] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [56, 209, 188, 172, 175, 156, 112, 162, 182, 17, 78, 104, 51, 32, 16, 27, 58, 23, 189, 250, 80, 133, 137, 255, 148, 180, 36, 73] }
 
 
 -------------------------------------------------------------------------------
@@ -92,10 +92,10 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Lock   |
                           Unlock |
-                          Exit
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ('Lock,   0)
-                                                , ('Unlock, 1)
-                                                , ('Exit,   2)
+                          Exit -- remove in production
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
+                                                , ( 'Unlock, 1 )
+                                                , ( 'Exit,   2 ) -- remove in production
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -105,20 +105,20 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Lock -> do 
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
-      ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- frac pid with tkn name
-      ; let d = traceIfFalse "Datum Error"         $ isEmbeddedDatumIncreasing contOutputs            -- value with correct datum
-      ;         traceIfFalse "Lock Endpoint Error" $ all (==True) [a,b,c,d]
+      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh                -- newm master key
+      ; let b = traceIfFalse "Single In/Out Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
+      ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
+      ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs            -- value with correct datum
+      ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
       }
     Unlock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh
-      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0
-      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue
-      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount
+      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh                      -- newm master key
+      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0       -- 1 script input 0 script output
+      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue -- artist get everything back
+      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                        -- burnfrac pid with tkn name
       ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
       }
-    Exit -> do 
+    Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }

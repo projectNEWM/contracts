@@ -21,7 +21,12 @@ MINT_ASSET="-1 ${policy_id}.${name}"
 #     --protocol-params-file tmp/protocol.json \
 #     --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
-script_address_out="${script_address} + 5000000 + 1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
+start_id=$(cat policy/policy.id)
+# It'sTheStarterToken4ProjectNewM
+token_name="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+START_ASSET="1 ${start_id}.${token_name}"
+
+script_address_out="${script_address} + 5000000 + ${START_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 # echo "Mint OUTPUT: "${buyer_address_out}
 #

@@ -50,10 +50,10 @@ import           TokenHelper
 -}
 
 lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [73, 116, 39, 115, 84, 104, 101, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110, 52, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value
@@ -123,10 +123,10 @@ instance Equiv CustomDatumType where
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Mint |
                           Burn |
-                          Exit   -- remove in production
+                          Exit
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
-                                                , ( 'Exit, 2 ) -- remove in production
+                                                , ( 'Exit, 2 )
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -136,22 +136,22 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     Mint -> do
-      { let a = traceIfFalse "Signing Tx Error"           $ ContextsV2.txSignedBy info getPkh                -- newm signs it
-      ; let b = traceIfFalse "Single Script Error"        $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
-      ; let c = traceIfFalse "NFT Minting Error"          checkMintedAmount                                  -- mint an nft only
-      ; let d = traceIfFalse "Datum Not Increasing Error" $ isEmbeddedDatumIncreasing contOutputs            -- value is cont and the datum is correct.
-      ; let e = traceIfFalse "Incorrect Start Token"      $ Value.geq validatingValue lockValue              -- must contain the start token
-      ;         traceIfFalse "Locking Contract Mint Endpoint Error" $ all (==True) [a,b,c,d,e]
+      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh                -- newm signs it
+      ; let b = traceIfFalse "Single In/Out Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
+      ; let c = traceIfFalse "NFT Minting Error"   checkMintedAmount                                  -- mint an nft only
+      ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs            -- value is cont and the datum is correct.
+      ; let e = traceIfFalse "Invalid Start Token" $ Value.geq validatingValue lockValue              -- must contain the start token
+      ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d,e]
       }
     Burn -> do
-      { let a = traceIfFalse "Signing Tx Error"         $ checkMultisig info listOfPkh 2                   -- newm multisig
-      ; let b = traceIfFalse "Single Script Error"      $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
-      ; let c = traceIfFalse "NFT Burning Error"        checkBurnedAmount                                  -- burn an nft only
-      ; let d = traceIfFalse "Datum Not Constant Error" $ isEmbeddedDatumConstant contOutputs              -- value is cont and the datum is correct.
-      ; let e = traceIfFalse "Incorrect Start Token"    $ Value.geq validatingValue lockValue              -- must contain the start token
-      ;         traceIfFalse "Locking Contract Burn Endpoint Error" $ all (==True) [a,b,c,d,e]
+      { let a = traceIfFalse "Signing Tx Error"      $ checkMultisig info listOfPkh 2                   -- newm multisig
+      ; let b = traceIfFalse "Single In/Out Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
+      ; let c = traceIfFalse "NFT Burning Error"     checkBurnedAmount                                  -- burn an nft only
+      ; let d = traceIfFalse "Invalid Datum Error"   $ isEmbeddedDatumConstant contOutputs              -- value is cont and the datum is correct.
+      ; let e = traceIfFalse "Invalid Starter Token" $ Value.geq validatingValue lockValue              -- must contain the start token
+      ;         traceIfFalse "Locking:Burn Error"    $ all (==True) [a,b,c,d,e]
       }
-    Exit -> do -- remove in production
+    Exit -> do -- remove in production or switch to multisig?
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
@@ -179,6 +179,7 @@ mkValidator datum redeemer context =
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
         _                -> False
     
+    -- burning stuff
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
@@ -187,7 +188,7 @@ mkValidator datum redeemer context =
     
     -- datum stuff
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumIncreasing []     = False
+    isEmbeddedDatumIncreasing []     = traceIfFalse "No Datum Found" False
     isEmbeddedDatumIncreasing (x:xs) =
       if PlutusV2.txOutValue x == validatingValue -- strict value continue
         then
@@ -209,8 +210,9 @@ mkValidator datum redeemer context =
                     Just embedded -> datum == embedded
         else isEmbeddedDatumIncreasing xs
 
+    -- datum stuff
     isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumConstant []     = False
+    isEmbeddedDatumConstant []     = traceIfFalse "No Datum Found" False
     isEmbeddedDatumConstant (x:xs) =
       if PlutusV2.txOutValue x == validatingValue -- strict value continue
         then

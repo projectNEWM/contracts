@@ -9,8 +9,6 @@ TESTNET_MAGIC=1097911063
 reference_address=$(cat wallets/reference-wallet/payment.addr)
 # echo $reference_address
 
-return_utxo="${reference_address} + 2000000"
-echo $return_utxo
 #
 # exit
 #
@@ -39,7 +37,6 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${reference_address} \
     --tx-in ${reference_tx_in} \
-    --tx-out="${return_utxo}" \
     --testnet-magic ${TESTNET_MAGIC})
 
 IFS=':' read -ra VALUE <<< "${FEE}"

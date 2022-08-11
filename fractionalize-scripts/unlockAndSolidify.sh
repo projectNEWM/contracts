@@ -14,9 +14,10 @@ buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 policy_id=$(cat ../minting-contract/policy.id)
+nft_id=$(cat ../nft-minting-contract/policy.id)
 
 #
-SC_ASSET="1 f935e9783a3c77a5ea7bdd18e7c20cf66292770122bfe86faa583afd.4e65774d5f30"
+SC_ASSET="1 ${nft_id}.4e65774d5f30"
 #
 BURN_ASSET="-100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
@@ -27,7 +28,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 # script_address_out="${script_address} + 5000000"
 buyer_address_out="${buyer_address} + 5000000 + ${SC_ASSET}"
 # echo "Script OUTPUT: "${script_address_out}
-echo "Mint OUTPUT: "${buyer_address_out}
+echo "Artist OUTPUT: "${buyer_address_out}
 
 #
 # exit

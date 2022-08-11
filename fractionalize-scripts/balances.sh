@@ -24,7 +24,7 @@ echo -e "\n \033[1;36m ${SELLER_ADDRESS} \033[0m \n";
 ${cli} query utxo --address ${SELLER_ADDRESS} --testnet-magic 1097911063
 #
 echo
-echo -e "\033[1;32m Customer Address: \033[0m" 
+echo -e "\033[1;32m Artist Address: \033[0m" 
 echo -e "\n \033[1;32m ${BUYER_ADDRESS} \033[0m \n";
 ${cli} query utxo --address ${BUYER_ADDRESS} --testnet-magic 1097911063
 #

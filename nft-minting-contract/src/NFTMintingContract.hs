@@ -49,10 +49,10 @@ import           TokenHelper
   Version  : Rev 2
 -}
 lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [152, 47, 147, 160, 239, 222, 142, 221, 14, 154, 244, 0, 218, 8, 62, 145, 217, 142, 29, 91, 74, 119, 160, 121, 56, 164, 222, 79] }
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 105, 115, 97, 118, 101, 114, 121, 108, 111, 110, 103, 115, 116, 114, 105, 110, 103, 102, 111, 114, 116, 101, 115, 116, 105, 110, 49, 48] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [73, 116, 39, 115, 84, 104, 101, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110, 52, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77] }
 
 -- check for nft here
 tokenValue :: PlutusV2.Value
@@ -97,7 +97,7 @@ checkMultisig txInfo pkhs amt = loopSigs pkhs 0
         else loopSigs xs counter
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [85, 130, 100, 236, 36, 236, 240, 140, 173, 227, 45, 4, 207, 92, 158, 16, 236, 10, 247, 248, 25, 85, 143, 108, 167, 244, 200, 106]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [195, 92, 117, 143, 13, 41, 204, 65, 169, 77, 20, 159, 19, 151, 74, 90, 211, 40, 34, 175, 71, 25, 23, 9, 111, 169, 231, 91]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
@@ -119,11 +119,11 @@ instance Eq CustomRedeemerType where
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
-      { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn check
-      ; let b = traceIfFalse "Incorrect Signer"      $ ContextsV2.txSignedBy info getPkh || checkMultisig info listOfPkh 2
-      ; let c = traceIfFalse "Input Datum Error"     checkInputDatum                             -- the input datum is equal what is being pass into the redeemer
-      ; let d = traceIfFalse "Incorrect Start Token" $ Value.geq valueAtValidator tokenValue -- must contain the starter token
-      ;         traceIfFalse "Minting Contract Endpoint Error" $ all (==True) [a,b,c,d]
+      { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn
+      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || checkMultisig info listOfPkh 2              -- newm or multisig
+      ; let c = traceIfFalse "Invalid Datum Error"   checkInputDatum                                                                    -- input datum equals redeemer
+      ; let d = traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator tokenValue                                            -- must contain the starter token
+      ;         traceIfFalse "Minting Error"         $ all (==True) [a,b,c,d]
       }
   where
     info :: PlutusV2.TxInfo

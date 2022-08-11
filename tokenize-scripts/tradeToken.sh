@@ -7,8 +7,8 @@ cli=$(cat path_to_cli.sh)
 
 # Addresses
 sender_address=$(cat wallets/seller-wallet/payment.addr)
-receiver_address=$(cat wallets/multisig-wallet/payment.addr)
-# receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
+# receiver_address=$(cat wallets/multisig-wallet/payment.addr)
+receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
 # Define Asset to be printed here
 asset="1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
@@ -16,7 +16,7 @@ asset="1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
-change_to_be_traded="${sender_address} + ${min_utxo} + ${asset}"
+change_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
 token_to_be_traded="${receiver_address} + 2500000"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
@@ -45,10 +45,10 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
-    --tx-out="${token_to_be_traded}" \
     --tx-out="${change_to_be_traded}" \
     --testnet-magic 1097911063)
 
+    # --tx-out="${token_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}

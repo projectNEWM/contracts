@@ -60,7 +60,7 @@ getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [137, 13, 73, 135, 126, 59, 70, 53, 94, 252, 213, 89, 99, 98, 154, 39, 192, 171, 68, 199, 36, 108, 167, 166, 246, 34, 138, 5]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [147, 136, 203, 146, 164, 219, 231, 27, 23, 3, 234, 74, 238, 220, 111, 38, 8, 47, 150, 35, 156, 164, 239, 194, 218, 162, 136, 78]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -82,13 +82,13 @@ PlutusTx.unstableMakeIsData ''CustomRedeemerType
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy _ context = checkMintedAmount && checkSigner
+mkPolicy _ context = checkMintedAmount && checkSigner -- simple minting requirements
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
 
     checkSigner :: Bool
-    checkSigner = traceIfFalse "Incorrect Signer" $ ContextsV2.txSignedBy info getPkh
+    checkSigner = traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info getPkh
 
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
