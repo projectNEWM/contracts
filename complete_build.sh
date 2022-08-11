@@ -1,14 +1,30 @@
+#!/bin/bash
+set -e
+if [[ $# -eq 0 ]] ; then
+    echo 'No Token Name Supplied'
+    exit 1
+fi
 # Complete Build
 echo -e "\033[1;35m Starting... \033[0m" 
 
 # set up start info
+cardano-cli transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy.id
 policy_id=$(cat tokenize-scripts/policy/policy.id)
-# It'sTheStarterToken4ProjectNewM
-token_name="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+# Select starter NFT token
+# tkn_name="ItsTheStarterTokenForProjectNewM"
+tkn_name=${1}
+tkn_name=$(echo ${tkn_name:0:32})
+echo -e "\033[1;36m Token Name: ${tkn_name} \033[0m"
+
+token_name=$(echo -n ${tkn_name} | od -A n -t x1 | sed 's/ *//g' | tr -d '\n')
+echo -e "\033[1;36m Starter Token ${policy_id}.${token_name} \033[0m"
+
 variable=${policy_id}; jq --arg variable "$variable" '.starterPid=$variable' start_info.json > start_info-new.json
 mv start_info-new.json start_info.json
 variable=${token_name}; jq --arg variable "$variable" '.starterTkn=$variable' start_info.json > start_info-new.json
 mv start_info-new.json start_info.json
+
+# exit
 
 # starter nft data
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterPid);s=binascii.unhexlify(a);print([x for x in s])" > start.pid

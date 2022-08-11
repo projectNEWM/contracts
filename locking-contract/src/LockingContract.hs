@@ -60,7 +60,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [56, 209, 188, 172, 175, 156, 112, 162, 182, 17, 78, 104, 51, 32, 16, 27, 58, 23, 189, 250, 80, 133, 137, 255, 148, 180, 36, 73] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [154, 197, 122, 175, 25, 220, 181, 250, 19, 53, 102, 233, 254, 157, 11, 50, 216, 140, 191, 20, 5, 15, 237, 59, 58, 109, 233, 234] }
 
 
 -------------------------------------------------------------------------------

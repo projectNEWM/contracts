@@ -12,8 +12,12 @@ collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallet
 
 policy_id=$(cat policy/policy.id)
 # It'sTheStarterToken4ProjectNewM
-TOKEN_NAME="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+TOKEN_NAME=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="-1 ${policy_id}.${TOKEN_NAME}"
+
+echo ""
+echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
+
 #
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 #     --protocol-params-file tmp/protocol.json \

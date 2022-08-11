@@ -43,7 +43,7 @@ echo -e "\n \033[1;34m ${REFERENCE_ADDRESS} \033[0m \n";
 ${cli} query utxo --address ${REFERENCE_ADDRESS} --testnet-magic 1097911063
 
 # #
-# echo
-# echo -e "\033[1;34m Multisig Address: \033[0m" 
-# echo -e "\n \033[1;34m ${MULTISIG_ADDRESS} \033[0m \n";
-# ${cli} query utxo --address ${MULTISIG_ADDRESS} --testnet-magic 1097911063
+echo
+echo -e "\033[1;34m Multisig Address: \033[0m" 
+echo -e "\n \033[1;34m ${MULTISIG_ADDRESS} \033[0m \n";
+${cli} query utxo --address ${MULTISIG_ADDRESS} --testnet-magic 1097911063

@@ -23,7 +23,7 @@ MINT_ASSET="-1 ${policy_id}.${name}"
 #
 start_id=$(cat policy/policy.id)
 # It'sTheStarterToken4ProjectNewM
-token_name="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${start_id}.${token_name}"
 
 script_address_out="${script_address} + 5000000 + ${START_ASSET}"

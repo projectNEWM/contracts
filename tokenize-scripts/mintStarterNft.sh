@@ -8,14 +8,14 @@ mint_path="policy/policy.script"
 #
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
-#
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+# collat, seller, reference
+multisig_address=$(cat wallets/multisig-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
 policy_id=$(cat policy/policy.id)
 # It'sTheStarterToken4ProjectNewM
-token_name="4974277354686553746172746572546f6b656e3450726f6a6563744e65774d"
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="1 ${policy_id}.${token_name}"
 #
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
@@ -30,18 +30,18 @@ echo "Mint OUTPUT: "${script_address_out}
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic 1097911063 \
-    --address ${seller_address} \
-    --out-file tmp/seller_utxo.json
+    --address ${multisig_address} \
+    --out-file tmp/multisig_utxo.json
 
-TXNS=$(jq length tmp/seller_utxo.json)
+TXNS=$(jq length tmp/multisig_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${multisig_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
-seller_tx_in=${TXIN::-8}
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/multisig_utxo.json)
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/multisig_utxo.json)
+multisig_tx_in=${TXIN::-8}
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -49,8 +49,9 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
-    --tx-in ${seller_tx_in} \
+    --change-address ${multisig_address} \
+    --tx-in ${multisig_tx_in} \
+    --tx-in-script-file wallets/multisig-wallet/payment.script \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/current_datum.json  \
     --required-signer-hash ${seller_pkh} \
@@ -80,11 +81,3 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic 1097911063 \
     --tx-file tmp/tx.signed
-
-# update start_info.json
-
-# variable=${policy_id}; jq --arg variable "$variable" '.starterPid=$variable' ../start_info.json > ../start_info-new.json
-# mv ../start_info-new.json ../start_info.json
-
-# variable=${token_name}; jq --arg variable "$variable" '.starterTkn=$variable' ../start_info.json > ../start_info-new.json
-# mv ../start_info-new.json ../start_info.json

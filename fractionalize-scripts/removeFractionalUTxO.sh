@@ -16,7 +16,8 @@ seller_address_out="${seller_address} + 5000000"
 echo "Exit OUTPUT: "${seller_address_out}
 
 #
-# exit
+echo "Use unlockAndSolidify.sh"
+exit
 #
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
