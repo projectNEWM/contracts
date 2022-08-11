@@ -4,22 +4,22 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 #
-script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
-mint_path="../v2-minting-contract/v2-fractional-minting-contract.plutus"
+script_path="../locking-contract/locking-contract.plutus"
+mint_path="../minting-contract/minting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
+#
+deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
-seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+policy_id=$(cat ../minting-contract/policy.id)
+nft_id=$(cat ../nft-minting-contract/policy.id)
 #
-policy_id=$(cat ../v2-minting-contract/policy.id)
+SC_ASSET="1 ${nft_id}.4e65774d5f30"
 #
-SC_ASSET="1 49d5d9a180b652ef4163ecfd53ea1521d9794a44933848da9c1b65fb.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
-#
-MINT_ASSET="100000000 ${policy_id}.6173757065726c6f6e676e616d6568657265776974686d61786c656e677432"
+MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --alonzo-era \
     --protocol-params-file tmp/protocol.json \
@@ -65,9 +65,10 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-collat_utxo="41df065af60008949b8db726eceebd1aac47338b7c753915d2ec7d88fd5cccfc"
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+# collat info
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -86,8 +87,8 @@ FEE=$(${cli} transaction build \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json \
-    --required-signer-hash ${buyer_pkh} \
-    --required-signer-hash ${seller_pkh} \
+    --required-signer-hash ${deleg_pkh} \
+    --required-signer-hash ${collat_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
@@ -107,7 +108,8 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/delegator-wallet/payment.skey \
+    --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic 1097911063

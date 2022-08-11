@@ -3,18 +3,21 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../v2-nft-locking-contract/v2-tokenized-locking-contract.plutus"
+script_path="../nft-locking-contract/nft-locking-contract.plutus"
 
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-sc_address_out="${SCRIPT_ADDRESS} + 5000000"
+policy_id=$(cat policy/policy.id)
+# It'sTheStarterToken4ProjectNewM
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
+START_ASSET="1 ${policy_id}.${token_name}"
+sc_address_out="${SCRIPT_ADDRESS} + 5000000 + ${START_ASSET}"
 echo "Script OUTPUT: "${sc_address_out}
-
 #
-# exit
+echo "USE mintStarterNFT.sh"
+exit
 #
-
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
 ${cli} query utxo \

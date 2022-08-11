@@ -4,7 +4,7 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 #
-script_path="../v2-locking-contract/v2-fractional-locking-contract.plutus"
+script_path="../locking-contract/locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
@@ -49,7 +49,8 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+echo "Use ../tokenize-scripts/mintNFT.sh"
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
