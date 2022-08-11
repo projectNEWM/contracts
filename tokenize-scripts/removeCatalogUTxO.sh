@@ -14,7 +14,7 @@ echo ""
 echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 
 
-policy_id=$(cat policy/policy.id)
+policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${policy_id}.${token_name}"

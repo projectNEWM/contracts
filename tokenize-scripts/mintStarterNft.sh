@@ -25,7 +25,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 script_address_out="${script_address} + 5000000 + ${MINT_ASSET}"
 echo "Mint OUTPUT: "${script_address_out}
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
