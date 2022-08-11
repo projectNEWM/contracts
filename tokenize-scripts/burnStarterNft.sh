@@ -10,7 +10,7 @@ seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
-policy_id=$(cat policy/policy.id)
+policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 TOKEN_NAME=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="-1 ${policy_id}.${TOKEN_NAME}"

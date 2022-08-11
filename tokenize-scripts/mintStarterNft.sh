@@ -13,7 +13,7 @@ multisig_address=$(cat wallets/multisig-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
-policy_id=$(cat policy/policy.id)
+policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="1 ${policy_id}.${token_name}"
@@ -25,7 +25,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 script_address_out="${script_address} + 5000000 + ${MINT_ASSET}"
 echo "Mint OUTPUT: "${script_address_out}
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \

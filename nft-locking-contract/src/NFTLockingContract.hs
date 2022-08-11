@@ -53,7 +53,7 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [84, 104, 101, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 101, 115, 116, 105, 110, 103, 105, 116] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value
@@ -123,10 +123,10 @@ instance Equiv CustomDatumType where
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Mint |
                           Burn |
-                          Exit
+                          Exit -- remove in production
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
-                                                , ( 'Exit, 2 )
+                                                , ( 'Exit, 2 ) -- remove in production
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -151,7 +151,7 @@ mkValidator datum redeemer context =
       ; let e = traceIfFalse "Invalid Starter Token" $ Value.geq validatingValue lockValue              -- must contain the start token
       ;         traceIfFalse "Locking:Burn Error"    $ all (==True) [a,b,c,d,e]
       }
-    Exit -> do -- remove in production or switch to multisig?
+    Exit -> do -- remove in production
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
       ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }

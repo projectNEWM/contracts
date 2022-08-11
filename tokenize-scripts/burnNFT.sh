@@ -21,7 +21,7 @@ MINT_ASSET="-1 ${policy_id}.${name}"
 #     --protocol-params-file tmp/protocol.json \
 #     --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
 #
-start_id=$(cat policy/policy.id)
+start_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${start_id}.${token_name}"

@@ -41,7 +41,7 @@ import           PlutusTx.Prelude
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
+  Version  : Rev 1
 -}
 -------------------------------------------------------------------------
 -- | Appends two bytestrings together from a list, element by element

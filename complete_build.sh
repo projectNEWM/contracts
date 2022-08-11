@@ -8,8 +8,8 @@ fi
 echo -e "\033[1;35m Starting... \033[0m" 
 
 # set up start info
-cardano-cli transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy.id
-policy_id=$(cat tokenize-scripts/policy/policy.id)
+cardano-cli transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
+policy_id=$(cat tokenize-scripts/policy/starter.id)
 # Select starter NFT token
 # tkn_name="ItsTheStarterTokenForProjectNewM"
 tkn_name=${1}
@@ -144,3 +144,21 @@ mv datum-new.json datum.json
 variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[1].bytes=$variable' datum.json > datum-new.json
 mv datum-new.json datum.json
 # build fractionalize contractsd
+
+# rm hash.hashes
+# rm policy.hashes
+# rm final.check
+
+cd ../..
+
+find . -name '*.hash' -type f -exec sha256sum {} \; > hash.hashes
+echo -e "\033[1;36m \nvalidator sha256sum \033[0m"
+echo -e "\033[1;33m $(cat hash.hashes) \033[0m"
+
+find . -name 'policy.id' -type f -exec sha256sum {} \; > policy.hashes
+echo -e "\033[1;36m policy sha256sum \033[0m"
+echo -e "\033[1;33m $(cat policy.hashes) \033[0m"
+
+find . -name '*.hashes' -type f -exec sha256sum {} \; > final.check
+echo -e "\033[1;35m \nfinal sha256sum \033[0m"
+echo -e "\033[1;32m $(sha256sum final.check) \033[0m"

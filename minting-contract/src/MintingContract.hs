@@ -45,7 +45,7 @@ import           Plutus.Script.Utils.V2.Scripts as Utils
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
+  Version  : Rev 1
 -}
 {-# INLINABLE flattenBuiltinByteString #-}
 flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
@@ -60,7 +60,7 @@ getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [69, 127, 202, 155, 227, 204, 124, 62, 229, 134, 9, 122, 86, 32, 174, 40, 232, 77, 10, 132, 127, 140, 30, 40, 250, 252, 90, 106]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [243, 55, 67, 227, 146, 203, 0, 178, 31, 141, 1, 146, 38, 213, 27, 109, 40, 58, 255, 242, 186, 193, 171, 168, 93, 78, 171, 121]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------

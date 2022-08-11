@@ -2,6 +2,8 @@
 
 A collection of contracts used my Project Newm.
 
+- NEEDS UPDATE FOR MVP
+
 # E2E Testing
 
 The initial testing will assume Newm holds a special wallet that will regulate all token minting. In the future, this will be expanded into more decentralized solutions.

@@ -46,13 +46,13 @@ import           TokenHelper
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
+  Version  : Rev 1
 -}
 lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [84, 104, 101, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 101, 115, 116, 105, 110, 103, 105, 116] }
 
 -- check for nft here
 tokenValue :: PlutusV2.Value
@@ -97,7 +97,7 @@ checkMultisig txInfo pkhs amt = loopSigs pkhs 0
         else loopSigs xs counter
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [3, 151, 204, 119, 12, 129, 177, 38, 4, 180, 206, 90, 213, 251, 181, 26, 0, 180, 197, 215, 70, 51, 229, 179, 69, 47, 65, 174]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [202, 207, 167, 55, 101, 72, 247, 188, 46, 110, 75, 4, 142, 252, 239, 200, 122, 151, 59, 210, 183, 190, 177, 188, 173, 11, 179, 178]
 
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol

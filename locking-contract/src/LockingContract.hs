@@ -46,12 +46,7 @@ import           CheckFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 2
-
-import binascii
-a="a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439"
-s=binascii.unhexlify(a)
-[x for x in s]
+  Version  : Rev 1
 -}
 
 {-# INLINABLE getPkh #-}
@@ -60,7 +55,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [154, 197, 122, 175, 25, 220, 181, 250, 19, 53, 102, 233, 254, 157, 11, 50, 216, 140, 191, 20, 5, 15, 237, 59, 58, 109, 233, 234] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [253, 58, 84, 169, 146, 187, 40, 223, 170, 112, 231, 127, 37, 179, 112, 79, 203, 18, 149, 236, 142, 25, 27, 128, 138, 140, 28, 169] }
 
 
 -------------------------------------------------------------------------------
