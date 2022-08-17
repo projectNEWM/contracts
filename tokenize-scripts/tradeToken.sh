@@ -6,9 +6,7 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 
 # Addresses
-sender_address=$(cat wallets/seller-wallet/payment.addr)
-sender_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-
+sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address=$(cat wallets/multisig-wallet/payment.addr)
 # receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
@@ -16,6 +14,7 @@ receiver_address=$(cat wallets/multisig-wallet/payment.addr)
 asset="1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    -babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
 change_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
@@ -27,7 +26,7 @@ echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --address ${sender_address} \
     --out-file tmp/sender_utxo.json
 
@@ -48,8 +47,7 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${token_to_be_traded}" \
-    --required-signer-hash ${sender_pkh} \
-    --testnet-magic 1097911063)
+    --testnet-magic 2)
 
     # --tx-out="${change_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -61,15 +59,14 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    --testnet-magic 2
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --tx-file tmp/tx.signed

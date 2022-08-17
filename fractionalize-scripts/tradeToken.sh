@@ -23,7 +23,7 @@ echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --address ${sender_address} \
     --out-file tmp/sender_utxo.json
 
@@ -44,7 +44,7 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${token_to_be_traded}" \
-    --testnet-magic 1097911063)
+    --testnet-magic 2)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -58,11 +58,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    --testnet-magic 2
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --tx-file tmp/tx.signed

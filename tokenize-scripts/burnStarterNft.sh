@@ -15,6 +15,9 @@ policy_id=$(cat policy/starter.id)
 TOKEN_NAME=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="-1 ${policy_id}.${TOKEN_NAME}"
 
+seller_address_out="${seller_address} + 1301620 + 5500 5c58aad408cfe2d5221617a4941d2b352aa9b35491315c8d68519417.4f6e65566572794c6f6e67537472696e67466f7254657374436f6e7472616374"
+
+
 echo ""
 echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 
@@ -30,7 +33,7 @@ echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -44,6 +47,7 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_ut
 CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
 seller_tx_in=${TXIN::-8}
 
+
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -52,11 +56,12 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
+    --tx-out="${seller_address_out}" \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${collat_pkh} \
     --mint-script-file policy/policy.script \
     --mint="${MINT_ASSET}" \
-    --testnet-magic 1097911063)
+    --testnet-magic 2)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -71,13 +76,13 @@ ${cli} transaction sign \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    --testnet-magic 2
 #    
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --tx-file tmp/tx.signed
 
 # update start_info.json

@@ -52,20 +52,14 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [84, 104, 101, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 73, 115, 84, 104, 101, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
 
 -- check for nft here
 tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
-{-# INLINABLE flattenBuiltinByteString #-}
-flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-flattenBuiltinByteString [] = emptyByteString 
-flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
-
-{-# INLINABLE createBuiltinByteString #-}
-createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
-createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString |x <- intList]
+getValidatorHash :: PlutusV2.ValidatorHash
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [53, 223, 206, 198, 137, 8, 212, 42, 255, 13, 56, 246, 155, 79, 131, 235, 241, 42, 60, 178, 215, 252, 16, 67, 112, 36, 84, 215]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
@@ -84,6 +78,15 @@ multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteStri
 listOfPkh :: [PlutusV2.PubKeyHash]
 listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
 -------------------------------------------------------------------------------
+-- | Create a proper bytestring
+-------------------------------------------------------------------------------
+createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
+createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
+  where
+    flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+    flattenBuiltinByteString []     = emptyByteString 
+    flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
+-------------------------------------------------------------------------------
 -- | Simple Multisig
 -------------------------------------------------------------------------------
 checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
@@ -95,10 +98,9 @@ checkMultisig txInfo pkhs amt = loopSigs pkhs 0
       if ContextsV2.txSignedBy txInfo x
         then loopSigs xs (counter + 1)
         else loopSigs xs counter
-
-getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [3, 151, 204, 119, 12, 129, 177, 38, 4, 180, 206, 90, 213, 251, 181, 26, 0, 180, 197, 215, 70, 51, 229, 179, 69, 47, 65, 174]
-
+-------------------------------------------------------------------------------
+-- | Create the redeemer data object.
+-------------------------------------------------------------------------------
 data CustomRedeemerType = CustomRedeemerType
   { crtNewmPid :: PlutusV2.CurrencySymbol
   -- ^ The policy id from the minting script.

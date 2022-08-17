@@ -5,7 +5,7 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 
-TESTNET_MAGIC=1097911063
+TESTNET_MAGIC=2
 
 lock_script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_script_path="../nft-minting-contract/nft-minting-contract.plutus"

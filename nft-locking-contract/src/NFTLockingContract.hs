@@ -28,7 +28,6 @@
 module NFTLockingContract
   ( lockingContractScript
   , lockingContractScriptShortBs
-  , CustomDatumType
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -53,7 +52,7 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [164, 41, 115, 189, 213, 27, 58, 248, 178, 206, 124, 143, 246, 58, 68, 143, 212, 246, 40, 205, 78, 231, 162, 174, 187, 234, 169, 3] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [84, 104, 101, 80, 114, 111, 106, 101, 99, 116, 78, 101, 119, 77, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [116, 104, 105, 115, 73, 115, 84, 104, 101, 83, 116, 97, 114, 116, 101, 114, 84, 111, 107, 101, 110] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value
@@ -89,11 +88,6 @@ checkMultisig txInfo pkhs amt = loopSigs pkhs 0
         then loopSigs xs (counter + 1)
         else loopSigs xs counter
 -------------------------------------------------------------------------------
--- | A custom eq class for datum objects.
--------------------------------------------------------------------------------
-class Equiv a where
-  (===) :: a -> a -> Bool
--------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
 data CustomDatumType = CustomDatumType
@@ -106,16 +100,15 @@ data CustomDatumType = CustomDatumType
   }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 
--- old == new | minting
+checkDatumIncrease :: CustomDatumType -> CustomDatumType -> Bool
+checkDatumIncrease a b =  ( cdtNewmPid    a == cdtNewmPid b ) &&
+                          ( cdtNumber a + 1 == cdtNumber  b ) &&
+                          ( cdtPrefix     a == cdtPrefix  b )
+
+-- old === new | burning
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( cdtNewmPid    a == cdtNewmPid b ) &&
-           ( cdtNumber a + 1 == cdtNumber  b ) &&
-           ( cdtPrefix     a == cdtPrefix  b )
--- old === new | burning
-instance Equiv CustomDatumType where
-  {-# INLINABLE (===) #-}
-  a === b = ( cdtNewmPid a == cdtNewmPid b ) &&
+  a == b =  ( cdtNewmPid a == cdtNewmPid b ) &&
             ( cdtNumber  a == cdtNumber  b ) &&
             ( cdtPrefix  a == cdtPrefix  b )
 -------------------------------------------------------------------------------
@@ -177,61 +170,45 @@ mkValidator datum redeemer context =
     checkMintedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
-        _                -> False
+        _                -> traceIfFalse "Bad Mint" False
     
     -- burning stuff
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> False
+        _              -> traceIfFalse "Bad Burn" False
     
     -- datum stuff
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumIncreasing []     = traceIfFalse "No Datum Found" False
+    isEmbeddedDatumIncreasing []     = traceIfFalse "No Increasing Datum Found" False
     isEmbeddedDatumIncreasing (x:xs) =
       if PlutusV2.txOutValue x == validatingValue -- strict value continue
         then
           case PlutusV2.txOutDatum x of
-            -- datumless
-            PlutusV2.NoOutputDatum -> isEmbeddedDatumIncreasing xs
-            -- inline datum
+            PlutusV2.NoOutputDatum       -> isEmbeddedDatumIncreasing xs -- datumless
+            (PlutusV2.OutputDatumHash _) -> isEmbeddedDatumIncreasing xs -- embedded datum
+            -- inline datum only
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
                 Nothing     -> isEmbeddedDatumIncreasing xs
-                Just inline -> datum == inline
-            -- embedded datum
-            (PlutusV2.OutputDatumHash dh) -> 
-              case ContextsV2.findDatum dh info of
-                Nothing                  -> isEmbeddedDatumIncreasing xs
-                Just (PlutusV2.Datum d') -> 
-                  case PlutusTx.fromBuiltinData d' of
-                    Nothing       -> isEmbeddedDatumIncreasing xs
-                    Just embedded -> datum == embedded
+                Just inline -> checkDatumIncrease datum inline
         else isEmbeddedDatumIncreasing xs
 
     -- datum stuff
     isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumConstant []     = traceIfFalse "No Datum Found" False
+    isEmbeddedDatumConstant []     = traceIfFalse "No Constant Datum Found" False
     isEmbeddedDatumConstant (x:xs) =
       if PlutusV2.txOutValue x == validatingValue -- strict value continue
         then
           case PlutusV2.txOutDatum x of
-            -- datumless
-            PlutusV2.NoOutputDatum -> isEmbeddedDatumConstant xs
-            -- inline datum
+            PlutusV2.NoOutputDatum       -> isEmbeddedDatumConstant xs -- datumless
+            (PlutusV2.OutputDatumHash _) -> isEmbeddedDatumConstant xs -- embedded datum
+            -- inline datum only
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
                 Nothing     -> isEmbeddedDatumConstant xs
-                Just inline -> datum === inline
-            -- embedded datum
-            (PlutusV2.OutputDatumHash dh) -> 
-              case ContextsV2.findDatum dh info of
-                Nothing                  -> isEmbeddedDatumConstant xs
-                Just (PlutusV2.Datum d') -> 
-                  case PlutusTx.fromBuiltinData d' of
-                    Nothing       -> isEmbeddedDatumConstant xs
-                    Just embedded -> datum === embedded
+                Just inline -> datum == inline
         else isEmbeddedDatumConstant xs
 
 -------------------------------------------------------------------------------

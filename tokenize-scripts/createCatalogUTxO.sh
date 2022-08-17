@@ -5,7 +5,7 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 
-SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
+SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 2)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
 policy_id=$(cat policy/policy.id)
@@ -21,7 +21,7 @@ exit
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -44,7 +44,7 @@ FEE=$(${cli} transaction build \
     --tx-in ${seller_tx_in} \
     --tx-out="${sc_address_out}" \
     --tx-out-inline-datum-file data/current_datum.json  \
-    --testnet-magic 1097911063)
+    --testnet-magic 2)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -58,11 +58,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    --testnet-magic 2
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --tx-file tmp/tx.signed

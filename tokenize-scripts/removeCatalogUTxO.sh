@@ -5,8 +5,9 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
+script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 2)
 seller_address=$(cat wallets/seller-wallet/payment.addr)
+buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
@@ -27,25 +28,25 @@ echo "Exit OUTPUT: "${seller_address_out}
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
-    --address ${seller_address} \
-    --out-file tmp/seller_utxo.json
+    --testnet-magic 2 \
+    --address ${buyer_address} \
+    --out-file tmp/buyer_utxo.json
 
-TXNS=$(jq length tmp/seller_utxo.json)
+TXNS=$(jq length tmp/buyer_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
 collateral_tx_in=${CTXIN::-19}
 seller_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --out-file tmp/script_utxo.json
 # transaction variables
 TXNS=$(jq length tmp/script_utxo.json)
@@ -60,7 +61,7 @@ script_tx_in=${TXIN::-8}
 script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-collat_utxo="87a43ee3889f827356a23a7459ef5f9eaf843880da1996d1b68595fb4171f63c" # in collat wallet
+collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -79,7 +80,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${deleg_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --testnet-magic 1097911063)
+    --testnet-magic 2)
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -90,16 +91,17 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --signing-key-file wallets/delegator-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    --testnet-magic 2
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    --testnet-magic 2 \
     --tx-file tmp/tx.signed
