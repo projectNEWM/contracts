@@ -60,7 +60,7 @@ getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [69, 127, 202, 155, 227, 204, 124, 62, 229, 134, 9, 122, 86, 32, 174, 40, 232, 77, 10, 132, 127, 140, 30, 40, 250, 252, 90, 106]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [212, 245, 213, 219, 51, 183, 150, 135, 175, 49, 146, 162, 110, 202, 154, 22, 157, 178, 120, 49, 211, 51, 58, 52, 155, 39, 9, 86]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------

@@ -31,23 +31,22 @@ module CheckFuncs
   , createBuiltinByteString
   ) where
 import qualified Plutus.V2.Ledger.Api        as PlutusV2
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 1
 -}
 -------------------------------------------------------------------------
--- | Appends two bytestrings together from a list, element by element
--------------------------------------------------------------------------
-flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-flattenBuiltinByteString [] = emptyByteString 
-flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
--------------------------------------------------------------------------
 -- | Creates a proper BuiltinByteString.
 -------------------------------------------------------------------------
 createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
 createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
+  where
+    -- | Appends two bytestrings together from a list, element by element
+    flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
+    flattenBuiltinByteString []     = emptyByteString 
+    flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
 -------------------------------------------------------------------------------
 -- | Force a number of inputs to have datums
 -------------------------------------------------------------------------------

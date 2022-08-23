@@ -4,8 +4,7 @@ set -e
 # SET UP VARS HERE
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-
-TESTNET_MAGIC=1097911063
+testnet_magic=$(cat ../testnet.magic)
 
 lock_script_path="../locking-contract/locking-contract.plutus"
 mint_script_path="../minting-contract/minting-contract.plutus"
@@ -38,7 +37,7 @@ echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${TESTNET_MAGIC} \
+    --testnet-magic ${testnet_magic} \
     --address ${reference_address} \
     --out-file tmp/reference_utxo.json
 
@@ -63,7 +62,7 @@ FEE=$(${cli} transaction build \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${mint_script_path} \
-    --testnet-magic ${TESTNET_MAGIC})
+    --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -77,11 +76,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-reference-utxo.signed \
-    --testnet-magic ${TESTNET_MAGIC}
+    --testnet-magic ${testnet_magic}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${TESTNET_MAGIC} \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx-reference-utxo.signed
