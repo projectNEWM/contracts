@@ -3,12 +3,16 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
-script_path="../nft-locking-contract/nft-locking-contract.plutus"
+testnet_magic=$(cat ../testnet.magic)
 
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 2)
+script_path="../nft-locking-contract/nft-locking-contract.plutus"
+script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+#
 seller_address=$(cat wallets/seller-wallet/payment.addr)
-buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+#
+buyer_address=$(cat wallets/buyer-wallet/payment.addr)
+#
 deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
 echo ""
@@ -19,8 +23,8 @@ policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${policy_id}.${token_name}"
-seller_address_out="${seller_address} + 5000000 + ${START_ASSET}"
-echo "Exit OUTPUT: "${seller_address_out}
+buyer_address_out="${buyer_address} + 5000000 + ${START_ASSET}"
+echo "Exit OUTPUT: "${buyer_address_out}
 
 #
 # exit
@@ -28,7 +32,7 @@ echo "Exit OUTPUT: "${seller_address_out}
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
@@ -46,7 +50,7 @@ seller_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --out-file tmp/script_utxo.json
 # transaction variables
 TXNS=$(jq length tmp/script_utxo.json)
@@ -68,7 +72,7 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
+    --change-address ${buyer_address} \
     --tx-in ${seller_tx_in} \
     --tx-in-collateral="${collat_utxo}#0" \
     --tx-in ${script_tx_in}  \
@@ -76,11 +80,11 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file data/exit_redeemer.json \
-    --tx-out="${seller_address_out}" \
+    --tx-out="${buyer_address_out}" \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${deleg_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --testnet-magic 2)
+    --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -97,11 +101,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/delegator-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 2
+    --testnet-magic ${testnet_magic}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed

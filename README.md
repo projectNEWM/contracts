@@ -2,7 +2,8 @@
 
 A collection of contracts used my Project Newm.
 
-- NEEDS UPDATE FOR MVP
+
+- @TODO: README NEEDS UPDATE FOR MVP
 
 # E2E Testing
 

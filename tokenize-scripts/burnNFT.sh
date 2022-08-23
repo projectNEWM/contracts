@@ -3,10 +3,14 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
+
+testnet_magic=$(cat ../testnet.magic)
+
+
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_path="../nft-minting-contract/nft-minting-contract.plutus"
 
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 2)
+script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
@@ -34,7 +38,7 @@ echo "Script OUTPUT: "${script_address_out}
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
@@ -52,7 +56,7 @@ buyer_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --out-file tmp/script_utxo.json
 
 # transaction variables
@@ -97,16 +101,14 @@ FEE=$(${cli} transaction build \
     --tx-out-inline-datum-file data/next_datum.json \
     --required-signer-hash ${reference_pkh} \
     --required-signer-hash ${collat_pkh} \
+    --required-signer-hash ${buyer_pkh} \
     --mint="${MINT_ASSET}" \
     --mint-tx-in-reference="${script_ref_utxo}#2" \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/next_datum.json \
-    --testnet-magic 2)
+    --testnet-magic ${testnet_magic})
 
-    # --required-signer-hash ${collat_pkh} \
-    # --required-signer-hash ${seller_pkh} \
-    # --required-signer-hash ${deleg_pkh} \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
@@ -115,19 +117,17 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 # exit
 #
 echo -e "\033[0;36m Signing \033[0m"
-    # --signing-key-file wallets/delegator-wallet/payment.skey \
-    # --signing-key-file wallets/seller-wallet/payment.skey \
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 2
+    --testnet-magic ${testnet_magic}
 #    
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed

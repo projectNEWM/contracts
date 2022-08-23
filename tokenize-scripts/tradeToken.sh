@@ -4,29 +4,33 @@ set -e
 # SET UP VARS HERE
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
+testnet_magic=$(cat ../testnet.magic)
+
 
 # Addresses
-sender_address=$(cat wallets/buyer-wallet/payment.addr)
+sender_address=$(cat wallets/seller-wallet/payment.addr)
 receiver_address=$(cat wallets/multisig-wallet/payment.addr)
 # receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
 # Define Asset to be printed here
-asset="1 982f93a0efde8edd0e9af400da083e91d98e1d5b4a77a07938a4de4f.74686973697361766572796c6f6e67737472696e67666f7274657374696e3130"
+asset="5500 5c58aad408cfe2d5221617a4941d2b352aa9b35491315c8d68519417.4f6e65566572794c6f6e67537472696e67466f7254657374436f6e7472616374"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
-    -babbage-era \
+    --babbage-era \
     --protocol-params-file tmp/protocol.json \
+    --tx-out-datum-hash-value 42 \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
-change_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
+change_to_be_traded="${sender_address} + ${min_utxo} + ${asset}"
 token_to_be_traded="${receiver_address} + 15000000"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
+echo -e "\nChange:\n" ${change_to_be_traded}
 #
 # exit
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --address ${sender_address} \
     --out-file tmp/sender_utxo.json
 
@@ -47,7 +51,8 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${token_to_be_traded}" \
-    --testnet-magic 2)
+    --tx-out="${change_to_be_traded}" \
+    --testnet-magic ${testnet_magic})
 
     # --tx-out="${change_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -59,14 +64,14 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 2
+    --testnet-magic ${testnet_magic}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed

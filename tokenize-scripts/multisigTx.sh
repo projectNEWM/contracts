@@ -26,7 +26,7 @@ echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --address ${sender_address} \
     --out-file tmp/sender_utxo.json
 
@@ -51,7 +51,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${token_to_be_traded}" \
     --required-signer-hash c9c81aeb38d02aa34b70e42a90e88435a729ea62d24b1eaeedf68e09 \
     --required-signer-hash a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439 \
-    --testnet-magic 2)
+    --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -65,13 +65,13 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #     --tx-body-file tmp/tx.draft \
 #     --signing-key-file wallets/buyer-wallet/payment.skey \
 #     --out-file tmp/addr1.witness \
-#     --testnet-magic 2
+#     --testnet-magic ${testnet_magic}
 
 # cardano-cli transaction witness \
 #     --tx-body-file tmp/tx.draft \
 #     --signing-key-file wallets/seller-wallet/payment.skey \
 #     --out-file tmp/addr2.witness \
-#     --testnet-magic 2
+#     --testnet-magic ${testnet_magic}
 
 # cardano-cli transaction assemble \
 #     --tx-body-file tmp/tx.draft \
@@ -86,11 +86,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 2
+    --testnet-magic ${testnet_magic}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed

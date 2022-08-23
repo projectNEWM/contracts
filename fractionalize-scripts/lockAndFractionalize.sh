@@ -3,11 +3,13 @@ set -e
 
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
+testnet_magic=$(cat ../testnet.magic)
+
 #
 script_path="../locking-contract/locking-contract.plutus"
 mint_path="../minting-contract/minting-contract.plutus"
-
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 2)
+#
+script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
 deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
@@ -21,8 +23,9 @@ SC_ASSET="1 ${nft_id}.4e65774d5f30"
 #
 MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-    --alonzo-era \
+    --babbage-era \
     --protocol-params-file tmp/protocol.json \
+    --tx-out-inline-datum-value 42 \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
@@ -34,7 +37,7 @@ echo "Mint OUTPUT: "${buyer_address_out}
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
@@ -52,7 +55,7 @@ buyer_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --out-file tmp/script_utxo.json
 
 # transaction variables
@@ -94,7 +97,7 @@ FEE=$(${cli} transaction build \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/datum.json \
-    --testnet-magic 2)
+    --testnet-magic ${testnet_magic})
 
     # --tx-out-datum-embed-file data/datum.json \
     # --spending-reference-tx-in-datum-file data/datum.json \
@@ -112,11 +115,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 2
+    --testnet-magic ${testnet_magic}
 #    
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 2 \
+    --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
