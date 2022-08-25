@@ -11,17 +11,24 @@ mint_path="../minting-contract/minting-contract.plutus"
 #
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
-deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
+deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 policy_id=$(cat ../minting-contract/policy.id)
 nft_id=$(cat ../nft-minting-contract/policy.id)
 #
-SC_ASSET="1 ${nft_id}.4e65774d5f30"
+
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
+token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
+
+name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+
+
+SC_ASSET="1 ${nft_id}.${name}"
 #
-MINT_ASSET="100000000 ${policy_id}.4e65774d5f30"
+MINT_ASSET="100000000 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
@@ -68,7 +75,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
@@ -99,8 +106,6 @@ FEE=$(${cli} transaction build \
     --mint-reference-tx-in-redeemer-file data/datum.json \
     --testnet-magic ${testnet_magic})
 
-    # --tx-out-datum-embed-file data/datum.json \
-    # --spending-reference-tx-in-datum-file data/datum.json \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
@@ -123,3 +128,6 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
+
+
+echo -e "\033[0;35m THE TOKENIZED OBJECT HAS BEEN FRACTIONALIZED \033[0m"

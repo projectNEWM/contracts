@@ -1,17 +1,27 @@
 #!/bin/bash
 set -e
 if [[ $# -eq 0 ]] ; then
-    echo 'No Token Name Supplied'
+    echo 'Please Supply A Token Name That Will Be Used For The Starter NFT And The Catalog Name'
     exit 1
 fi
 # Complete Build
 echo -e "\033[1;35m Starting... \033[0m" 
 
+pkh1=$(cat start_info.json | jq -r .multisig1)
+pkh2=$(cat start_info.json | jq -r .multisig2)
+pkh3=$(cat start_info.json | jq -r .multisig3)
+
 # set up start info
+variable=${pkh1}; jq --arg variable "$variable" '.scripts[0].keyHash=$variable' tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy-new.script
+mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.script
+variable=${pkh2}; jq --arg variable "$variable" '.scripts[1].keyHash=$variable' tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy-new.script
+mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.script
+variable=${pkh3}; jq --arg variable "$variable" '.scripts[2].keyHash=$variable' tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy-new.script
+mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.script
+
 cardano-cli transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
 policy_id=$(cat tokenize-scripts/policy/starter.id)
-# Select starter NFT token
-# tkn_name="ItsTheStarterTokenForProjectNewM"
+
 tkn_name=${1}
 tkn_name=$(echo ${tkn_name:0:32})
 echo -e "\033[1;36m Token Name: ${tkn_name} \033[0m"
@@ -24,8 +34,15 @@ mv start_info-new.json start_info.json
 variable=${token_name}; jq --arg variable "$variable" '.starterTkn=$variable' start_info.json > start_info-new.json
 mv start_info-new.json start_info.json
 
-# exit
 
+variable=${token_name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' tokenize-scripts/data/current_datum.json > tokenize-scripts/data/current_datum-new.json
+mv tokenize-scripts/data/current_datum-new.json tokenize-scripts/data/current_datum.json
+variable=${token_name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' tokenize-scripts/data/next_datum.json > tokenize-scripts/data/next_datum-new.json
+mv tokenize-scripts/data/next_datum-new.json tokenize-scripts/data/next_datum.json
+
+#
+# exit
+#
 # starter nft data
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterPid);s=binascii.unhexlify(a);print([x for x in s])" > start.pid
 python3 -c "import binascii;a=$(cat start_info.json | jq .starterTkn);s=binascii.unhexlify(a);print([x for x in s])" > start.tkn

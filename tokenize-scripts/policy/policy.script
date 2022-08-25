@@ -1,8 +1,7 @@
 {
   "type": "atLeast",
   "required": 2,
-  "scripts":
-  [
+  "scripts": [
     {
       "type": "sig",
       "keyHash": "8b1c1fc2a84a7aa8546a4f20f9d6f5edcb06e593263688742b774e39"

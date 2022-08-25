@@ -10,18 +10,23 @@ mint_path="../minting-contract/minting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
-deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
+deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 policy_id=$(cat ../minting-contract/policy.id)
 nft_id=$(cat ../nft-minting-contract/policy.id)
 
 #
-SC_ASSET="1 ${nft_id}.4e65774d5f30"
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
+token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
+
+name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+
+SC_ASSET="1 ${nft_id}.${name}"
 #
-BURN_ASSET="-100000000 ${policy_id}.4e65774d5f30"
+BURN_ASSET="-100000000 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
@@ -67,8 +72,8 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 # exit
-collat=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+collat=$(${cli} transaction txid --tx-file tmp/tx.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
@@ -119,3 +124,11 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
+
+echo -e "\033[0;36m Prepping References  \033[0m"
+
+cd ../tokenize-scripts
+./00_createReferenceScript.sh
+
+echo -e "\033[0;35m THE FRACTIONALIZED OBJECT HAS BEEN SOLIDIFIED \033[0m"
+echo -e "\033[0;35m PLEASE MOVE TO THE TOKENIZATION FOLDER \033[0m"

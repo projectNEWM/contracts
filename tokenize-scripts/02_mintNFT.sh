@@ -15,17 +15,28 @@ ft_script_path="../locking-contract/locking-contract.plutus"
 ft_script_address=$(${cli} address build --payment-script-file ${ft_script_path} --testnet-magic ${testnet_magic})
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 #
-deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
+deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
 #
 policy_id=$(cat ../nft-minting-contract/policy.id)
 #
-name=$(echo -n "NewM_0" | xxd -ps)
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
+token_number=$(cat data/current_datum.json | jq -r .fields[1].int)
+
+name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+
+variable=${name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
+mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
+
+
+# echo $name
+# exit
+
 MINT_ASSET="1 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -50,19 +61,19 @@ echo "Mint OUTPUT: "${buyer_address_out}
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
-    --address ${buyer_address} \
-    --out-file tmp/buyer_utxo.json
+    --address ${seller_address} \
+    --out-file tmp/seller_utxo.json
 
-TXNS=$(jq length tmp/buyer_utxo.json)
+TXNS=$(jq length tmp/seller_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
 collateral_tx_in=${CTXIN::-19}
-buyer_tx_in=${TXIN::-8}
+seller_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -80,7 +91,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
@@ -91,9 +102,9 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${buyer_address} \
+    --change-address ${seller_address} \
     --tx-in-collateral="${collat_utxo}#0" \
-    --tx-in ${buyer_tx_in} \
+    --tx-in ${seller_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -122,7 +133,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/delegator-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
@@ -135,3 +146,11 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
+
+echo -e "\033[0;36m Prepping References  \033[0m"
+cd ../fractionalize-scripts
+./createReferenceScript.sh
+
+echo -e "\033[0;35m THE OBJECT HAS BEEN TOKENIZED \033[0m"
+
+echo -e "\033[0;35m PLEASE MOVE TO THE FRACTIONALIZATION FOLDER \033[0m"

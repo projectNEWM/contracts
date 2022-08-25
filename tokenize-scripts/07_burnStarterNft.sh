@@ -10,9 +10,9 @@ mint_path="policy/policy.script"
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
-collat_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
+seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
 policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
@@ -27,18 +27,18 @@ echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
-    --address ${buyer_address} \
-    --out-file tmp/buyer_utxo.json
+    --address ${seller_address} \
+    --out-file tmp/seller_utxo.json
 
-TXNS=$(jq length tmp/buyer_utxo.json)
+TXNS=$(jq length tmp/seller_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
-buyer_tx_in=${TXIN::-8}
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
+CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
+seller_tx_in=${TXIN::-8}
 
 
 # exit
@@ -47,8 +47,8 @@ FEE=$(${cli} transaction build \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --change-address ${buyer_address} \
-    --tx-in ${buyer_tx_in} \
+    --change-address ${seller_address} \
+    --tx-in ${seller_tx_in} \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${buyer_pkh} \
     --required-signer-hash ${collat_pkh} \

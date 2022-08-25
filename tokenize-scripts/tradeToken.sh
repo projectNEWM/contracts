@@ -8,7 +8,7 @@ testnet_magic=$(cat ../testnet.magic)
 
 
 # Addresses
-sender_address=$(cat wallets/seller-wallet/payment.addr)
+sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address=$(cat wallets/multisig-wallet/payment.addr)
 # receiver_address="addr_test1qrxm0qpeek38dflguvrpp87hhewthd0mda44tnd45rjxqdt2s7gj5l4pam3pdeckkp7jwx8dsxelvq3ypv2ggzet9wcsxrp7pu"
 
@@ -20,7 +20,7 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out-datum-hash-value 42 \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
-change_to_be_traded="${sender_address} + ${min_utxo} + ${asset}"
+change_to_be_traded="${receiver_address} + ${min_utxo} + ${asset}"
 token_to_be_traded="${receiver_address} + 15000000"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
@@ -64,7 +64,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic ${testnet_magic}

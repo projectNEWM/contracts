@@ -5,6 +5,8 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
+mkdir -p tmp
+${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
 
 lock_script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_script_path="../nft-minting-contract/nft-minting-contract.plutus"

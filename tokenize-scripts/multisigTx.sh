@@ -61,19 +61,19 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 # exit
 #
 
-# cardano-cli transaction witness \
+# ${cli} transaction witness \
 #     --tx-body-file tmp/tx.draft \
 #     --signing-key-file wallets/buyer-wallet/payment.skey \
 #     --out-file tmp/addr1.witness \
 #     --testnet-magic ${testnet_magic}
 
-# cardano-cli transaction witness \
+# ${cli} transaction witness \
 #     --tx-body-file tmp/tx.draft \
 #     --signing-key-file wallets/seller-wallet/payment.skey \
 #     --out-file tmp/addr2.witness \
 #     --testnet-magic ${testnet_magic}
 
-# cardano-cli transaction assemble \
+# ${cli} transaction assemble \
 #     --tx-body-file tmp/tx.draft \
 #     --witness-file tmp/addr1.witness \
 #     --witness-file tmp/addr2.witness \

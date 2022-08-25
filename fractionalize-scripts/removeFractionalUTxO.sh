@@ -9,9 +9,9 @@ testnet_magic=$(cat ../testnet.magic)
 script_path="../locking-contract/locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
-buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
-deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
+buyer_address=$(cat wallets/seller-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
 
 buyer_address_out="${buyer_address} + 5000000"
@@ -20,7 +20,7 @@ echo "Exit OUTPUT: "${buyer_address_out}
 #
 echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 echo "Use unlockAndSolidify.sh"
-exit
+# exit
 #
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
@@ -55,7 +55,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
@@ -88,7 +88,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/delegator-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \

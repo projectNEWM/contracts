@@ -13,13 +13,18 @@ mint_path="../nft-minting-contract/nft-minting-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 #
-deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
+deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
 policy_id=$(cat ../nft-minting-contract/policy.id)
 #
-name=$(echo -n "NewM_0" | xxd -ps)
+
+token_name=$(cat ../start_info.json | jq -r .starterTkn)
+token_number=$(cat data/current_datum.json | jq -r .fields[1].int)
+
+name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+
 MINT_ASSET="-1 ${policy_id}.${name}"
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 #     --protocol-params-file tmp/protocol.json \
@@ -69,11 +74,11 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-# collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-collat_utxo=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+# collat_utxo=$(${cli} transaction txid --tx-file tmp/tx.signed)
+collat_utxo=$(${cli} transaction txid --tx-file tmp/tx.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 # collat info
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
@@ -131,3 +136,6 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
+
+
+echo -e "\033[0;35m THE TOKENIZED OBJECT HAS BEEN BURNED \033[0m"

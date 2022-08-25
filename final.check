@@ -1,6 +1,4 @@
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./fractionalize-scripts/data/hash.hashes
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./fractionalize-scripts/data/policy.hashes
-7f326fe4d9cd5598a95434d941df3939a646deba6d810a23043579da8fe7259d  ./hash.hashes
-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./tokenize-scripts/hash.hashes
-7102b36d82e5f418161451f3299b79fbab70b3febb91b249fdf4325a6eadbc00  ./tokenize-scripts/policy.hashes
-1bc15478c73ccb7ee3bcec4a859888fe91a8832426b2b584160247fdf0576613  ./policy.hashes
+5d6fe32c191071f05a810c4db57ae9af1b3300880c7d6c500c90ccd68b322791  ./hash.hashes
+a34ced01939b91745f968eee100cac7486cfceef2c169a49f5b92eeed654ec20  ./policy.hashes
