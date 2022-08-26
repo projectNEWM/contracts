@@ -52,14 +52,14 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [78, 69, 87, 77, 95] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [67, 97, 116, 97, 108, 111, 103, 35] }
 
 -- check for nft here
 tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [52, 181, 247, 30, 234, 45, 131, 236, 205, 188, 139, 44, 183, 129, 18, 104, 150, 201, 102, 180, 53, 92, 61, 255, 246, 135, 247, 62]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [99, 12, 228, 102, 87, 201, 242, 139, 77, 126, 219, 54, 12, 229, 164, 211, 183, 209, 179, 51, 75, 124, 210, 69, 84, 169, 195, 35]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }

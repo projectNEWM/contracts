@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# set -e
 if [[ $# -eq 0 ]] ; then
     echo 'Please Supply A Token Name That Will Be Used For The Starter NFT And The Catalog Name'
     exit 1
