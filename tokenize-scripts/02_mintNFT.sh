@@ -5,6 +5,9 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
 
+# get params
+${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+
 #
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
@@ -19,6 +22,9 @@ buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buye
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+#
+collat_address=$(cat wallets/collat-wallet/payment.addr)
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 #
 deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
@@ -41,8 +47,7 @@ MINT_ASSET="1 ${policy_id}.${name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-value 42 \
-    --tx-out="${buyer_address} ${MINT_ASSET}" | tr -dc '0-9')
+    --tx-out="${buyer_address} + 5000000 + ${MINT_ASSET}" | tr -dc '0-9')
 #
 start_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
@@ -74,7 +79,7 @@ echo "Mint OUTPUT: "${buyer_address_out}
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
+echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
     --address ${seller_address} \
@@ -87,9 +92,20 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
-collateral_tx_in=${CTXIN::-19}
 seller_tx_in=${TXIN::-8}
+
+echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
+${cli} query utxo \
+    --testnet-magic ${testnet_magic} \
+    --address ${collat_address} \
+    --out-file tmp/collat_utxo.json
+
+TXNS=$(jq length tmp/collat_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
+   exit;
+fi
+collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -108,9 +124,6 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_ut
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
-# collat info
-collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -119,7 +132,7 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
-    --tx-in-collateral="${collat_utxo}#0" \
+    --tx-in-collateral="${collat_utxo}" \
     --tx-in ${seller_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
@@ -163,9 +176,10 @@ ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
 
-echo -e "\033[0;36m Prepping References  \033[0m"
-cd ../fractionalize-scripts
-./createReferenceScript.sh
+# FIXME Quinn please!
+# echo -e "\033[0;36m Prepping References  \033[0m"
+# cd ../fractionalize-scripts
+# ./createReferenceScript.sh
 
 echo -e "\033[0;35m THE OBJECT HAS BEEN TOKENIZED \033[0m"
 
