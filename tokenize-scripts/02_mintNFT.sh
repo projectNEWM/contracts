@@ -50,14 +50,13 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${start_id}.${token_name}"
 
 script_address_out="${script_address} + 5000000 + ${START_ASSET}"
-
-
 starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/current_datum.json | tr -dc '0-9')
 
+script_address_out="${script_address} + 45000000000 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
 fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \

@@ -33,7 +33,16 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-value 42 \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
 
-buyer_address_out="${buyer_address} + 5000000 + ${SC_ASSET}"
+script_address_out="${script_address} + 45000000000 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
+
+fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/datum.json | tr -dc '0-9')
+
+
+buyer_address_out="${buyer_address} + ${fractional_nft_min_utxo} + ${SC_ASSET}"
 echo "Artist OUTPUT: "${buyer_address_out}
 #
 # exit

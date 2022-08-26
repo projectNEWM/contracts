@@ -12,21 +12,39 @@ mint_script_path="../minting-contract/minting-contract.plutus"
 # Addresses
 reference_address=$(cat wallets/reference-wallet/payment.addr)
 
+# lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+#     --babbage-era \
+#     --protocol-params-file tmp/protocol.json \
+#     --tx-out-reference-script-file ${lock_script_path} \
+#     --tx-out="${reference_address} 0" | tr -dc '0-9')
+# echo "Locking Min Fee" ${lock_min_utxo}
+
+# mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+#     --babbage-era \
+#     --protocol-params-file tmp/protocol.json \
+#     --tx-out-reference-script-file ${mint_script_path} \
+#     --tx-out="${reference_address} 0" | tr -dc '0-9')
+# echo "Minting Min Fee" ${mint_min_utxo}
+# lock_value=$((${lock_min_utxo} + 1000000))
+# mint_value=$((${mint_min_utxo} + 1000000))
+
 lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${lock_script_path} \
-    --tx-out="${reference_address} 0" | tr -dc '0-9')
+    --tx-out="${reference_address} 5000000" | tr -dc '0-9')
 echo "Locking Min Fee" ${lock_min_utxo}
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${mint_script_path} \
-    --tx-out="${reference_address} 0" | tr -dc '0-9')
+    --tx-out="${reference_address} 5000000" | tr -dc '0-9')
 echo "Minting Min Fee" ${mint_min_utxo}
-lock_value=$((${lock_min_utxo} + 1000000))
-mint_value=$((${mint_min_utxo} + 1000000))
+
+mint_value=$mint_min_utxo
+lock_value=$lock_min_utxo
+
 lock_script_reference_utxo="${reference_address} + ${lock_value}"
 mint_script_reference_utxo="${reference_address} + ${mint_value}"
 

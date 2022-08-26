@@ -24,7 +24,7 @@ policy_id=$(cat policy/starter.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${policy_id}.${token_name}"
 seller_address_out="${seller_address} + 5000000 + ${START_ASSET}"
-echo "Exit OUTPUT: "${seller_address_out}
+# echo "Exit OUTPUT: "${seller_address_out}
 
 #
 # exit

@@ -13,7 +13,7 @@ SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
 BUYER_ADDRESS=$(cat wallets/buyer-wallet/payment.addr)
 REFERENCE_ADDRESS=$(cat wallets/reference-wallet/payment.addr)
 COLLAT_ADDRESS=$(cat wallets/collat-wallet/payment.addr)
-MULTISIG_ADDRESS=$(cat wallets/multisig-wallet/payment.addr)
+# MULTISIG_ADDRESS=$(cat wallets/multisig-wallet/payment.addr)
 
 #
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
@@ -54,7 +54,6 @@ echo -e "\n${COLLAT_ADDRESS}\n";
 ${cli} query utxo --address ${COLLAT_ADDRESS} --testnet-magic ${testnet_magic}
 echo -e "\033[0m"
 
-# # #
 # echo
 # echo -e "\033[1;34m Multisig Address: \033[0m" 
 # echo -e "\n \033[1;34m ${MULTISIG_ADDRESS} \033[0m \n";
