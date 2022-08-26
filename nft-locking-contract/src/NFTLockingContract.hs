@@ -52,7 +52,7 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [78, 69, 87, 77, 95] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [67, 97, 116, 97, 108, 111, 103, 35] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value
@@ -82,7 +82,7 @@ checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
 checkMultisig txInfo pkhs amt = loopSigs pkhs 0
   where
     loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
-    loopSigs []     counter = traceIfFalse "Not Enough Signers" counter >= amt
+    loopSigs []     counter = traceIfFalse "Not Enough Signers" (counter >= amt)
     loopSigs (x:xs) counter = 
       if ContextsV2.txSignedBy txInfo x
         then loopSigs xs (counter + 1)
