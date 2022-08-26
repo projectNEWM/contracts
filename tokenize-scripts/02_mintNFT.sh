@@ -176,11 +176,6 @@ ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
 
-# FIXME Quinn please!
-# echo -e "\033[0;36m Prepping References  \033[0m"
-# cd ../fractionalize-scripts
-# ./createReferenceScript.sh
-
 echo -e "\033[0;35m THE OBJECT HAS BEEN TOKENIZED \033[0m"
 
 echo -e "\033[0;35m PLEASE MOVE TO THE FRACTIONALIZATION FOLDER \033[0m"
