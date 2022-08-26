@@ -71,8 +71,8 @@ FEE=$(${cli} transaction build \
     --tx-out-inline-datum-file data/current_datum.json  \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${multisig1_pkh} \
-    --required-signer-hash ${multisig1_pkh} \
-    --required-signer-hash ${multisig1_pkh} \
+    --required-signer-hash ${multisig2_pkh} \
+    --required-signer-hash ${multisig3_pkh} \
     --mint-script-file policy/policy.script \
     --mint="${MINT_ASSET}" \
     --testnet-magic ${testnet_magic})

@@ -2,10 +2,10 @@
   "__comment1__": "This is the primary NEWM signer for minting / burning",
   "delegator": "7c1fd41de14a3997825afa2d54a65edb7d253c95c83d400c6366dea4",
   "__comment2__": "These are the multisig signers for the minting policy",
-  "multisig1": "8b1c1fc2a84a7aa8546a4f20f9d6f5edcb06e593263688742b774e39",
-  "multisig2": "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439",
-  "multisig3": "c9c81aeb38d02aa34b70e42a90e88435a729ea62d24b1eaeedf68e09",
+  "multisig1": "9693df66caa6ae115d5f187eec6792249e645666074c4c4d73f79384",
+  "multisig2": "d5f741060fcbaa74ee4d9e4574fcb048d3c5384ec0ce499e0889be53",
+  "multisig3": "439e52018da81413f09284d96133a059c104de462a0b1d25d3726a97",
   "__comment3__": "These are auto filled",
-  "starterPid": "a42973bdd51b3af8b2ce7c8ff63a448fd4f628cd4ee7a2aebbeaa903",
-  "starterTkn": "436174616c6f6723"
+  "starterPid": "26903de7dd94fdcb59fd2b5980a8ca4ff71f062f7ed25859cb26e87f",
+  "starterTkn": "4e45574d5f"
 }

@@ -14,6 +14,9 @@ script_address=$(${cli} address build --payment-script-file ${script_path} --tes
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
+multisig1_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig1.vkey)
+multisig2_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig2.vkey)
+multisig3_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig3.vkey)
 #
 deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
@@ -36,6 +39,16 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${start_id}.${token_name}"
 
 script_address_out="${script_address} + 5000000 + ${START_ASSET}"
+
+starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/current_datum.json | tr -dc '0-9')
+    
+echo "Starter NFT Min Fee: "${starter_nft_min_utxo}
+
+script_address_out="${script_address} + ${starter_nft_min_utxo} + ${START_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 # echo "Mint OUTPUT: "${buyer_address_out}
 #
@@ -86,6 +99,7 @@ collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" #
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 reference_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/reference-wallet/payment.vkey)
+delegator_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
 
 # exit
@@ -104,7 +118,9 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file data/burn_redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
-    --required-signer-hash ${reference_pkh} \
+    --required-signer-hash ${multisig1_pkh} \
+    --required-signer-hash ${multisig2_pkh} \
+    --required-signer-hash ${multisig3_pkh} \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${buyer_pkh} \
     --mint="${MINT_ASSET}" \
@@ -125,7 +141,9 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
-    --signing-key-file wallets/reference-wallet/payment.skey \
+    --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic ${testnet_magic}

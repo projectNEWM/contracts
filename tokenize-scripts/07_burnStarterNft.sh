@@ -13,7 +13,9 @@ buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-
+multisig1_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig1.vkey)
+multisig2_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig2.vkey)
+multisig3_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig3.vkey)
 policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 TOKEN_NAME=$(cat ../start_info.json | jq -r .starterTkn)
@@ -50,8 +52,9 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
     --required-signer-hash ${seller_pkh} \
-    --required-signer-hash ${buyer_pkh} \
-    --required-signer-hash ${collat_pkh} \
+    --required-signer-hash ${multisig1_pkh} \
+    --required-signer-hash ${multisig2_pkh} \
+    --required-signer-hash ${multisig3_pkh} \
     --mint-script-file policy/policy.script \
     --mint="${MINT_ASSET}" \
     --testnet-magic ${testnet_magic})
@@ -65,9 +68,10 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/seller-wallet/payment.skey \
-    --signing-key-file wallets/collat-wallet/payment.skey \
+    --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic ${testnet_magic}

@@ -50,7 +50,24 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 START_ASSET="1 ${start_id}.${token_name}"
 
 script_address_out="${script_address} + 5000000 + ${START_ASSET}"
-ft_script_address_out="${ft_script_address} + 5000000"
+
+
+starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/current_datum.json | tr -dc '0-9')
+
+fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file ../fractionalize-scripts/data/datum.json | tr -dc '0-9')
+    
+echo "Starter NFT Min Fee: "${starter_nft_min_utxo}
+
+script_address_out="${script_address} + ${starter_nft_min_utxo} + ${START_ASSET}"
+ft_script_address_out="${ft_script_address} + ${fractional_nft_min_utxo}"
 buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Token Script OUTPUT: "${script_address_out}
 echo "Fraction Script OUTPUT: "${ft_script_address_out}

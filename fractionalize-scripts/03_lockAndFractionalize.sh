@@ -36,6 +36,15 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${buyer_address} ${SC_ASSET}" | tr -dc '0-9')
 #
 script_address_out="${script_address} + 5000000 + ${SC_ASSET}"
+fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/datum.json | tr -dc '0-9')
+
+
+script_address_out="${script_address} + 1499880 + ${SC_ASSET}"
+
 buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${buyer_address_out}
@@ -111,7 +120,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
