@@ -23,14 +23,14 @@ lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${nft_lock_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "Locking Min Fee" ${lock_min_utxo}
+echo "NFT Locking Min Fee" ${lock_min_utxo}
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${nft_mint_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "Minting Min Fee" ${mint_min_utxo}
+echo "NFT Minting Min Fee" ${mint_min_utxo}
 
 echo
 nft_mint_value=$mint_min_utxo
@@ -43,14 +43,14 @@ lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "Locking Min Fee" ${lock_min_utxo}
+echo "FT Locking Min Fee" ${lock_min_utxo}
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-reference-script-file ${mint_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "Minting Min Fee" ${mint_min_utxo}
+echo "FT Minting Min Fee" ${mint_min_utxo}
 
 mint_value=$mint_min_utxo
 lock_value=$lock_min_utxo
@@ -81,58 +81,35 @@ HEXTXIN=${TXIN::-8}
 # echo $HEXTXIN
 # exit
 
-# split the utxo into two
-echo -e "\033[0;36m Building Tx \033[0m"
-FEE=$(${cli} transaction build \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
-    --tx-in ${HEXTXIN} \
-    --tx-out="${seller_address} + 100000000" \
-    --tx-out="${seller_address} + 100000000" \
-    --testnet-magic ${testnet_magic})
-
-echo -e "\033[0;36m Signing \033[0m"
-${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
-    --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx-1.signed \
-    --testnet-magic ${testnet_magic}
-#
-# exit
-#
-nextUTxO=$(cardano-cli transaction txid --tx-body-file tmp/tx.draft)
-# echo "First in the tx chain" $nextUTxO
-
-# chain two at a time
+# chain second set of reference scripts to the first
 echo -e "\033[0;36m Building Tx \033[0m"
 
+starting_seller_lovelace=$(jq '[.. | objects | .lovelace] | add' tmp/seller_utxo.json)
 
 ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#1" \
-    --tx-out="${seller_address} + 10000000" \
+    --tx-in ${HEXTXIN} \
+    --tx-out="${seller_address} + ${starting_seller_lovelace}" \
     --tx-out="${nft_lock_script_reference_utxo}" \
     --tx-out-reference-script-file ${nft_lock_script_path} \
     --tx-out="${nft_mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${nft_mint_script_path} \
-    --fee 0
-FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 1 --tx-out-count 3 --witness-count 1)
+    --fee 900000
+FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 # echo $fee
 # exit
-firstReturn=$((100000000 - ${nft_mint_value} - ${nft_lock_value} - ${fee}))
+firstReturn=$((${starting_seller_lovelace} - ${nft_mint_value} - ${nft_lock_value} - ${fee}))
 # echo $firstReturn
 # exit
 ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#1" \
+    --tx-in ${HEXTXIN} \
     --tx-out="${seller_address} + ${firstReturn}" \
     --tx-out="${nft_lock_script_reference_utxo}" \
     --tx-out-reference-script-file ${nft_lock_script_path} \
@@ -144,8 +121,12 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx-2.signed \
+    --out-file tmp/tx-1.signed \
     --testnet-magic ${testnet_magic}
+
+nextUTxO=$(cardano-cli transaction txid --tx-body-file tmp/tx.draft)
+echo "First in the tx chain" $nextUTxO
+
 #
 # exit
 #
@@ -154,27 +135,27 @@ ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#2" \
-    --tx-out="${seller_address} + 1000000" \
+    --tx-in="${nextUTxO}#0" \
+    --tx-out="${seller_address} + ${firstReturn}" \
     --tx-out="${lock_script_reference_utxo}" \
     --tx-out-reference-script-file ${lock_script_path} \
     --tx-out="${mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${mint_script_path} \
-    --fee 0
+    --fee 900000
 
-FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 1 --tx-out-count 3 --witness-count 1)
+FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 # echo $fee
 # exit
-secondReturn=$((100000000 - ${mint_value} - ${lock_value} - ${fee}))
+secondReturn=$((${firstReturn} - ${mint_value} - ${lock_value} - ${fee}))
 
 
 ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#2" \
+    --tx-in="${nextUTxO}#0" \
     --tx-out="${seller_address} + ${secondReturn}" \
     --tx-out="${lock_script_reference_utxo}" \
     --tx-out-reference-script-file ${lock_script_path} \
@@ -188,7 +169,7 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx-3.signed \
+    --out-file tmp/tx-2.signed \
     --testnet-magic ${testnet_magic}
 #
 # exit
@@ -202,9 +183,5 @@ ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx-2.signed
 
-${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
-    --tx-file tmp/tx-3.signed
-
-cp tmp/tx-2.signed tmp/tx-reference-utxo.signed
-cp tmp/tx-3.signed ../fractionalize-scripts/tmp/tx-reference-utxo.signed
+cp tmp/tx-1.signed tmp/tx-reference-utxo.signed
+cp tmp/tx-2.signed ../fractionalize-scripts/tmp/tx-reference-utxo.signed
