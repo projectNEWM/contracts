@@ -39,6 +39,9 @@ name=${token_name}$(echo -n "${token_number}" | xxd -ps)
 variable=${name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
 mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
 
+variable=${buyer_pkh}; jq --arg variable "$variable" '.fields[3].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
+mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
+
 
 # echo $name
 # exit

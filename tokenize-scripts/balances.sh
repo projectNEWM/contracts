@@ -7,6 +7,10 @@ testnet_magic=$(cat ../testnet.magic)
 #
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+#
+ft_script_path="../locking-contract/locking-contract.plutus"
+FT_SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${ft_script_path} --testnet-magic ${testnet_magic})
+
 
 #
 SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
@@ -21,9 +25,16 @@ ${cli} query tip --testnet-magic ${testnet_magic} | jq
 
 #
 echo
-echo -e "\033[1;35m Script Address:" 
+echo -e "\033[1;35m NFT Script Address:" 
 echo -e "\n${SCRIPT_ADDRESS}\n";
 ${cli} query utxo --address ${SCRIPT_ADDRESS} --testnet-magic ${testnet_magic}
+echo -e "\033[0m"
+
+#
+echo
+echo -e "\033[1;35m FT Script Address:" 
+echo -e "\n${FT_SCRIPT_ADDRESS}\n";
+${cli} query utxo --address ${FT_SCRIPT_ADDRESS} --testnet-magic ${testnet_magic}
 echo -e "\033[0m"
 
 #

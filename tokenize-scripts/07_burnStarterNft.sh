@@ -5,6 +5,9 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
 
+# get params
+${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+
 #
 mint_path="policy/policy.script"
 #
@@ -26,7 +29,7 @@ echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
 # exit
 #
 
-echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
+echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
     --address ${seller_address} \
@@ -39,7 +42,6 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
 seller_tx_in=${TXIN::-8}
 
 

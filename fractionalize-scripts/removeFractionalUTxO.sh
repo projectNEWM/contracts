@@ -12,7 +12,9 @@ script_address=$(${cli} address build --payment-script-file ${script_path} --tes
 buyer_address=$(cat wallets/seller-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
-
+#
+collat_address=$(cat wallets/collat-wallet/payment.addr)
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
 buyer_address_out="${buyer_address} + 5000000"
 echo "Exit OUTPUT: "${buyer_address_out}
@@ -36,9 +38,20 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
-collateral_tx_in=${CTXIN::-19}
 buyer_tx_in=${TXIN::-8}
+
+echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
+${cli} query utxo \
+    --testnet-magic ${testnet_magic} \
+    --address ${collat_address} \
+    --out-file tmp/collat_utxo.json
+
+TXNS=$(jq length tmp/collat_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
+   exit;
+fi
+collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -51,14 +64,10 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
-script_tx_in=${TXIN::-8}
+# only do the first one
+script_tx_in=$(jq -r 'keys[0]' tmp/script_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
-# collat info
-collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -67,7 +76,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
-    --tx-in-collateral="${collat_utxo}#0" \
+    --tx-in-collateral="${collat_utxo}" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \

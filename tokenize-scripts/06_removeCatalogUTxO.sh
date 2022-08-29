@@ -5,6 +5,9 @@ export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
 
+# get params
+${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
 #
@@ -12,6 +15,9 @@ seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
+#
+collat_address=$(cat wallets/collat-wallet/payment.addr)
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 #
 deleg_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 
@@ -43,9 +49,20 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/seller_utxo.json)
-collateral_tx_in=${CTXIN::-19}
 seller_tx_in=${TXIN::-8}
+
+echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
+${cli} query utxo \
+    --testnet-magic ${testnet_magic} \
+    --address ${collat_address} \
+    --out-file tmp/collat_utxo.json
+
+TXNS=$(jq length tmp/collat_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
+   exit;
+fi
+collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -62,10 +79,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-script_ref_utxo=$(cardano-cli transaction txid --tx-file tmp/tx-reference-utxo.signed)
-# collat info
-collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
+script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -74,7 +88,7 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
-    --tx-in-collateral="${collat_utxo}#0" \
+    --tx-in-collateral="${collat_utxo}" \
     --tx-in ${script_tx_in}  \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \

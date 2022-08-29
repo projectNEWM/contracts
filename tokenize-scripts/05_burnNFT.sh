@@ -6,11 +6,14 @@ cli=$(cat path_to_cli.sh)
 
 testnet_magic=$(cat ../testnet.magic)
 
+# get params
+${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
 
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_path="../nft-minting-contract/nft-minting-contract.plutus"
 
 script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+collat_address=$(cat wallets/collat-wallet/payment.addr)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
@@ -24,9 +27,9 @@ policy_id=$(cat ../nft-minting-contract/policy.id)
 #
 
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
-token_number=$(cat data/current_datum.json | jq -r .fields[1].int)
 
-name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+#pass in the token number to this script
+name=${token_name}$(echo -n "${1}" | xxd -ps)
 
 MINT_ASSET="-1 ${policy_id}.${name}"
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
@@ -66,10 +69,11 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
-CTXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in-collateral"' tmp/buyer_utxo.json)
-collateral_tx_in=${CTXIN::-19}
+# Gather only UTxO that are ada-only or are holding the correct NFT
+TXIN=$(jq -r --arg alltxin "" --arg policy_id "$policy_id" --arg name "$name" 'to_entries[] | select((.value.value | length < 2) or .value.value[$policy_id][$name] == 1) | .key | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
 buyer_tx_in=${TXIN::-8}
+
+echo "buyer_tx_in: $buyer_tx_in"
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -86,21 +90,26 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
+echo "script_tx_in: $script_tx_in"
 
-# collat_utxo=$(${cli} transaction txid --tx-file tmp/tx.signed)
-collat_utxo=$(${cli} transaction txid --tx-file tmp/tx.signed)
+echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
+${cli} query utxo \
+    --testnet-magic ${testnet_magic} \
+    --address ${collat_address} \
+    --out-file tmp/collat_utxo.json
+
+TXNS=$(jq length tmp/collat_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
+   exit;
+fi
+collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
+
 script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
-
-script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
-# collat info
-collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-collat_utxo="10e5b05d90199da3f7cb581f00926f5003e22aac8a3d5a33607cd4c57d13aaf3" # in collat wallet
-
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 reference_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/reference-wallet/payment.vkey)
 delegator_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
-
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -109,7 +118,7 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
-    --tx-in-collateral="${collat_utxo}#0" \
+    --tx-in-collateral="${collat_utxo}" \
     --tx-in ${buyer_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
