@@ -52,7 +52,7 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [78, 101, 119, 77, 95] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [115, 111, 109, 101, 115, 116, 97, 114, 116, 105, 110, 103, 116, 111, 107, 101, 110, 110, 97, 109, 101] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value

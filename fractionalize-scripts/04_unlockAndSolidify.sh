@@ -105,27 +105,27 @@ collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Building Tx \033[0m"
 
-echo "${cli} transaction build \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --out-file tmp/tx.draft \
-    --change-address ${buyer_address} \
-    --tx-in-collateral="${collat_utxo}" \
-    --tx-in ${buyer_tx_in} \
-    --tx-in ${script_tx_in} \
-    --spending-tx-in-reference="${script_ref_utxo}#1" \
-    --spending-plutus-script-v2 \
-    --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/unlock_redeemer.json \
-    --tx-out="${buyer_address_out}" \
-    --required-signer-hash ${deleg_pkh} \
-    --required-signer-hash ${collat_pkh} \
-    --mint="${BURN_ASSET}" \
-    --mint-tx-in-reference="${script_ref_utxo}#2" \
-    --mint-plutus-script-v2 \
-    --policy-id="${policy_id}" \
-    --mint-reference-tx-in-redeemer-file data/datum.json \
-    --testnet-magic ${testnet_magic}"
+# echo "${cli} transaction build \
+#     --babbage-era \
+#     --protocol-params-file tmp/protocol.json \
+#     --out-file tmp/tx.draft \
+#     --change-address ${buyer_address} \
+#     --tx-in-collateral="${collat_utxo}" \
+#     --tx-in ${buyer_tx_in} \
+#     --tx-in ${script_tx_in} \
+#     --spending-tx-in-reference="${script_ref_utxo}#1" \
+#     --spending-plutus-script-v2 \
+#     --spending-reference-tx-in-inline-datum-present \
+#     --spending-reference-tx-in-redeemer-file data/unlock_redeemer.json \
+#     --tx-out="${buyer_address_out}" \
+#     --required-signer-hash ${deleg_pkh} \
+#     --required-signer-hash ${collat_pkh} \
+#     --mint="${BURN_ASSET}" \
+#     --mint-tx-in-reference="${script_ref_utxo}#2" \
+#     --mint-plutus-script-v2 \
+#     --policy-id="${policy_id}" \
+#     --mint-reference-tx-in-redeemer-file data/datum.json \
+#     --testnet-magic ${testnet_magic}"
 
 FEE=$(${cli} transaction build \
     --babbage-era \

@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
-
+if [[ $# -eq 0 ]] ; then
+    echo 'Please Supply A Token Number'
+    exit 1
+fi
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 
