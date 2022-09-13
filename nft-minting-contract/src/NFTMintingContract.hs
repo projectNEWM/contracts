@@ -59,7 +59,7 @@ tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [28, 127, 219, 202, 8, 140, 247, 11, 24, 120, 84, 8, 219, 181, 80, 122, 154, 24, 247, 47, 100, 78, 216, 161, 143, 14, 174, 68]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [65, 77, 6, 214, 162, 69, 73, 122, 227, 143, 194, 170, 36, 63, 105, 186, 208, 187, 89, 137, 112, 221, 191, 70, 139, 154, 78, 111]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }

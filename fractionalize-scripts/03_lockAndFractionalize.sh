@@ -41,8 +41,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${buyer_address} + 5000000 + ${MINT_ASSET}" | tr -dc '0-9')
 
 #
-script_address_out="${script_address} + 45000000000 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
-
+script_address_out="${script_address} + 18446744073709551615 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
 fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
@@ -51,7 +50,6 @@ fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
 
 
 script_address_out="${script_address} + ${fractional_nft_min_utxo} + ${SC_ASSET}"
-
 buyer_address_out="${buyer_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Mint OUTPUT: "${buyer_address_out}

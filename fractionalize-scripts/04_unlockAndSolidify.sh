@@ -39,8 +39,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${buyer_address} + 5000000 + ${SC_ASSET}" | tr -dc '0-9')
 
-script_address_out="${script_address} + 45000000000 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
-
+script_address_out="${script_address} + 18446744073709551615 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
 fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
@@ -105,27 +104,6 @@ collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Building Tx \033[0m"
 
-# echo "${cli} transaction build \
-#     --babbage-era \
-#     --protocol-params-file tmp/protocol.json \
-#     --out-file tmp/tx.draft \
-#     --change-address ${buyer_address} \
-#     --tx-in-collateral="${collat_utxo}" \
-#     --tx-in ${buyer_tx_in} \
-#     --tx-in ${script_tx_in} \
-#     --spending-tx-in-reference="${script_ref_utxo}#1" \
-#     --spending-plutus-script-v2 \
-#     --spending-reference-tx-in-inline-datum-present \
-#     --spending-reference-tx-in-redeemer-file data/unlock_redeemer.json \
-#     --tx-out="${buyer_address_out}" \
-#     --required-signer-hash ${deleg_pkh} \
-#     --required-signer-hash ${collat_pkh} \
-#     --mint="${BURN_ASSET}" \
-#     --mint-tx-in-reference="${script_ref_utxo}#2" \
-#     --mint-plutus-script-v2 \
-#     --policy-id="${policy_id}" \
-#     --mint-reference-tx-in-redeemer-file data/datum.json \
-#     --testnet-magic ${testnet_magic}"
 
 FEE=$(${cli} transaction build \
     --babbage-era \

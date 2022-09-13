@@ -35,7 +35,7 @@ starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/current_datum.json | tr -dc '0-9')
+    --tx-out-inline-datum-file data/worst_case_datum.json | tr -dc '0-9')
     
 echo "Starter NFT Min Fee: "${starter_nft_min_utxo}
 
