@@ -10,10 +10,10 @@ testnet_magic=$(cat ../testnet.magic)
 # Addresses
 sender_address=$(cat wallets/buyer-wallet/payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
-receiver_address="addr_test1vqzsryzakwwlzl7dq0tj3206g6lyd7sr0kvpecxevg95syck6jz2s"
+receiver_address="addr_test1qrupt9d9ug2ufnrrajp2q7gwvmrtzzgr80p5ug7q8nt4d66hu0s5mnhxh2853wtsgn9gdz6wuqtaqnkv0yk78p474d6qudapqh"
 
 # Define Asset to be printed here
-asset="1 d01780a9d234f71e2b82a35be1c1dbea213e29556634798f40fa2527.4e45574d5f30"
+asset="1234567 f61e1c1d38fc4e5b0734329a4b7b820b76bb8e0729458c153c4248ea.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6731"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \

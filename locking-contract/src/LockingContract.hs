@@ -55,7 +55,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [240, 61, 83, 54, 114, 179, 19, 35, 107, 217, 241, 254, 53, 23, 40, 25, 241, 146, 103, 150, 178, 41, 144, 135, 66, 236, 155, 161] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [209, 223, 233, 60, 77, 243, 54, 58, 162, 243, 69, 166, 122, 247, 67, 222, 167, 104, 224, 63, 93, 89, 220, 192, 119, 1, 157, 154] }
 
 
 -------------------------------------------------------------------------------
@@ -86,11 +86,9 @@ instance Eq CustomDatumType where
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Lock   |
-                          Unlock |
-                          Exit -- remove in production
+                          Unlock
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
                                                 , ( 'Unlock, 1 )
-                                                , ( 'Exit,   2 ) -- remove in production
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -112,10 +110,6 @@ mkValidator datum redeemer context =
       ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue -- artist get everything back
       ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                        -- burnfrac pid with tkn name
       ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
-      }
-    Exit -> do -- remove in production
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
    where
     info :: PlutusV2.TxInfo

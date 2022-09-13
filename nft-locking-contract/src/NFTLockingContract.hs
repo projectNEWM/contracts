@@ -52,7 +52,7 @@ lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
 
 lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [115, 111, 109, 101, 115, 116, 97, 114, 116, 105, 110, 103, 116, 111, 107, 101, 110, 110, 97, 109, 101] }
+lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [78, 69, 87, 77, 95] }
 
 -- check for nft here
 lockValue :: PlutusV2.Value
@@ -115,11 +115,9 @@ instance Eq CustomDatumType where
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Mint |
-                          Burn |
-                          Exit -- remove in production
+                          Burn
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
-                                                , ( 'Exit, 2 ) -- remove in production
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -143,10 +141,6 @@ mkValidator datum redeemer context =
       ; let d = traceIfFalse "Invalid Datum Error"   $ isEmbeddedDatumConstant contOutputs              -- value is cont and the datum is correct.
       ; let e = traceIfFalse "Invalid Starter Token" $ Value.geq validatingValue lockValue              -- must contain the start token
       ;         traceIfFalse "Locking:Burn Error"    $ all (==True) [a,b,c,d,e]
-      }
-    Exit -> do -- remove in production
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh
-      ;         traceIfFalse "Exit Endpoint Error" $ all (==True) [a]
       }
    where
     info :: PlutusV2.TxInfo

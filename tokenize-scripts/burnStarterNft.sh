@@ -23,10 +23,10 @@ policy_id=$(cat policy/starter.id)
 # It'sTheStarterToken4ProjectNewM
 TOKEN_NAME=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="-1 ${policy_id}.${TOKEN_NAME}"
-echo -e "\033[0;31m THIS WILL BE REMOVED IN PRODUCTION  \033[0m"
+echo -e "\033[0;31m THIS IS REMOVED \033[0m"
 
 #
-# exit
+exit
 #
 
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
