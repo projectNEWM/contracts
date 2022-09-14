@@ -46,7 +46,7 @@ fractional_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/datum.json | tr -dc '0-9')
 
-
+script_address_out="${script_address} + 1000000"
 buyer_address_out="${buyer_address} + ${fractional_nft_min_utxo} + ${SC_ASSET}"
 echo "Artist OUTPUT: "${buyer_address_out}
 #

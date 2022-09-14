@@ -59,7 +59,7 @@ tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [65, 77, 6, 214, 162, 69, 73, 122, 227, 143, 194, 170, 36, 63, 105, 186, 208, 187, 89, 137, 112, 221, 191, 70, 139, 154, 78, 111]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [217, 191, 0, 142, 165, 76, 238, 76, 148, 71, 60, 95, 179, 28, 196, 173, 9, 120, 6, 56, 33, 37, 152, 31, 131, 46, 34, 116]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
@@ -142,21 +142,14 @@ mkPolicy redeemer' context = do
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
     getDatumFromTxOut x = 
       case PlutusV2.txOutDatum x of
-        -- datumless
-        PlutusV2.NoOutputDatum -> Nothing
+        PlutusV2.NoOutputDatum       -> Nothing -- datumless
+        (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
         -- inline datum
         (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
           case PlutusTx.fromBuiltinData d of
             Nothing     -> Nothing
             Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
-        -- embedded datum
-        (PlutusV2.OutputDatumHash dh) -> 
-          case ContextsV2.findDatum dh info of
-            Nothing                  -> Nothing
-            Just (PlutusV2.Datum d') -> 
-              case PlutusTx.fromBuiltinData d' of
-                Nothing       -> Nothing
-                Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType embedded
+        
 
     -- return the first datum hash from a txout going to the locking script
     checkInputs :: [PlutusV2.TxInInfo] -> Maybe CustomRedeemerType
@@ -170,7 +163,7 @@ mkPolicy redeemer' context = do
     checkInputDatum :: Bool
     checkInputDatum =
       case checkInputs txInputs of
-        Nothing -> traceIfFalse "No Input Datum Hash" False
+        Nothing         -> traceIfFalse "No Input Datum Hash" False
         Just inputDatum -> inputDatum == d
       where
         d :: CustomRedeemerType
@@ -185,30 +178,28 @@ mkPolicy redeemer' context = do
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
 
     datumAtValidator :: Maybe CustomRedeemerType
-    datumAtValidator = 
-      case datumAtValidator' of
-        -- datumless
-        PlutusV2.NoOutputDatum -> Nothing
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
-          case PlutusTx.fromBuiltinData d of
-            Nothing     -> Nothing
-            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
-        -- embedded datum
-        (PlutusV2.OutputDatumHash dh) -> 
-          case ContextsV2.findDatum dh info of
-            Nothing                  -> Nothing
-            Just (PlutusV2.Datum d') -> 
-              case PlutusTx.fromBuiltinData d' of
-                Nothing       -> Nothing
-                Just embedded -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType embedded
-      where datumAtValidator' = fst $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
-
+    datumAtValidator =
+      if length scriptOutputs == 0 
+        then Nothing
+        else 
+          let datumAtValidator' = fst $ head scriptOutputs
+          in case datumAtValidator' of
+            PlutusV2.NoOutputDatum       -> Nothing -- datumless
+            (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
+            -- inline datum
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing     -> Nothing
+                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
+      where 
+        scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
+        scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
+        
     -- the output datum for minting increases the number by one
     checkOutputDatum :: Integer -> Bool
     checkOutputDatum increment = 
       case datumAtValidator of
-        Nothing -> traceIfFalse "No Datum At Validator" False
+        Nothing      -> traceIfFalse "No Datum At Validator" False
         Just datum'' -> datum'' == d
       where
         d :: CustomRedeemerType

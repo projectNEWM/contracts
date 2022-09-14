@@ -55,7 +55,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [238, 94, 242, 225, 235, 194, 149, 190, 188, 172, 132, 28, 220, 6, 181, 135, 165, 104, 166, 136, 237, 222, 87, 245, 244, 139, 157, 176] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [209, 207, 223, 19, 122, 250, 144, 80, 32, 211, 115, 100, 177, 68, 131, 114, 136, 200, 210, 187, 37, 87, 123, 197, 224, 2, 179, 105] }
 
 
 -------------------------------------------------------------------------------
@@ -74,6 +74,7 @@ data CustomDatumType = CustomDatumType
     -- ^ The artist's staking key hash.
     }
 PlutusTx.unstableMakeIsData ''CustomDatumType
+
 -- old == new
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
@@ -101,7 +102,7 @@ mkValidator datum redeemer context =
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh                -- newm master key
       ; let b = traceIfFalse "Single In/Out Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
       ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
-      ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs            -- value with correct datum
+      ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs              -- value with correct datum
       ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
       }
     Unlock -> do 
@@ -142,10 +143,11 @@ mkValidator datum redeemer context =
         Nothing    -> traceError "No Input to Validate." -- This error should never be hit.
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
+    -- what is being sent into the fractionalize contract upon locking
     singularNFT :: PlutusV2.Value
     singularNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
 
-    -- minting
+    -- minting amount is handled in the minting contract
     checkMintedAmount :: Bool
     checkMintedAmount = 
       case Value.flattenValue (PlutusV2.txInfoMint info) of
@@ -153,28 +155,20 @@ mkValidator datum redeemer context =
         _             -> traceIfFalse "Wrong pid and tkn name" False
     
     -- datum stuff
-    isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumIncreasing []     = False
-    isEmbeddedDatumIncreasing (x:xs) =
-      if PlutusV2.txOutValue x == (validatingValue + singularNFT)-- strict value continue
+    isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> Bool
+    isEmbeddedDatumConstant []     = False
+    isEmbeddedDatumConstant (x:xs) =
+      if PlutusV2.txOutValue x == (validatingValue + singularNFT) -- strict value continue
         then
           case PlutusV2.txOutDatum x of
-            -- datumless
-            PlutusV2.NoOutputDatum -> isEmbeddedDatumIncreasing xs
+            PlutusV2.NoOutputDatum       -> isEmbeddedDatumConstant xs -- datumless
+            (PlutusV2.OutputDatumHash _) -> isEmbeddedDatumConstant xs -- embedded datum
             -- inline datum
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> isEmbeddedDatumIncreasing xs
+                Nothing     -> isEmbeddedDatumConstant xs
                 Just inline -> datum == inline
-            -- embedded datum
-            (PlutusV2.OutputDatumHash dh) -> 
-              case ContextsV2.findDatum dh info of
-                Nothing                  -> isEmbeddedDatumIncreasing xs
-                Just (PlutusV2.Datum d') -> 
-                  case PlutusTx.fromBuiltinData d' of
-                    Nothing       -> isEmbeddedDatumIncreasing xs
-                    Just embedded -> datum == embedded
-        else isEmbeddedDatumIncreasing xs
+        else isEmbeddedDatumConstant xs
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

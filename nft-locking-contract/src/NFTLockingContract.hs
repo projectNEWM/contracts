@@ -164,14 +164,14 @@ mkValidator datum redeemer context =
     checkMintedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum) && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum)) && (amt == (1 :: Integer))
-        _                -> traceIfFalse "Bad Mint Info" False
+        _                -> traceIfFalse "Bad Minting Info" False
     
     -- burning stuff
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> traceIfFalse "Bad Burn Info" False
+        _              -> traceIfFalse "Bad Burning Info" False
     
     -- datum stuff
     isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> Bool
