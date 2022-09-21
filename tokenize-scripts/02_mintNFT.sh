@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+if [[ $# -eq 0 ]] ; then
+    echo 'Please Supply A metadata.json file to represent the NFT!'
+    exit 1
+fi
+
+metadata_json_source=$1
+
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
@@ -35,6 +42,7 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat data/current_datum.json | jq -r .fields[1].int)
 
 name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name_ascii=$(echo -n "$name" | xxd -p -r)
 
 variable=${name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
 mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
@@ -42,6 +50,7 @@ mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/da
 variable=${buyer_pkh}; jq --arg variable "$variable" '.fields[3].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
 mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
 
+sed -e "s/<policy_id_hex>/${policy_id}/g" -e "s/<asset_name_ascii>/${name_ascii}/g" ${metadata_json_source} | jq . > /tmp/metadata.json
 
 # echo $name
 # exit
@@ -147,6 +156,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${buyer_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/next_datum.json \
+    --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${deleg_pkh} \
     --required-signer-hash ${collat_pkh} \
     --mint="${MINT_ASSET}" \
@@ -154,6 +164,7 @@ FEE=$(${cli} transaction build \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/current_datum.json \
+    --metadata-json-file /tmp/metadata.json \
     --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -176,8 +187,8 @@ ${cli} transaction sign \
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
-    --tx-file tmp/tx.signed
+ --testnet-magic ${testnet_magic} \
+ --tx-file tmp/tx.signed
 
 echo -e "\033[0;35m THE OBJECT HAS BEEN TOKENIZED \033[0m"
 

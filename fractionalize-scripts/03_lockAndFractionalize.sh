@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+if [[ $# -eq 0 ]] ; then
+    echo 'Please Supply A metadata.json file to represent the fractionalized tokens!'
+    exit 1
+fi
+
+metadata_json_source=$1
+
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat ../testnet.magic)
@@ -30,7 +37,9 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
 
 name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name_ascii=$(echo -n "$name" | xxd -p -r)
 
+sed -e "s/<policy_id_hex>/${policy_id}/g" -e "s/<asset_name_ascii>/${name_ascii}/g" ${metadata_json_source} | jq . > /tmp/metadata.json
 
 SC_ASSET="1 ${nft_id}.${name}"
 #
@@ -127,6 +136,7 @@ FEE=$(${cli} transaction build \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/datum.json \
+    --metadata-json-file /tmp/metadata.json \
     --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
