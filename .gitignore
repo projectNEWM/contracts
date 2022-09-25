@@ -27,3 +27,4 @@ result*
 scripts/wallet
 status.json
 __pycache__/
+tmp
