@@ -32,8 +32,11 @@ mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.scri
 variable=${pkh3}; jq --arg variable "$variable" '.scripts[2].keyHash=$variable' tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy-new.script
 mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.script
 
- ${cli} transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
+${cli} transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
 policy_id=$(cat tokenize-scripts/policy/starter.id)
+
+# Create the payment addr for the script multisig wallet
+${cli} address build --payment-script-file ./tokenize-scripts/policy/policy.script ${network} > ./tokenize-scripts/wallets/multisig-wallet/payment.addr
 
 tkn_name=${1}
 tkn_name=$(echo ${tkn_name:0:32})

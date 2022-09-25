@@ -10,7 +10,6 @@ script_path="../nft-locking-contract/nft-locking-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 # collat, seller, reference
 seller_address=$(cat wallets/seller-wallet/payment.addr)
-multisig_address=$(cat wallets/multisig-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 multisig1_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig1.vkey)
 multisig2_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig2.vkey)
