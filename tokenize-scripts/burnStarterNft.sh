@@ -1,12 +1,7 @@
 #!/bin/bash
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-testnet_magic=$(cat ../testnet.magic)
-
-# get params
-${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+source ../.env
 
 #
 mint_path="policy/policy.script"
@@ -31,7 +26,7 @@ exit
 
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -59,7 +54,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${multisig3_pkh} \
     --mint-script-file policy/policy.script \
     --mint="${MINT_ASSET}" \
-    --testnet-magic ${testnet_magic})
+    ${network})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -71,18 +66,18 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
-    --signing-key-file wallets/multisig-wallet/multisig1.skey \
-    --signing-key-file wallets/multisig-wallet/multisig2.skey \
-    --signing-key-file wallets/multisig-wallet/multisig3.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #    
 # exit
 #
-echo -e "\033[0;36m Submitting \033[0m"
-${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
-    --tx-file tmp/tx.signed
+# echo -e "\033[0;36m Submitting \033[0m"
+# ${cli} transaction submit \
+#     ${network} \
+#     --tx-file tmp/tx.signed
 
 # update start_info.json

@@ -1,18 +1,13 @@
 #!/bin/bash
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-testnet_magic=$(cat ../testnet.magic)
-
-# get params
-${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+source ../.env
 
 #
 script_path="../locking-contract/locking-contract.plutus"
 mint_path="../minting-contract/minting-contract.plutus"
 
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 #
 deleg_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/delegator-wallet/payment.vkey)
 #
@@ -54,7 +49,7 @@ echo "Artist OUTPUT: "${buyer_address_out}
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
@@ -71,7 +66,7 @@ buyer_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --out-file tmp/script_utxo.json
 
 # transaction variables
@@ -91,7 +86,7 @@ script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${collat_address} \
     --out-file tmp/collat_utxo.json
 
@@ -125,7 +120,7 @@ FEE=$(${cli} transaction build \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/datum.json \
-    --testnet-magic ${testnet_magic})
+    ${network})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -141,13 +136,13 @@ ${cli} transaction sign \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #    
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --tx-file tmp/tx.signed
 
 echo -e "\033[0;35m THE FRACTIONALIZED OBJECT HAS BEEN SOLIDIFIED \033[0m"

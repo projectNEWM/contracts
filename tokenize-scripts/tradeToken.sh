@@ -1,11 +1,7 @@
 #!/bin/bash
 set -e
 
-# SET UP VARS HERE
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-testnet_magic=$(cat ../testnet.magic)
-
+source ../.env
 
 # Addresses
 sender_address=$(cat wallets/buyer-wallet/payment.addr)
@@ -30,7 +26,7 @@ echo -e "\nChange:\n" ${change_to_be_traded}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${sender_address} \
     --out-file tmp/sender_utxo.json
 
@@ -51,7 +47,7 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
     --tx-out="${change_to_be_traded}" \
-    --testnet-magic ${testnet_magic})
+    ${network})
 
     # --tx-out="${token_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -66,11 +62,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --tx-file tmp/tx.signed

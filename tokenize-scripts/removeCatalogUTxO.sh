@@ -1,15 +1,10 @@
 #!/bin/bash
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-testnet_magic=$(cat ../testnet.magic)
-
-# get params
-${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+source ../.env
 
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 #
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(cardano-cli address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
@@ -38,7 +33,7 @@ exit
 
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -53,7 +48,7 @@ seller_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${collat_address} \
     --out-file tmp/collat_utxo.json
 
@@ -67,7 +62,7 @@ collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --out-file tmp/script_utxo.json
 # transaction variables
 TXNS=$(jq length tmp/script_utxo.json)
@@ -98,7 +93,7 @@ FEE=$(${cli} transaction build \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${deleg_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --testnet-magic ${testnet_magic})
+    ${network})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -114,11 +109,11 @@ ${cli} transaction sign \
     --signing-key-file wallets/delegator-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --tx-file tmp/tx.signed

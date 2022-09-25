@@ -4,18 +4,13 @@ if [[ $# -eq 0 ]] ; then
     echo 'Please Supply A Token Number'
     exit 1
 fi
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
 
-testnet_magic=$(cat ../testnet.magic)
-
-# get params
-${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+source ../.env
 
 script_path="../nft-locking-contract/nft-locking-contract.plutus"
 mint_path="../nft-minting-contract/nft-minting-contract.plutus"
 
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 collat_address=$(cat wallets/collat-wallet/payment.addr)
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
@@ -62,7 +57,7 @@ echo "Script OUTPUT: "${script_address_out}
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${buyer_address} \
     --out-file tmp/buyer_utxo.json
 
@@ -81,7 +76,7 @@ echo "buyer_tx_in: $buyer_tx_in"
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --out-file tmp/script_utxo.json
 
 # transaction variables
@@ -97,7 +92,7 @@ echo "script_tx_in: $script_tx_in"
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${collat_address} \
     --out-file tmp/collat_utxo.json
 
@@ -140,7 +135,7 @@ FEE=$(${cli} transaction build \
     --mint-plutus-script-v2 \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file data/next_datum.json \
-    --testnet-magic ${testnet_magic})
+    ${network})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -153,19 +148,19 @@ echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
-    --signing-key-file wallets/multisig-wallet/multisig1.skey \
-    --signing-key-file wallets/multisig-wallet/multisig2.skey \
-    --signing-key-file wallets/multisig-wallet/multisig3.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    # --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #    
 # exit
 #
-echo -e "\033[0;36m Submitting \033[0m"
-${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
-    --tx-file tmp/tx.signed
+# echo -e "\033[0;36m Submitting \033[0m"
+# ${cli} transaction submit \
+#     ${network} \
+#     --tx-file tmp/tx.signed
 
 
-echo -e "\033[0;35m THE TOKENIZED OBJECT HAS BEEN BURNED \033[0m"
+echo -e "\033[0;35m Sign tmp/tx.signed with multisig keys and submit to burn \033[0m"

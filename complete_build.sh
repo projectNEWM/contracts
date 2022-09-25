@@ -4,8 +4,21 @@ if [[ $# -eq 0 ]] ; then
     echo 'Please Supply A Token Name That Will Be Used For The Starter NFT And The Catalog Name'
     exit 1
 fi
+
+source ./.env
+
 # Complete Build
 echo -e "\033[1;35m Starting... \033[0m" 
+
+# Populate start_info.json with the keys we actually are using
+variable=$(./tokenize-scripts/bech32 < ./tokenize-scripts/wallets/delegator-wallet/payment.addr | cut -c 3-); jq --arg variable "$variable" '.delegator=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
+variable=$(./tokenize-scripts/bech32 < ./tokenize-scripts/wallets/multisig-wallet/multisig1.addr | cut -c 3-); jq --arg variable "$variable" '.multisig1=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
+variable=$(./tokenize-scripts/bech32 < ./tokenize-scripts/wallets/multisig-wallet/multisig2.addr | cut -c 3-); jq --arg variable "$variable" '.multisig2=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
+variable=$(./tokenize-scripts/bech32 < ./tokenize-scripts/wallets/multisig-wallet/multisig3.addr | cut -c 3-); jq --arg variable "$variable" '.multisig3=$variable' start_info.json > start_info-new.json
+mv start_info-new.json start_info.json
 
 pkh1=$(cat start_info.json | jq -r .multisig1)
 pkh2=$(cat start_info.json | jq -r .multisig2)
@@ -19,7 +32,7 @@ mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.scri
 variable=${pkh3}; jq --arg variable "$variable" '.scripts[2].keyHash=$variable' tokenize-scripts/policy/policy.script > tokenize-scripts/policy/policy-new.script
 mv tokenize-scripts/policy/policy-new.script tokenize-scripts/policy/policy.script
 
-cardano-cli transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
+ ${cli} transaction policyid --script-file tokenize-scripts/policy/policy.script > tokenize-scripts/policy/starter.id
 policy_id=$(cat tokenize-scripts/policy/starter.id)
 
 tkn_name=${1}
@@ -89,7 +102,7 @@ rm validator.bytes
 rm validator.hash
 cabal build -w ghc-8.10.7 -O2
 cabal run nft-locking-contract
-cardano-cli transaction policyid --script-file nft-locking-contract.plutus > validator.hash
+ ${cli} transaction policyid --script-file nft-locking-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 # nft locking validator hash
 echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
@@ -110,7 +123,7 @@ rm policy.id
 rm policy.bytes
 cabal build -w ghc-8.10.7 -O2
 cabal run nft-minting-contract
-cardano-cli transaction policyid --script-file nft-minting-contract.plutus > policy.id
+ ${cli} transaction policyid --script-file nft-minting-contract.plutus > policy.id
 python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
 
 # nft minting validator hash
@@ -134,7 +147,7 @@ rm validator.bytes
 rm validator.hash
 cabal build -w ghc-8.10.7 -O2
 cabal run locking-contract
-cardano-cli transaction policyid --script-file locking-contract.plutus > validator.hash
+ ${cli} transaction policyid --script-file locking-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
 echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
@@ -149,7 +162,7 @@ rm policy.id
 rm policy.bytes
 cabal build -w ghc-8.10.7
 cabal run minting-contract
-cardano-cli transaction policyid --script-file minting-contract.plutus > policy.id
+ ${cli} transaction policyid --script-file minting-contract.plutus > policy.id
 python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
 
 echo -e "\033[1;36m Policy Id: $(cat policy.id) \033[0m"

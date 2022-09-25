@@ -1,12 +1,7 @@
 #!/bin/bash
 set -e
 
-# SET UP VARS HERE
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-testnet_magic=$(cat ../testnet.magic)
-mkdir -p tmp
-${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+source ../.env
 
 nft_lock_script_path="../nft-locking-contract/nft-locking-contract.plutus"
 nft_mint_script_path="../nft-minting-contract/nft-minting-contract.plutus"
@@ -66,7 +61,7 @@ echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -97,7 +92,7 @@ ${cli} transaction build-raw \
     --tx-out="${nft_mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${nft_mint_script_path} \
     --fee 900000
-FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 # echo $fee
@@ -122,9 +117,9 @@ ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-1.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 
-nextUTxO=$(cardano-cli transaction txid --tx-body-file tmp/tx.draft)
+nextUTxO=$(${cli} transaction txid --tx-body-file tmp/tx.draft)
 echo "First in the tx chain" $nextUTxO
 
 #
@@ -143,7 +138,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${mint_script_path} \
     --fee 900000
 
-FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 # echo $fee
@@ -170,17 +165,17 @@ ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-2.signed \
-    --testnet-magic ${testnet_magic}
+    ${network}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --tx-file tmp/tx-1.signed
 
 ${cli} transaction submit \
-    --testnet-magic ${testnet_magic} \
+    ${network} \
     --tx-file tmp/tx-2.signed
 
 cp tmp/tx-1.signed tmp/tx-reference-utxo.signed
