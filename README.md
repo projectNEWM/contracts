@@ -6,6 +6,12 @@ A collection of smart contracts for Project NEWM.
 
 The v0.2.x contract versions assume NEWM holds a special wallet that will regulate token minting and burning. In the future, this centralized signing mechanism will be replaced with a decentralized solution.
 
+### useful-funcs
+
+A library for useful functions for inside the contracts.
+
+https://github.com/logicalmechanism/useful-funcs
+
 ## Flow
 
 An artist comes to NEWM wishing to tokenize a piece of art, digitalizing a real-world object onto the blockchain. The artist may decide to split the ownership rights of the tokenized object by fractionalization, splitting a tokeninzed object into 100,000,000 fractions. First, NEWM will create the initial tokenized object by minting an NFT on the official NEWM catalog policy id. At this point, the artist may keep the original tokenized version of their art or they may fractionalize the original NFT into a fungible token.

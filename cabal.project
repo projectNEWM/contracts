@@ -325,3 +325,9 @@ source-repository-package
   type: git
   location: https://github.com/raduom/hysterical-screams
   tag: f3bbd38a19f99de5c8ddc650c94330b2d09a865b
+
+source-repository-package
+  type: git
+  location: https://github.com/logicalmechanism/useful-funcs
+  tag: b86b01fd0baf5e9d79b18272f7236a991991b225
+  subdir: useful-funcs

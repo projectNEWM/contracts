@@ -2,7 +2,7 @@ cabal-version: 2.4
 
 name:                   nft-locking-contract
 version:                1
-description:            A plutus script for locking funds..
+description:            A plutus script for locking funds.
 author:                 Quinn Parkinson
 maintainer:             qparkinson@projectnewm.io
 license:                AGPL-3.0-only
@@ -46,8 +46,6 @@ library
   hs-source-dirs:       src
 
   exposed-modules:      NFTLockingContract
-                        CheckFuncs
-                        TokenHelper
 
   build-depends:        bytestring
                       , cardano-api
@@ -56,6 +54,7 @@ library
                       , plutus-tx-plugin
                       , plutus-script-utils
                       , serialise
+                      , useful-funcs
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 

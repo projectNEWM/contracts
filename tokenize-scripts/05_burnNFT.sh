@@ -141,8 +141,9 @@ IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
+echo -e "\033[0;35m Sign tmp/tx.signed with multisig keys and submit to burn \033[0m"
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
@@ -163,4 +164,3 @@ ${cli} transaction sign \
 #     --tx-file tmp/tx.signed
 
 
-echo -e "\033[0;35m Sign tmp/tx.signed with multisig keys and submit to burn \033[0m"

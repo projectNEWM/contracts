@@ -40,8 +40,7 @@ import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-import           CheckFuncs
-import           TokenHelper
+import           UsefulFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -76,17 +75,10 @@ multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteStri
 listOfPkh :: [PlutusV2.PubKeyHash]
 listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
 -------------------------------------------------------------------------------
--- | Simple Multisig
+-- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
-checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
-checkMultisig txInfo pkhs amt = loopSigs pkhs 0
-  where
-    loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
-    loopSigs []     counter = traceIfFalse "Not Enough Signers" (counter >= amt)
-    loopSigs (x:xs) counter = 
-      if ContextsV2.txSignedBy txInfo x
-        then loopSigs xs (counter + 1)
-        else loopSigs xs counter
+nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
+nftName prefix num = prefix <> integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -135,7 +127,7 @@ mkValidator datum redeemer context =
       ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d,e]
       }
     Burn -> do
-      { let a = traceIfFalse "Signing Tx Error"      $ checkMultisig info listOfPkh 2                   -- newm multisig
+      { let a = traceIfFalse "Signing Tx Error"      $ checkValidMultisig info listOfPkh 2              -- newm multisig
       ; let b = traceIfFalse "Single In/Out Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
       ; let c = traceIfFalse "NFT Burning Error"     checkBurnedAmount                                  -- burn an nft only
       ; let d = traceIfFalse "Invalid Datum Error"   $ isEmbeddedDatumConstant contOutputs              -- value is cont and the datum is correct.

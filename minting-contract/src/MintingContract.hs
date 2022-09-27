@@ -43,25 +43,17 @@ import qualified Plutus.V1.Ledger.Address         as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
+import           UsefulFuncs
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 1
 -}
-{-# INLINABLE flattenBuiltinByteString #-}
-flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-flattenBuiltinByteString [] = emptyByteString 
-flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
-
-{-# INLINABLE createBuiltinByteString #-}
-createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
-createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
-
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [101, 59, 217, 200, 124, 49, 0, 193, 103, 215, 167, 12, 118, 127, 254, 254, 120, 37, 201, 158, 70, 152, 104, 34, 52, 210, 197, 219]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [244, 171, 224, 222, 47, 159, 140, 36, 16, 115, 109, 69, 189, 47, 179, 77, 128, 151, 253, 141, 72, 254, 220, 62, 150, 117, 55, 0]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------

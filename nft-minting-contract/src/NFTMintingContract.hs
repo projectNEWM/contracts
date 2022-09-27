@@ -42,7 +42,7 @@ import qualified Plutus.V1.Ledger.Address       as Addr
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-import           TokenHelper
+import           UsefulFuncs
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -59,7 +59,7 @@ tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [217, 191, 0, 142, 165, 76, 238, 76, 148, 71, 60, 95, 179, 28, 196, 173, 9, 120, 6, 56, 33, 37, 152, 31, 131, 46, 34, 116]
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [103, 232, 225, 18, 171, 5, 18, 201, 201, 115, 124, 209, 55, 70, 38, 122, 160, 53, 253, 115, 216, 169, 99, 20, 3, 144, 8, 6]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
@@ -78,26 +78,10 @@ multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteStri
 listOfPkh :: [PlutusV2.PubKeyHash]
 listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
 -------------------------------------------------------------------------------
--- | Create a proper bytestring
+-- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
-createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
-createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
-  where
-    flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-    flattenBuiltinByteString []     = emptyByteString 
-    flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
--------------------------------------------------------------------------------
--- | Simple Multisig
--------------------------------------------------------------------------------
-checkMultisig :: PlutusV2.TxInfo -> [PlutusV2.PubKeyHash] -> Integer -> Bool
-checkMultisig txInfo pkhs amt = loopSigs pkhs 0
-  where
-    loopSigs :: [PlutusV2.PubKeyHash] -> Integer  -> Bool
-    loopSigs []     counter = counter >= amt
-    loopSigs (x:xs) counter = 
-      if ContextsV2.txSignedBy txInfo x
-        then loopSigs xs (counter + 1)
-        else loopSigs xs counter
+nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
+nftName prefix num = prefix <> integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the redeemer data object.
 -------------------------------------------------------------------------------
@@ -122,7 +106,7 @@ instance Eq CustomRedeemerType where
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context = do
       { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn
-      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || checkMultisig info listOfPkh 2              -- newm or multisig
+      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || checkValidMultisig info listOfPkh 2         -- newm or multisig
       ; let c = traceIfFalse "Invalid Datum Error"   checkInputDatum                                                                    -- input datum equals redeemer
       ; let d = traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator tokenValue                                            -- must contain the starter token
       ;         traceIfFalse "Minting Error"         $ all (==True) [a,b,c,d]

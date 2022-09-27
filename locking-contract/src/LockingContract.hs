@@ -28,8 +28,6 @@
 module LockingContract
   ( lockingContractScript
   , lockingContractScriptShortBs
-  , CustomDatumType
-  , getPkh
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -42,7 +40,7 @@ import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
-import           CheckFuncs
+import           UsefulFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -55,8 +53,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString 
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [209, 207, 223, 19, 122, 250, 144, 80, 32, 211, 115, 100, 177, 68, 131, 114, 136, 200, 210, 187, 37, 87, 123, 197, 224, 2, 179, 105] }
-
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [157, 2, 179, 97, 157, 219, 35, 220, 208, 27, 89, 28, 183, 138, 124, 16, 79, 250, 132, 184, 223, 104, 109, 25, 147, 143, 151, 197] }
 
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
@@ -106,10 +103,10 @@ mkValidator datum redeemer context =
       ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
       }
     Unlock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh                      -- newm master key
-      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0       -- 1 script input 0 script output
-      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaid txOutputs artistAddr validatingValue -- artist get everything back
-      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                        -- burnfrac pid with tkn name
+      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh                             -- newm master key
+      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0              -- 1 script input 0 script output
+      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
+      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                               -- burnfrac pid with tkn name
       ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
       }
    where
