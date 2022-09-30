@@ -65,30 +65,38 @@ FEE=$(${cli} transaction build \
     --tx-in ${seller_tx_in} \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file data/current_datum.json  \
+    --mint-script-file policy/policy.script \
+    --mint="${MINT_ASSET}" \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${multisig1_pkh} \
     --required-signer-hash ${multisig2_pkh} \
     --required-signer-hash ${multisig3_pkh} \
-    --mint-script-file policy/policy.script \
-    --mint="${MINT_ASSET}" \
+    --cddl-format \
     ${network})
+
+${hwcli} transaction transform --tx-file tmp/tx.draft --out-file tmp/tx.draft
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+#exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
-#    --signing-key-file wallets/multisig-wallet/multisig1.skey \
-#    --signing-key-file wallets/multisig-wallet/multisig2.skey \
-#    --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     ${network}
+
+#    --signing-key-file wallets/multisig-wallet/multisig1.skey \
+#    --signing-key-file wallets/multisig-wallet/multisig2.skey \
+#    --signing-key-file wallets/multisig-wallet/multisig3.skey \
+
+# create a witness for seller wallet since we'll re-assemble tx from tx-body with all witnesses
+${cli} transaction witness --tx-body-file tmp/tx.draft --signing-key-file wallets/seller-wallet/payment.skey ${network} --out-file tmp/seller.witness
+
 #    
 # exit
 #
