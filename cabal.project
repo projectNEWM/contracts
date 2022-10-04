@@ -6,6 +6,7 @@ packages:
     minting-contract
     nft-locking-contract
     nft-minting-contract
+    marketplace-contract
 
 -- We never, ever, want this.
 write-ghc-environment-files: never
@@ -326,8 +327,16 @@ source-repository-package
   location: https://github.com/raduom/hysterical-screams
   tag: f3bbd38a19f99de5c8ddc650c94330b2d09a865b
 
+-- import useful functions
 source-repository-package
   type: git
   location: https://github.com/logicalmechanism/useful-funcs
-  tag: b86b01fd0baf5e9d79b18272f7236a991991b225
+  tag: c389842f483f42ac5882244ee32861471435b7f0
   subdir: useful-funcs
+
+-- oracle data structures
+source-repository-package
+  type: git
+  location: https://github.com/logicalmechanism/cogno
+  tag: 5f67a2fff3b17b33f08de3c33e072fe4e18ef84f
+  subdir: cogno-contract
