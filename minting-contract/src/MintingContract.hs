@@ -27,117 +27,170 @@
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module MintingContract
-  ( apiExamplePlutusMintingScript
+  ( mintingPlutusScript
   , mintingScriptShortBs
+  , getValidatorHash
   ) where
-import           Codec.Serialise
 import qualified PlutusTx
-import           Ledger                   hiding (singleton)
-import           PlutusTx.Prelude         hiding (Semigroup (..), unless)
-import           Plutus.V1.Ledger.Value   as Value
-import qualified Plutus.V1.Ledger.Address as Address
-import qualified Data.ByteString.Lazy     as LB
-import qualified Data.ByteString.Short    as SBS
-import qualified Ledger.Typed.Scripts     as Scripts
-import           Cardano.Api.Shelley      ( PlutusScript (..), PlutusScriptV1 )
-import           Data.Aeson               ( FromJSON, ToJSON )
-import           Data.OpenApi.Schema      ( ToSchema )
-import           GHC.Generics             ( Generic )
-import           Prelude                  ( Show )
+import           PlutusTx.Prelude
+import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScriptV2 )
+import           Codec.Serialise                ( serialise )
+import qualified Data.ByteString.Lazy           as LBS
+import qualified Data.ByteString.Short          as SBS
+import qualified Plutus.V1.Ledger.Scripts       as Scripts
+import qualified Plutus.V1.Ledger.Value         as Value
+import qualified Plutus.V1.Ledger.Address         as Addr
+import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
+import qualified Plutus.V2.Ledger.Api           as PlutusV2
+import           Plutus.Script.Utils.V2.Scripts as Utils
+import           UsefulFuncs
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
   Version  : Rev 1
 -}
-data MintParams = MintParams
-  { mpValidatorHash :: !ValidatorHash
-  -- ^ Validator hash of the locking script
-  , mpNewmPKH       :: !PubKeyHash
-  -- ^ Official Newm public key hash.
-  }
-PlutusTx.makeLift ''MintParams
+getPkh :: PlutusV2.PubKeyHash
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [85, 15, 135, 50, 248, 57, 226, 178, 62, 195, 209, 187, 50, 138, 78, 21, 190, 219, 187, 32, 171, 156, 113, 43, 92, 241, 26, 217] }
 
+getValidatorHash :: PlutusV2.ValidatorHash
+getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [229, 247, 199, 30, 144, 83, 29, 116, 136, 7, 116, 77, 23, 224, 240, 52, 115, 115, 239, 227, 14, 48, 86, 112, 107, 186, 89, 54]
+-------------------------------------------------------------------------------
+-- | Create the redeemer parameters data object.
+-------------------------------------------------------------------------------
 data CustomRedeemerType = CustomRedeemerType
-    { cdtNewmPid   :: !CurrencySymbol
+    { crtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
-    , cdtArtistPid :: !CurrencySymbol
-    -- ^ The artist's tokenized policy id
-    , cdtArtistTn  :: !TokenName
-    -- ^ the artist's tokenized token name.
-    , cdtArtistPKH :: !PubKeyHash
+    , crtTokenizedPid  :: PlutusV2.CurrencySymbol
+    -- ^ The Newm tokenized policy id
+    , crtTokenizedTn   :: PlutusV2.TokenName
+    -- ^ the tokenized token name.
+    , crtArtistPKH     :: PlutusV2.PubKeyHash
     -- ^ The artist's public key hash.
-    , cdtArtistSC ::  !PubKeyHash
+    , crtArtistSC      :: PlutusV2.PubKeyHash
     -- ^ The artist's staking key hash.
     }
-    deriving stock (Show, Generic)
-    deriving anyclass (FromJSON, ToJSON, ToSchema)
 PlutusTx.unstableMakeIsData ''CustomRedeemerType
-PlutusTx.makeLift ''CustomRedeemerType
+
+instance Eq CustomRedeemerType where
+  {-# INLINABLE (==) #-}
+  a == b = ( crtFractionalPid a == crtFractionalPid b ) &&
+           ( crtTokenizedPid  a == crtTokenizedPid  b ) &&
+           ( crtTokenizedTn   a == crtTokenizedTn   b ) &&
+           ( crtArtistPKH     a == crtArtistPKH     b ) &&
+           ( crtArtistSC      a == crtArtistSC      b )
+-------------------------------------------------------------------------------
+-- | mkPolicy :: Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
-mkPolicy :: MintParams -> BuiltinData -> ScriptContext -> Bool
-mkPolicy mp _ context = checkMintedAmount && checkSigner
+mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
+mkPolicy _ context = do
+      { let a = traceIfFalse "Minting/Burning Error" $ (checkMintedAmount && checkInputOutputDatum) || (checkBurnedAmount && checkInputDatum)
+      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh
+      ;         traceIfFalse "Minting Error"         $ all (==True) [a,b]
+      }
   where
-    info :: TxInfo
-    info = scriptContextTxInfo context
+    info :: PlutusV2.TxInfo
+    info = PlutusV2.scriptContextTxInfo context
 
-    txOutputs :: [TxOut]
-    txOutputs = txInfoOutputs info
+    txInputs :: [PlutusV2.TxInInfo]
+    txInputs = ContextsV2.txInfoInputs info
 
-    isEmbeddedDatum :: [TxOut] -> Maybe CustomRedeemerType
-    isEmbeddedDatum []     = Nothing
-    isEmbeddedDatum (x:xs) =
-      if txOutAddress x == Address.scriptHashAddress (mpValidatorHash mp)
-      then
-        case txOutDatumHash x of
-          Nothing -> isEmbeddedDatum xs
-          Just dh ->
-            case findDatum dh info of
-              Nothing        -> isEmbeddedDatum xs
-              Just (Datum d) -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType d
-      else isEmbeddedDatum xs
+    checkPolicyId :: PlutusV2.CurrencySymbol -> Bool
+    checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
 
-    checkSigner :: Bool
-    checkSigner = traceIfFalse "Signer Error" signerFromTxOut
-      where
-        signerFromTxOut :: Bool
-        signerFromTxOut =
-          case isEmbeddedDatum txOutputs of
-            Nothing     -> traceIfFalse "No Datum Found" False
-            Just datum' -> traceIfFalse "Incorrect Signer"  $ txSignedBy info (mpNewmPKH mp) && txSignedBy info (cdtArtistPKH datum')
-
-    checkPolicyId :: CurrencySymbol ->  Bool
-    checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ownCurrencySymbol context
-
-    checkAmount :: Integer -> Bool
-    checkAmount amt = traceIfFalse "Incorrect Mint/Burn Amount" $ amt == (100_000_000 :: Integer) || amt == (-100_000_000 :: Integer)
+    mintAmount :: Integer -> Bool
+    mintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (100_000_000 :: Integer)
+    
+    burnAmount :: Integer -> Bool
+    burnAmount amt = traceIfFalse "Incorrect Burn Amount" $ amt == (-100_000_000 :: Integer)
 
     checkMintedAmount :: Bool
     checkMintedAmount =
-      case Value.flattenValue (txInfoMint info) of
-        [(cs, _, amt)] -> checkPolicyId cs && checkAmount amt
-        _              -> traceIfFalse "Mint/Burn Error" False
+      case Value.flattenValue (PlutusV2.txInfoMint info) of
+        [(cs, _, amt)] -> checkPolicyId cs && mintAmount amt
+        _              -> traceIfFalse "Minting Error" False
 
--------------------------------------------------------------------------------
-policy :: MintParams -> Scripts.MintingPolicy
-policy mp = mkMintingPolicyScript ($$(PlutusTx.compile [|| Scripts.wrapMintingPolicy . mkPolicy ||]) `PlutusTx.applyCode` PlutusTx.liftCode mp)
--------------------------------------------------------------------------------
-plutusScript :: Script
-plutusScript = unMintingPolicyScript (policy params)
-  where params = MintParams { mpValidatorHash = "49cf1d9cb7c80faac818e2e3673f06f381e2e4a9cd40e75e91e4f440" -- locking script
-                            , mpNewmPKH       = "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439" -- newm pkh
-                            }
+    checkBurnedAmount :: Bool
+    checkBurnedAmount =
+      case Value.flattenValue (PlutusV2.txInfoMint info) of
+        [(cs, _, amt)] -> checkPolicyId cs && burnAmount amt
+        _              -> traceIfFalse "Burning Error" False
+    
 
-validator :: Validator
-validator = Validator plutusScript
+    -- check if the incoming datum is the correct form.
+    getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
+    getDatumFromTxOut x = 
+      case PlutusV2.txOutDatum x of
+        PlutusV2.NoOutputDatum       -> Nothing -- datumless
+        (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
+        -- inline datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+          case PlutusTx.fromBuiltinData d of
+            Nothing     -> Nothing
+            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
+        
 
+    -- return the first datum hash from a txout going to the locking script
+    checkInputs :: [PlutusV2.TxInInfo] -> Maybe CustomRedeemerType
+    checkInputs [] = Nothing
+    checkInputs (x:xs) =
+      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress getValidatorHash
+      then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
+      else checkInputs xs
+    
+    datumAtValidator :: Maybe CustomRedeemerType
+    datumAtValidator = 
+      if length scriptOutputs == 0 
+        then Nothing
+        else 
+          let datumAtValidator' = fst $ head scriptOutputs
+          in case datumAtValidator' of
+            PlutusV2.NoOutputDatum       -> Nothing -- datumless
+            (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
+            -- inline datum
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing     -> Nothing
+                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
+      where
+        scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
+        scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
+
+    -- check that the locking script has the correct datum hash
+    checkInputDatum :: Bool
+    checkInputDatum =
+      case checkInputs txInputs of
+        Nothing -> traceIfFalse "No Input Datum" False
+        Just _  -> True
+    
+    -- check that the locking script has the correct datum hash
+    checkInputOutputDatum :: Bool
+    checkInputOutputDatum =
+      case checkInputs txInputs of
+        Nothing         -> traceIfFalse "No Input Datum" False
+        Just inputDatum ->
+          case datumAtValidator of
+            Nothing          -> traceIfFalse "No Output Datum" False
+            Just outputDatum -> inputDatum == outputDatum
 -------------------------------------------------------------------------------
--- Do Not Remove
-scriptAsCbor :: LB.ByteString
+-- | Now we need to compile the Validator.
+-------------------------------------------------------------------------------
+policy :: PlutusV2.MintingPolicy
+policy = PlutusV2.mkMintingPolicyScript $$(PlutusTx.compile [|| wrap ||])
+  where
+    wrap = Utils.mkUntypedMintingPolicy mkPolicy
+
+plutusScript :: Scripts.Script
+plutusScript = PlutusV2.unMintingPolicyScript policy
+
+validator :: PlutusV2.Validator
+validator = PlutusV2.Validator plutusScript
+
+scriptAsCbor :: LBS.ByteString
 scriptAsCbor = serialise validator
 
-apiExamplePlutusMintingScript :: PlutusScript PlutusScriptV1
-apiExamplePlutusMintingScript = PlutusScriptSerialised . SBS.toShort $ LB.toStrict scriptAsCbor
+mintingPlutusScript :: PlutusScript PlutusScriptV2
+mintingPlutusScript = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict scriptAsCbor
 
 mintingScriptShortBs :: SBS.ShortByteString
-mintingScriptShortBs = SBS.toShort . LB.toStrict $ scriptAsCbor
+mintingScriptShortBs = SBS.toShort . LBS.toStrict $ scriptAsCbor

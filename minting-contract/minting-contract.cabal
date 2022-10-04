@@ -49,16 +49,12 @@ library
 
   build-depends:        bytestring
                       , cardano-api
-                      , plutus-ledger
                       , plutus-ledger-api
                       , plutus-tx
                       , plutus-tx-plugin
+                      , plutus-script-utils
                       , serialise
-                      , text
-                      , containers
-                      , plutus-contract
-                      , openapi3
-                      , aeson
+                      , useful-funcs
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
@@ -73,8 +69,5 @@ executable minting-contract
                         -O2
 
   build-depends:        cardano-api
-                      , cardano-ledger-alonzo
                       , minting-contract
-                      , plutus-ledger-api
-                      , bytestring
 

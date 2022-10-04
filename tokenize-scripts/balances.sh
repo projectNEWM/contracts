@@ -1,38 +1,70 @@
 #!/usr/bin/bash
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-script_path="../nft-locking-contract/nft_locking_contract.plutus"
+source ../.env
 
-SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
+#
+script_path="../nft-locking-contract/nft-locking-contract.plutus"
+SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} ${network})
+#
+ft_script_path="../locking-contract/locking-contract.plutus"
+FT_SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${ft_script_path} ${network})
+
+
+#
 SELLER_ADDRESS=$(cat wallets/seller-wallet/payment.addr)
 BUYER_ADDRESS=$(cat wallets/buyer-wallet/payment.addr)
-PROFIT_ADDRESS=$(cat wallets/profit-wallet/payment.addr)
+REFERENCE_ADDRESS=$(cat wallets/reference-wallet/payment.addr)
+COLLAT_ADDRESS=$(cat wallets/collat-wallet/payment.addr)
+# MULTISIG_ADDRESS=$(cat wallets/multisig-wallet/payment.addr)
 
-${cli} query protocol-parameters --testnet-magic 1097911063 --out-file tmp/protocol.json
-${cli} query tip --testnet-magic 1097911063 | jq
+#
+${cli} query protocol-parameters ${network} --out-file tmp/protocol.json
+${cli} query tip ${network} | jq
 
 #
 echo
-echo -e "\033[1;35m Script Address: \033[0m" 
-echo -e "\n \033[1;35m ${SCRIPT_ADDRESS} \033[0m \n";
-${cli} query utxo --address ${SCRIPT_ADDRESS} --testnet-magic 1097911063
+echo -e "\033[1;35m NFT Script Address:" 
+echo -e "\n${SCRIPT_ADDRESS}\n";
+${cli} query utxo --address ${SCRIPT_ADDRESS} ${network}
+echo -e "\033[0m"
 
 #
 echo
-echo -e "\033[1;36m Seller Address: \033[0m" 
-echo -e "\n \033[1;36m ${SELLER_ADDRESS} \033[0m \n";
-${cli} query utxo --address ${SELLER_ADDRESS} --testnet-magic 1097911063
+echo -e "\033[1;35m FT Script Address:" 
+echo -e "\n${FT_SCRIPT_ADDRESS}\n";
+${cli} query utxo --address ${FT_SCRIPT_ADDRESS} ${network}
+echo -e "\033[0m"
 
 #
 echo
-echo -e "\033[1;32m Buyer Address: \033[0m" 
-echo -e "\n \033[1;32m ${BUYER_ADDRESS} \033[0m \n";
-${cli} query utxo --address ${BUYER_ADDRESS} --testnet-magic 1097911063
+echo -e "\033[1;36m NEWM Address:" 
+echo -e "\n${SELLER_ADDRESS}\n";
+${cli} query utxo --address ${SELLER_ADDRESS} ${network}
+echo -e "\033[0m"
 
 #
 echo
-echo -e "\033[1;34m Profit Address: \033[0m" 
-echo -e "\n \033[1;34m ${PROFIT_ADDRESS} \033[0m \n";
-# ${cli} query utxo --address ${PROFIT_ADDRESS} --testnet-magic 1097911063
+echo -e "\033[1;32m Artist Address:" 
+echo -e "\n${BUYER_ADDRESS}\n";
+${cli} query utxo --address ${BUYER_ADDRESS} ${network}
+echo -e "\033[0m"
+
+#
+echo
+echo -e "\033[1;34m Reference Address:" 
+echo -e "\n \033[1;34m ${REFERENCE_ADDRESS}\n";
+${cli} query utxo --address ${REFERENCE_ADDRESS} ${network}
+echo -e "\033[0m"
+
+#
+echo
+echo -e "\033[1;33m Collateral Address:" 
+echo -e "\n${COLLAT_ADDRESS}\n";
+${cli} query utxo --address ${COLLAT_ADDRESS} ${network}
+echo -e "\033[0m"
+
+# echo
+# echo -e "\033[1;34m Multisig Address: \033[0m" 
+# echo -e "\n \033[1;34m ${MULTISIG_ADDRESS} \033[0m \n";
+# ${cli} query utxo --address ${MULTISIG_ADDRESS} ${network}

@@ -1,16 +1,18 @@
 #!/bin/bash
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
-cli=$(cat path_to_cli.sh)
-script_path="../locking-contract/locking_contract.plutus"
+source ../.env
 
-SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} --testnet-magic 1097911063)
+#
+script_path="../locking-contract/locking-contract.plutus"
+script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-sc_address_out="${SCRIPT_ADDRESS} + 5000000"
+sc_address_out="${script_address} + 5000000"
 echo "Script OUTPUT: "${sc_address_out}
 
+echo "Use mintStarterNFT.sh"
+exit
 #
 # exit
 #
@@ -18,7 +20,7 @@ echo "Script OUTPUT: "${sc_address_out}
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 # get utxo
 ${cli} query utxo \
-    --testnet-magic 1097911063 \
+    ${network} \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
 
@@ -40,26 +42,28 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
     --tx-out="${sc_address_out}" \
-    --tx-out-datum-embed-file data/datum.json  \
-    --testnet-magic 1097911063)
+    --tx-out-inline-datum-file data/datum.json  \
+    ${network})
 
+    # --tx-out-datum-embed-file data/datum.json  \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+echo "Use ../tokenize-scripts/mintNFT.sh"
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
-    --testnet-magic 1097911063
+    ${network}
 #
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    --testnet-magic 1097911063 \
+    ${network} \
     --tx-file tmp/tx.signed

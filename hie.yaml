@@ -1,10 +1,10 @@
 cradle:
   cabal:
-    - path: "./locking-contract/src"
-      component: "locking-contract:lib:locking-contract"
-    - path: "./minting-contract/src"
-      component: "minting-contract:lib:minting-contract"
-    - path: "./nft-minting-contract/src"
-      component: "nft-minting-contract:lib:nft-minting-contract"
-    - path: "./nft-locking-contract/src"
-      component: "nft-locking-contract:lib:nft-locking-contract"
+    - path: "./v2-locking-contract/src"
+      component: "v2-locking-contract:lib:v2-locking-contract"
+    - path: "./v2-minting-contract/src"
+      component: "v2-minting-contract:lib:v2-minting-contract"
+    - path: "./v2-nft-minting-contract/src"
+      component: "v2-nft-minting-contract:lib:v2-nft-minting-contract"
+    - path: "./v2-nft-locking-contract/src"
+      component: "v2-nft-locking-contract:lib:v2-nft-locking-contract"
