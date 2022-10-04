@@ -26,5 +26,6 @@ result*
 .vim
 scripts/wallet
 status.json
-__pycache__/
+__pycache__
 tmp
+*.metadata.json

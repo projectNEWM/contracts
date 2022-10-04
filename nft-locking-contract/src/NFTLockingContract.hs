@@ -48,7 +48,7 @@ import           UsefulFuncs
 -}
 
 lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
+lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [254, 67, 217, 228, 63, 221, 205, 93, 162, 223, 115, 214, 63, 237, 245, 3, 134, 124, 239, 37, 53, 223, 12, 139, 77, 213, 19, 64] }
 
 lockTkn :: PlutusV2.TokenName
 lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString [78, 69, 87, 77, 95] }
@@ -59,17 +59,17 @@ lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 -- main key
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [85, 15, 135, 50, 248, 57, 226, 178, 62, 195, 209, 187, 50, 138, 78, 21, 190, 219, 187, 32, 171, 156, 113, 43, 92, 241, 26, 217] }
 
 -- collat wallet
 multiPkh1 :: PlutusV2.PubKeyHash
-multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [150, 147, 223, 102, 202, 166, 174, 17, 93, 95, 24, 126, 236, 103, 146, 36, 158, 100, 86, 102, 7, 76, 76, 77, 115, 247, 147, 132] }
+multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [111, 255, 109, 51, 149, 143, 101, 2, 45, 230, 74, 171, 211, 193, 106, 122, 126, 7, 186, 215, 169, 74, 69, 133, 206, 29, 172, 118] }
 -- seller wallet
 multiPkh2 :: PlutusV2.PubKeyHash
-multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [213, 247, 65, 6, 15, 203, 170, 116, 238, 77, 158, 69, 116, 252, 176, 72, 211, 197, 56, 78, 192, 206, 73, 158, 8, 137, 190, 83] }
+multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [63, 22, 163, 63, 160, 112, 117, 22, 247, 235, 164, 210, 223, 197, 124, 214, 18, 122, 160, 94, 171, 114, 217, 90, 27, 249, 82, 99] }
 -- reference wallet
 multiPkh3 :: PlutusV2.PubKeyHash
-multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [67, 158, 82, 1, 141, 168, 20, 19, 240, 146, 132, 217, 97, 51, 160, 89, 193, 4, 222, 70, 42, 11, 29, 37, 211, 114, 106, 151] }
+multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [60, 47, 234, 52, 123, 28, 154, 240, 143, 240, 62, 109, 37, 231, 123, 240, 32, 118, 204, 101, 205, 133, 30, 131, 27, 182, 139, 132] }
 
 -- all possible signers
 listOfPkh :: [PlutusV2.PubKeyHash]
