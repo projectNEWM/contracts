@@ -3,75 +3,51 @@ set -e
 
 source ../.env
 
-nft_lock_script_path="../nft-locking-contract/nft-locking-contract.plutus"
-nft_mint_script_path="../nft-minting-contract/nft-minting-contract.plutus"
-
-lock_script_path="../locking-contract/locking-contract.plutus"
-mint_script_path="../minting-contract/minting-contract.plutus"
+cogno_script_path="../cogno-contract/cogno-contract.plutus"
+market_script_path="../marketplace-contract/marketplace-contract.plutus"
 
 # Addresses
 reference_address=$(cat wallets/reference-wallet/payment.addr)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+reference_address=$(cat wallets/reference-wallet/payment.addr)
 
 lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${nft_lock_script_path} \
+    --tx-out-reference-script-file ${cogno_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
 echo "NFT Locking Min Fee" ${lock_min_utxo}
 
 mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${nft_mint_script_path} \
+    --tx-out-reference-script-file ${market_script_path} \
     --tx-out="${reference_address} 5000000" | tr -dc '0-9')
 echo "NFT Minting Min Fee" ${mint_min_utxo}
 
 echo
-nft_mint_value=$mint_min_utxo
-nft_lock_value=$lock_min_utxo
-nft_lock_script_reference_utxo="${reference_address} + ${nft_lock_value}"
-nft_mint_script_reference_utxo="${reference_address} + ${nft_mint_value}"
+market_value=$mint_min_utxo
+cogno_value=$lock_min_utxo
+cogno_script_reference_utxo="${reference_address} + ${cogno_value}"
+market_script_reference_utxo="${reference_address} + ${market_value}"
 
-lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${lock_script_path} \
-    --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "FT Locking Min Fee" ${lock_min_utxo}
-
-mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${mint_script_path} \
-    --tx-out="${reference_address} 5000000" | tr -dc '0-9')
-echo "FT Minting Min Fee" ${mint_min_utxo}
-
-mint_value=$mint_min_utxo
-lock_value=$lock_min_utxo
-lock_script_reference_utxo="${reference_address} + ${lock_value}"
-mint_script_reference_utxo="${reference_address} + ${mint_value}"
-
-echo -e "\nCreating NFT Locking Reference:\n" ${nft_lock_script_reference_utxo}
-echo -e "\nCreating NFT Minting Reference:\n" ${nft_mint_script_reference_utxo}
-echo -e "\nCreating Locking Reference:\n" ${lock_script_reference_utxo}
-echo -e "\nCreating Minting Reference:\n" ${mint_script_reference_utxo}
+echo -e "\nCreating NFT Locking Reference:\n" ${cogno_script_reference_utxo}
+echo -e "\nCreating NFT Minting Reference:\n" ${market_script_reference_utxo}
 #
 # exit
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
     ${network} \
-    --address ${seller_address} \
-    --out-file tmp/seller_utxo.json
+    --address ${reference_address} \
+    --out-file tmp/reference_utxo.json
 
-TXNS=$(jq length tmp/seller_utxo.json)
+TXNS=$(jq length tmp/reference_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${reference_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/reference_utxo.json)
 HEXTXIN=${TXIN::-8}
 # echo $HEXTXIN
 # exit
@@ -79,25 +55,25 @@ HEXTXIN=${TXIN::-8}
 # chain second set of reference scripts to the first
 echo -e "\033[0;36m Building Tx \033[0m"
 
-starting_seller_lovelace=$(jq '[.. | objects | .lovelace] | add' tmp/seller_utxo.json)
+starting_reference_lovelace=$(jq '[.. | objects | .lovelace] | add' tmp/reference_utxo.json)
 
 ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --tx-in ${HEXTXIN} \
-    --tx-out="${seller_address} + ${starting_seller_lovelace}" \
-    --tx-out="${nft_lock_script_reference_utxo}" \
-    --tx-out-reference-script-file ${nft_lock_script_path} \
-    --tx-out="${nft_mint_script_reference_utxo}" \
-    --tx-out-reference-script-file ${nft_mint_script_path} \
+    --tx-out="${reference_address} + ${starting_reference_lovelace}" \
+    --tx-out="${cogno_script_reference_utxo}" \
+    --tx-out-reference-script-file ${cogno_script_path} \
+    --tx-out="${market_script_reference_utxo}" \
+    --tx-out-reference-script-file ${market_script_path} \
     --fee 900000
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 # echo $fee
 # exit
-firstReturn=$((${starting_seller_lovelace} - ${nft_mint_value} - ${nft_lock_value} - ${fee}))
+firstReturn=$((${starting_reference_lovelace} - ${market_value} - ${cogno_value} - ${fee}))
 # echo $firstReturn
 # exit
 ${cli} transaction build-raw \
@@ -105,68 +81,19 @@ ${cli} transaction build-raw \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --tx-in ${HEXTXIN} \
-    --tx-out="${seller_address} + ${firstReturn}" \
-    --tx-out="${nft_lock_script_reference_utxo}" \
-    --tx-out-reference-script-file ${nft_lock_script_path} \
-    --tx-out="${nft_mint_script_reference_utxo}" \
-    --tx-out-reference-script-file ${nft_mint_script_path} \
+    --tx-out="${reference_address} + ${firstReturn}" \
+    --tx-out="${cogno_script_reference_utxo}" \
+    --tx-out-reference-script-file ${cogno_script_path} \
+    --tx-out="${market_script_reference_utxo}" \
+    --tx-out-reference-script-file ${market_script_path} \
     --fee ${fee}
 
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-1.signed \
     ${network}
-
-nextUTxO=$(${cli} transaction txid --tx-body-file tmp/tx.draft)
-echo "First in the tx chain" $nextUTxO
-
-#
-# exit
-#
-echo -e "\033[0;36m Building Tx \033[0m"
-${cli} transaction build-raw \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#0" \
-    --tx-out="${seller_address} + ${firstReturn}" \
-    --tx-out="${lock_script_reference_utxo}" \
-    --tx-out-reference-script-file ${lock_script_path} \
-    --tx-out="${mint_script_reference_utxo}" \
-    --tx-out-reference-script-file ${mint_script_path} \
-    --fee 900000
-
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
-# echo $FEE
-fee=$(echo $FEE | rev | cut -c 9- | rev)
-# echo $fee
-# exit
-secondReturn=$((${firstReturn} - ${mint_value} - ${lock_value} - ${fee}))
-
-
-${cli} transaction build-raw \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --out-file tmp/tx.draft \
-    --tx-in="${nextUTxO}#0" \
-    --tx-out="${seller_address} + ${secondReturn}" \
-    --tx-out="${lock_script_reference_utxo}" \
-    --tx-out-reference-script-file ${lock_script_path} \
-    --tx-out="${mint_script_reference_utxo}" \
-    --tx-out-reference-script-file ${mint_script_path} \
-    --fee ${fee}
-#
-# exit
-#
-echo -e "\033[0;36m Signing \033[0m"
-${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
-    --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx-2.signed \
-    ${network}
-#
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
@@ -174,9 +101,4 @@ ${cli} transaction submit \
     ${network} \
     --tx-file tmp/tx-1.signed
 
-${cli} transaction submit \
-    ${network} \
-    --tx-file tmp/tx-2.signed
-
 cp tmp/tx-1.signed tmp/tx-reference-utxo.signed
-cp tmp/tx-2.signed ../fractionalize-scripts/tmp/tx-reference-utxo.signed

@@ -74,13 +74,10 @@ PlutusTx.makeIsDataIndexed ''CognoDatumType [ ( 'Cogno,  0 )
 -- | Oracle starter token value information
 -------------------------------------------------------------------------------
 oraclePid :: PlutusV2.CurrencySymbol
-oraclePid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [10, 87, 27, 224, 106, 116, 163, 98, 171, 247, 253, 32, 55, 140, 211, 170, 210, 242, 157, 96, 68, 116, 88, 176, 182, 76, 149, 97] }
+oraclePid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [185, 156, 43, 118, 234, 165, 127, 144, 170, 240, 166, 198, 30, 82, 33, 6, 150, 230, 102, 47, 72, 54, 147, 227, 22, 116, 126, 26] }
 
 oracleTkn :: PlutusV2.TokenName
-oracleTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [115, 116, 97, 114, 116, 101, 114, 95, 116, 111, 107, 101, 110, 95, 48] }
-
-oracleValue :: PlutusV2.Value
-oracleValue = Value.singleton oraclePid oracleTkn (1 :: Integer)
+oracleTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString [115, 116, 97, 114, 116, 101, 114, 95, 110, 102, 116] }
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -156,10 +153,9 @@ mkValidator datum redeemer context =
       ; let nextAmt = Value.valueOf valueAtValidator (cdtPid datum) (cdtTkn datum)
       ; let a = traceIfFalse "Single In/Out Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
       ; let b = traceIfFalse "Bad Signer Tx Error" $ ContextsV2.txSignedBy info pkh                   -- the owner must sign it
-      ; let c = traceIfFalse "Single Ref In Error" $ isNInputs txRefInputs 1                          -- 1 ref input
-      ; let d = traceIfFalse "Datum Continu Error" $ datumAtValidator datum                           -- datum stays the same
-      ; let e = traceIfFalse "FT Must Remain"      $ currAmt == nextAmt                               -- datum stays the same
-      ;         traceIfFalse "Stable: Mint Error"  $ all (==True) [a,b,c,d,e]
+      ; let c = traceIfFalse "Datum Continu Error" $ datumAtValidator datum                           -- datum stays the same
+      ; let d = traceIfFalse "FT Must Remain"      $ currAmt == nextAmt                               -- datum stays the same
+      ;         traceIfFalse "Stable: Mint Error"  $ all (==True) [a,b,c,d]
       }
     _  -> False
   where
@@ -222,7 +218,8 @@ mkValidator datum redeemer context =
           ; let curAmt   = Value.valueOf validatingValue (cdtPid datum) (cdtTkn datum)
           ; let a = traceIfFalse "Bad Cont Value" $ (validatingValue + incToken - outToken) == valueAtValidator
           ; let b = traceIfFalse "Not Enough Tkn" $ curAmt >= relAmt
-          ;         traceIfFalse "Value Error"    $ all (==True) [a,b]
+          ; let c = traceIfFalse "Payout is Zero" $ not $ Value.isZero outToken
+          ;         traceIfFalse "Value Error"    $ all (==True) [a,b,c]
           }
           
     -- reference teh oracle stuff

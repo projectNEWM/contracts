@@ -4,10 +4,10 @@ set -e
 source ../.env
 
 #
-script_path="../nft-locking-contract/nft-locking-contract.plutus"
+script_path="../cogno-contract/cogno-contract.plutus"
 SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} ${network})
 #
-ft_script_path="../locking-contract/locking-contract.plutus"
+ft_script_path="../marketplace-contract/marketplace-contract.plutus"
 FT_SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${ft_script_path} ${network})
 
 
@@ -24,14 +24,14 @@ ${cli} query tip ${network} | jq
 
 #
 echo
-echo -e "\033[1;35m NFT Script Address:" 
+echo -e "\033[1;35m Cogno Script Address:" 
 echo -e "\n${SCRIPT_ADDRESS}\n";
 ${cli} query utxo --address ${SCRIPT_ADDRESS} ${network}
 echo -e "\033[0m"
 
 #
 echo
-echo -e "\033[1;35m FT Script Address:" 
+echo -e "\033[1;35m Marketplace Script Address:" 
 echo -e "\n${FT_SCRIPT_ADDRESS}\n";
 ${cli} query utxo --address ${FT_SCRIPT_ADDRESS} ${network}
 echo -e "\033[0m"
