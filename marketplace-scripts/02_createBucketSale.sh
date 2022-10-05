@@ -12,14 +12,11 @@ script_address=$(${cli} address build --payment-script-file ${script_path} ${net
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/buyer-wallet/payment.vkey)
 
-MINT_ASSET="527530 3f1eb5125fbde17a5a5cf96be0b9863142a34f677bf84cef63c699af.537461626c65"
 
-script_address_out="${script_address} + 5000000 + ${MINT_ASSET}"
-echo "Mint OUTPUT: "${script_address_out}
-#
-# exit
-#
-echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
+token_pid=$(cat market.json | jq -r .tokenPid)
+token_tkn=$(cat market.json | jq -r .tokenTkn)
+
+echo -e "\033[0;36m Gathering Payer UTxO Information  \033[0m"
 ${cli} query utxo \
     ${network} \
     --address ${buyer_address} \
@@ -34,6 +31,15 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
 buyer_tx_in=${TXIN::-8}
 
+totalTknAmount=$(jq -r --arg policy_id "$token_pid" --arg name "$token_tkn" '[to_entries[] | select(.value.value[$policy_id][$name] >= 1) | .value.value[$policy_id][$name]] | add' tmp/buyer_utxo.json)
+
+MINT_ASSET="${totalTknAmount} ${token_pid}.${token_tkn}"
+
+script_address_out="${script_address} + 2000000 + ${MINT_ASSET}"
+echo "Mint OUTPUT: "${script_address_out}
+#
+# exit
+#
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \

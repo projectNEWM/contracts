@@ -31,22 +31,20 @@ fi
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-pid="3f1eb5125fbde17a5a5cf96be0b9863142a34f677bf84cef63c699af"
-tkn="537461626c65"
-
+pid=$(cat market.json | jq -r .tokenPid)
+tkn=$(cat market.json | jq -r .tokenTkn)
 
 totalTknAmount=$(jq -r --arg policy_id "$pid" --arg name "$tkn" '[to_entries[] | select(.value.value[$policy_id][$name] >= 1) | .value.value[$policy_id][$name]] | add' tmp/script_utxo.json)
 totalAdaAmount=$(jq -r --arg policy_id "$pid" --arg name "$tkn" '[to_entries[] | select(.value.value.lovelace >= 1) | .value.value.lovelace] | add' tmp/script_utxo.json)
 MINT_ASSET="${totalTknAmount} ${pid}.${tkn}"
 
-if [ -z "$totalTknAmount" ];
+if [ "${totalTknAmount}" -gt "0" ];
 then buyer_address_out="${buyer_address} + ${totalAdaAmount} + ${MINT_ASSET}"; 
 else buyer_address_out="${buyer_address} + ${totalAdaAmount}"; 
 fi
 echo "Total Coin:" ${totalTknAmount}
 echo "Total Ada:" ${totalAdaAmount}
 
-# buyer_address_out="${buyer_address} + ${totalAdaAmount} + ${MINT_ASSET}"
 echo "Mint OUTPUT: "${buyer_address_out}
 #
 # exit

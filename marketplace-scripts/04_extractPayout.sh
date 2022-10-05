@@ -39,8 +39,8 @@ fi
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-pid="3f1eb5125fbde17a5a5cf96be0b9863142a34f677bf84cef63c699af"
-tkn="537461626c65"
+pid=$(cat market.json | jq -r .tokenPid)
+tkn=$(cat market.json | jq -r .tokenTkn)
 
 totalTknAmount=$(jq -r --arg policy_id "$pid" --arg name "$tkn" '[to_entries[] | select(.value.value[$policy_id][$name] >= 1) | .value.value[$policy_id][$name]] | add' tmp/script_utxo.json)
 totalAdaAmount=$(jq -r --arg policy_id "$pid" --arg name "$tkn" '[to_entries[] | select(.value.value.lovelace >= 1) | .value.value.lovelace] | add' tmp/script_utxo.json)
@@ -106,8 +106,8 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 
-oracle_id="b99c2b76eaa57f90aaf0a6c61e52210696e6662f483693e316747e1a"
-oracle_name="737461727465725f6e6674"
+oracle_id=$(cat market.json | jq -r .oraclePid)
+oracle_name=$(cat market.json | jq -r .oracleTkn)
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" --arg policy_id "$oracle_id" --arg token_name "$oracle_name" 'to_entries[] | select(.value.value[$policy_id][$token_name] >= 1) | .key | . + $alltxin + " --tx-in"' tmp/oracle_utxo.json)
 oracle_tx_in=${TXIN::-8}
@@ -122,9 +122,8 @@ FEE=$(${cli} transaction build \
     --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${buyer_address} \
-    --tx-in-collateral ${collat_utxo} \
     --tx-in ${buyer_tx_in} \
-    --read-only-tx-in-reference ${oracle_tx_in} \
+    --tx-in-collateral ${collat_utxo} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#2" \
     --spending-plutus-script-v2 \
