@@ -7,6 +7,7 @@ packages:
     nft-locking-contract
     nft-minting-contract
     marketplace-contract
+    order-book-contract
 
 -- We never, ever, want this.
 write-ghc-environment-files: never
@@ -331,7 +332,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/logicalmechanism/useful-funcs
-  tag: c389842f483f42ac5882244ee32861471435b7f0
+  tag: 728851d70938b712817c6b93ee544e54e0703171
   subdir: useful-funcs
 
 -- oracle data structures
