@@ -27,12 +27,15 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module DataTypes
   ( OrderBookData (..)
-  , IncreaseADA (..)
+  , IncreaseADA   (..)
+  , SwapData      (..)
   , updateOrderBookData
+  , verifyExtraADA
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as PlutusV2
+import           UsefulFuncs             ( pow )
 -------------------------------------------------------------------------------
 -- | Create the OrderBookData object.
 -------------------------------------------------------------------------------
@@ -73,7 +76,32 @@ updateOrderBookData a b = ( obPkh     a == obPkh     b ) &&
 -- | Create the IncreaseADA object.
 -------------------------------------------------------------------------------
 data IncreaseADA = IncreaseADA
-  { iExtraAda :: Integer
-  -- ^ The lovelace amount for the printer payout.
+  { iExtraAda     :: Integer
+  -- ^ The extra ada required for the min ada.
+  , iExtraAdaFlag :: Integer
+  -- ^ The positive/negative flag for min ada.
+  , iFeeDiff      :: Integer
+  -- ^ The difference in the fee that is being added in the tx.
+  , iFeeDiffFlag  :: Integer
+  -- ^ The positive/negative flag for fee diff.
+  , iIncDiff      :: Integer
+  -- ^ The difference in the incentive being added in the tx.
+  , iIncDiffFlag  :: Integer
+  -- ^ The positive/negative flag for incentive diff.
   }
 PlutusTx.unstableMakeIsData ''IncreaseADA
+
+-- confirm that the fee and incentive have been increased properly
+verifyExtraADA :: OrderBookData -> OrderBookData -> IncreaseADA -> Bool
+verifyExtraADA a b c =  ( obFeeAmt    a + (pow (-1) (iFeeDiffFlag c)) * (iFeeDiff c) == obFeeAmt    b ) &&
+                        ( obIncentive a + (pow (-1) (iIncDiffFlag c)) * (iIncDiff c) == obIncentive b )
+-------------------------------------------------------------------------------
+-- | Create the SwapData object.
+-------------------------------------------------------------------------------
+data SwapData = SwapData
+  { sTx :: PlutusV2.TxId
+  -- ^ The tx hash of the other utxo being swapped.
+  , sIdx :: Integer
+  -- ^ The index of the tx hash.
+  }
+PlutusTx.unstableMakeIsData ''SwapData

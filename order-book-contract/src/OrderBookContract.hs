@@ -48,7 +48,7 @@ import           DataTypes
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = Swap               |
+data CustomRedeemerType = Swap   SwapData    |
                           Update IncreaseADA |
                           Remove
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Swap,   0 )
@@ -69,16 +69,24 @@ mkValidator datum redeemer context =
   -}
   case redeemer of
     -- | Swap two utxos according to the order book method.
-    Swap -> False
+    (Swap sData) -> do
+      { let a = traceIfFalse "Double Script UTxO" $ isNInputs txInputs 2 && isNOutputs contTxOutputs 0 -- single script input
+      ;         traceIfFalse "Remove Error"       $ all (==(True :: Bool)) [a]
+      }
     -- | Update the order book utxo with new sale information.
-    (Update iData) -> let additionalValue = validatingValue + (adaValue $ iExtraAda iData)
+    (Update iData) ->
+      let extraAda = (pow (-1) (iExtraAdaFlag iData)) * (iExtraAda iData)
+          feeDiff  = (pow (-1) (iFeeDiffFlag  iData)) * (iFeeDiff iData)
+          incDiff  = (pow (-1) (iIncDiffFlag  iData)) * (iIncDiff iData)
+          additionalValue = validatingValue + adaValue extraAda + adaValue feeDiff + adaValue incDiff
       in case getContinuingDatum contTxOutputs additionalValue of
         Nothing        -> traceIfFalse "getContinuingDatum Error" False
         Just contDatum -> do
           { let a = traceIfFalse "Incorrect Signer"    $ ContextsV2.txSignedBy info (obPkh datum)           -- wallet must sign it
           ; let b = traceIfFalse "Single Script UTxO"  $ isNInputs txInputs 1 && isNOutputs contTxOutputs 1 -- single script input
           ; let c = traceIfFalse "Incorrect New State" $ updateOrderBookData datum contDatum                -- update allowed information
-          ;         traceIfFalse "Update Error"        $ all (==(True :: Bool)) [a,b,c]
+          ; let d = traceIfFalse "Incorrect Ada Amt"   $ verifyExtraADA datum contDatum iData               -- verify the fee and incentive add up
+          ;         traceIfFalse "Update Error"        $ all (==(True :: Bool)) [a,b,c,d]
           }
     -- | Remove the order book utxo back to the wallet
     Remove -> do
@@ -123,6 +131,20 @@ mkValidator datum redeemer context =
                 Nothing     -> getContinuingDatum xs val
                 Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @OrderBookData inline
         else getContinuingDatum xs val
+    
+    getDatumByTxId :: PlutusV2.TxOutRef -> Maybe OrderBookData
+    getDatumByTxId txId = 
+      case ContextsV2.findTxInByTxOutRef txId info of
+        Nothing -> Nothing
+        Just txIn -> 
+          case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved txIn of
+            PlutusV2.NoOutputDatum       -> Nothing -- skip datumless
+            (PlutusV2.OutputDatumHash _) -> Nothing -- skip embedded datum
+            -- inline datum only
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing     -> Nothing
+                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @OrderBookData inline
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

@@ -47,6 +47,7 @@ library
 
   exposed-modules:      OrderBookContract
                         DataTypes
+                        HelperFunctions
 
   build-depends:        bytestring
                       , cardano-api
