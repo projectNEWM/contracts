@@ -78,21 +78,18 @@ mkValidator datum redeemer context =
         Just otherDatum -> do
           { let walletAAddr = createAddress (obPkh datum)      (obSc datum)
           ; let walletBAddr = createAddress (obPkh otherDatum) (obSc otherDatum)
-          ; let aPrice = effectivePrice (obHaveAmt datum)      (obWantAmt datum)
-          ; let bPrice = effectivePrice (obWantAmt otherDatum) (obHaveAmt otherDatum)
-          ; let aSlip = obSlippage datum
-          ; let bSlip = obSlippage otherDatum
-          ; let a = traceIfFalse "Double Script UTxO" $ isNInputs txInputs 2 && isNOutputs contTxOutputs 0                                     -- single script input
-          ; let b = traceIfFalse "No Mirrorred Pairs" $ checkMirrorredDatums datum otherDatum                                                  -- mirrored have and want tokens.
-          ; let c = traceIfFalse "Hold Enough Token"  $ Value.valueOf validatingValue (obHavePid datum) (obHaveTkn datum) == (obHaveAmt datum) -- must have what is claimed
-          ; let d = traceIfFalse "Incorrect Slippage" $ isIntegerInRange aPrice aSlip bPrice == isIntegerInRange bPrice bSlip aPrice           -- slippage is in range
+          ; let isPart      = checkIfPartialSwap datum otherDatum
+          ; let a = traceIfFalse "Incorrect In/Outs"  $ isNInputs txInputs 2 && isNOutputs contTxOutputs isPart -- single script input
+          ; let b = traceIfFalse "No Mirrorred Pairs" $ checkMirrorredDatums datum otherDatum                   -- mirrored have and want tokens.
+          ; let c = traceIfFalse "Hold Enough Token"  $ checkIfHoldingEnough                                    -- must have what is claimed
+          ; let d = traceIfFalse "Incorrect Slippage" $ checkIfInEffectiveSlippageRange datum otherDatum        -- slippage is in range
           ;         traceIfFalse "Swap Error"         $ all (==(True :: Bool)) [a,b,c,d]
           }
     -- | Update the order book utxo with new sale information.
     (Update iData) ->
       let extraAda = (pow (-1) (iExtraAdaFlag iData)) * (iExtraAda iData)
-          feeDiff  = (pow (-1) (iFeeDiffFlag  iData)) * (iFeeDiff iData)
-          incDiff  = (pow (-1) (iIncDiffFlag  iData)) * (iIncDiff iData)
+          feeDiff  = (pow (-1) (iFeeDiffFlag  iData)) * (iFeeDiff  iData)
+          incDiff  = (pow (-1) (iIncDiffFlag  iData)) * (iIncDiff  iData)
           additionalValue = validatingValue + adaValue extraAda + adaValue feeDiff + adaValue incDiff
       in case getContinuingDatum contTxOutputs additionalValue of
         Nothing        -> traceIfFalse "getContinuingDatum Error" False
@@ -132,6 +129,15 @@ mkValidator datum redeemer context =
         Nothing    -> traceError "No Input to Validate"
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
+    checkIfPartialSwap :: OrderBookData -> OrderBookData -> Integer
+    checkIfPartialSwap thisDatum thatDatum =
+      if checkIfInSlippageRange thisDatum thatDatum
+        then 0 -- full swap
+        else 1 -- partial swap
+
+    checkIfHoldingEnough :: Bool
+    checkIfHoldingEnough = Value.valueOf validatingValue (obHavePid datum) (obHaveTkn datum) == (obHaveAmt datum) 
+
     getContinuingDatum :: [PlutusV2.TxOut] -> PlutusV2.Value -> Maybe OrderBookData
     getContinuingDatum []     _   = Nothing
     getContinuingDatum (x:xs) val =

@@ -33,6 +33,9 @@ import qualified PlutusTx
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as PlutusV2
 -------------------------------------------------------------------------------
+-- | Calculate ratio price.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Calculate the effective price.
 -------------------------------------------------------------------------------
 effectivePrice :: Integer -> Integer -> Integer

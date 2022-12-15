@@ -32,11 +32,20 @@ module DataTypes
   , updateOrderBookData
   , checkMirrorredDatums
   , verifyExtraADA
+  , checkIfInSlippageRange
+  , checkIfInEffectiveSlippageRange
+  , calculateRatioPrice
+  , testData1
+  , testData2
+  , testData3
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as PlutusV2
-import           UsefulFuncs             ( pow )
+import           UsefulFuncs             ( pow
+                                         , isIntegerInRange
+                                         )
+import           HelperFunctions         ( effectivePrice )
 -------------------------------------------------------------------------------
 -- | Create the OrderBookData object.
 -------------------------------------------------------------------------------
@@ -65,6 +74,91 @@ data OrderBookData = OrderBookData
   -- ^ The owner is willing to pay this much incentive.
   }
 PlutusTx.unstableMakeIsData ''OrderBookData
+-- | Test data for price calculations
+testData1 :: OrderBookData
+testData1 = OrderBookData
+  { obPkh       = ""
+  , obSc        = ""
+  , obHavePid   = ""
+  , obHaveTkn   = ""
+  , obHaveAmt   = 617283
+  , obWantPid   = ""
+  , obWantTkn   = ""
+  , obWantAmt   = 555555
+  , obSlippage  = 20
+  , obFeeAmt    = 0
+  , obIncentive = 0
+  }
+
+testData2 :: OrderBookData
+testData2 = OrderBookData
+  { obPkh       = ""
+  , obSc        = ""
+  , obHavePid   = ""
+  , obHaveTkn   = ""
+  , obHaveAmt   = 541623
+  , obWantPid   = ""
+  , obWantTkn   = ""
+  , obWantAmt   = 630412
+  , obSlippage  = 20
+  , obFeeAmt    = 0
+  , obIncentive = 0
+  }
+
+testData3 :: OrderBookData
+testData3 = OrderBookData
+  { obPkh       = ""
+  , obSc        = ""
+  , obHavePid   = ""
+  , obHaveTkn   = ""
+  , obHaveAmt   = 1260824
+  , obWantPid   = ""
+  , obWantTkn   = ""
+  , obWantAmt   = 1083246
+  , obSlippage  = 20
+  , obFeeAmt    = 0
+  , obIncentive = 0
+  }
+
+calculateRatioPrice :: OrderBookData -> OrderBookData -> Integer
+calculateRatioPrice a b = price
+  where
+
+    h1 = obHaveAmt a
+    w1 = obWantAmt a
+
+    h2 = obHaveAmt b
+    w2 = obWantAmt b
+
+    price = divide (h1*w2) h2
+
+-- | Calculate if two order book dats are within their effective slippage range.
+checkIfInSlippageRange :: OrderBookData -> OrderBookData -> Bool
+checkIfInSlippageRange a b =  isIntegerInRange (obHaveAmt a) aSlip (obWantAmt b) == True && 
+                              isIntegerInRange (obHaveAmt b) bSlip (obWantAmt a) == True
+  where
+    aSlip :: Integer
+    aSlip = obSlippage a
+
+    bSlip :: Integer
+    bSlip = obSlippage b
+
+-- | Calculate if two order book dats are within their effective slippage range.
+checkIfInEffectiveSlippageRange :: OrderBookData -> OrderBookData -> Bool
+checkIfInEffectiveSlippageRange a b =  isIntegerInRange aPrice aSlip bPrice == True && 
+                                       isIntegerInRange bPrice bSlip aPrice == True
+  where
+    aPrice :: Integer
+    aPrice = effectivePrice (obHaveAmt a) (obWantAmt a)
+
+    bPrice :: Integer
+    bPrice = effectivePrice (obWantAmt b) (obHaveAmt b)
+
+    aSlip :: Integer
+    aSlip = obSlippage a
+
+    bSlip :: Integer
+    bSlip = obSlippage b
 
 -- | Update the order book want token, slip, fee, and incentive information.
 updateOrderBookData :: OrderBookData -> OrderBookData -> Bool
