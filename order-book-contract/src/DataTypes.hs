@@ -30,6 +30,7 @@ module DataTypes
   , IncreaseADA   (..)
   , SwapData      (..)
   , updateOrderBookData
+  , checkMirrorredDatums
   , verifyExtraADA
   ) where
 import qualified PlutusTx
@@ -72,6 +73,11 @@ updateOrderBookData a b = ( obPkh     a == obPkh     b ) &&
                           ( obHavePid a == obHavePid b ) &&
                           ( obHaveTkn a == obHaveTkn b ) &&
                           ( obHaveAmt a == obHaveAmt b )
+
+-- | Check if two datums have inverse have and want tokens.
+checkMirrorredDatums :: OrderBookData -> OrderBookData -> Bool
+checkMirrorredDatums a b =  ( obHavePid a == obWantPid b ) &&
+                            ( obHaveTkn a == obWantTkn b )
 -------------------------------------------------------------------------------
 -- | Create the IncreaseADA object.
 -------------------------------------------------------------------------------

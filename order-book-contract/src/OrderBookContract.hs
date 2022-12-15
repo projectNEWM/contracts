@@ -36,11 +36,13 @@ import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScrip
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
+import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
 import           UsefulFuncs
 import           DataTypes
+import           HelperFunctions
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
@@ -69,10 +71,23 @@ mkValidator datum redeemer context =
   -}
   case redeemer of
     -- | Swap two utxos according to the order book method.
-    (Swap sData) -> do
-      { let a = traceIfFalse "Double Script UTxO" $ isNInputs txInputs 2 && isNOutputs contTxOutputs 0 -- single script input
-      ;         traceIfFalse "Remove Error"       $ all (==(True :: Bool)) [a]
-      }
+    (Swap sData) ->
+      let txId = createTxOutRef (sTx sData) (sIdx sData)
+      in case getDatumByTxId txId of
+        Nothing -> traceIfFalse "getDatumByTxId Error" False
+        Just otherDatum -> do
+          { let walletAAddr = createAddress (obPkh datum)      (obSc datum)
+          ; let walletBAddr = createAddress (obPkh otherDatum) (obSc otherDatum)
+          ; let aPrice = effectivePrice (obHaveAmt datum)      (obWantAmt datum)
+          ; let bPrice = effectivePrice (obWantAmt otherDatum) (obHaveAmt otherDatum)
+          ; let aSlip = obSlippage datum
+          ; let bSlip = obSlippage otherDatum
+          ; let a = traceIfFalse "Double Script UTxO" $ isNInputs txInputs 2 && isNOutputs contTxOutputs 0                                     -- single script input
+          ; let b = traceIfFalse "No Mirrorred Pairs" $ checkMirrorredDatums datum otherDatum                                                  -- mirrored have and want tokens.
+          ; let c = traceIfFalse "Hold Enough Token"  $ Value.valueOf validatingValue (obHavePid datum) (obHaveTkn datum) == (obHaveAmt datum) -- must have what is claimed
+          ; let d = traceIfFalse "Incorrect Slippage" $ isIntegerInRange aPrice aSlip bPrice == isIntegerInRange bPrice bSlip aPrice           -- slippage is in range
+          ;         traceIfFalse "Swap Error"         $ all (==(True :: Bool)) [a,b,c,d]
+          }
     -- | Update the order book utxo with new sale information.
     (Update iData) ->
       let extraAda = (pow (-1) (iExtraAdaFlag iData)) * (iExtraAda iData)
