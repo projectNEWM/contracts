@@ -35,9 +35,12 @@ module DataTypes
   , checkIfInSlippageRange
   , checkIfInEffectiveSlippageRange
   , calculateRatioPrice
+  -- testing below
   , testData1
   , testData2
   , testData3
+  , testData4
+  , showTestAmts
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -120,6 +123,24 @@ testData3 = OrderBookData
   , obIncentive = 0
   }
 
+testData4 :: OrderBookData
+testData4 = OrderBookData
+  { obPkh       = ""
+  , obSc        = ""
+  , obHavePid   = ""
+  , obHaveTkn   = ""
+  , obHaveAmt   = 1083246
+  , obWantPid   = ""
+  , obWantTkn   = ""
+  , obWantAmt   = 1260824
+  , obSlippage  = 20
+  , obFeeAmt    = 0
+  , obIncentive = 0
+  }
+
+showTestAmts :: OrderBookData -> [(Integer, Integer, Integer)]
+showTestAmts a = [(obHaveAmt a, obWantAmt a, effectivePrice (obHaveAmt a) (obWantAmt a))]
+
 calculateRatioPrice :: OrderBookData -> OrderBookData -> Integer
 calculateRatioPrice a b = price
   where
@@ -131,6 +152,7 @@ calculateRatioPrice a b = price
     w2 = obWantAmt b
 
     price = divide (h1*w2) h2
+    -- price = divide (h2*w1) h1
 
 -- | Calculate if two order book dats are within their effective slippage range.
 checkIfInSlippageRange :: OrderBookData -> OrderBookData -> Bool
