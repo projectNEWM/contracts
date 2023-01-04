@@ -29,7 +29,6 @@ module HelperFunctions
   ( effectivePrice
   , createTxOutRef
   ) where
-import qualified PlutusTx
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as PlutusV2
 -------------------------------------------------------------------------------
@@ -52,11 +51,11 @@ effectivePrice haveAmt wantAmt = price
 -------------------------------------------------------------------------------
 -- | Create a TxOutRef from the tx hash and index.
 -------------------------------------------------------------------------------
-createTxOutRef :: PlutusV2.TxId -> Integer -> PlutusV2.TxOutRef
+createTxOutRef :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.TxOutRef
 createTxOutRef txHash index = txId
   where
     txId :: PlutusV2.TxOutRef
     txId = PlutusV2.TxOutRef
-      { PlutusV2.txOutRefId  = txHash
+      { PlutusV2.txOutRefId  = PlutusV2.TxId { PlutusV2.getTxId = txHash }
       , PlutusV2.txOutRefIdx = index
       }

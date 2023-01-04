@@ -1,6 +1,6 @@
-cabal clean
-cabal update
-cabal build -w ghc-8.10.7 -O2
+# cabal clean
+# cabal update
+cabal build -w ghc-8.10.7
 cabal run order-book-contract
 #
 cardano-cli address build --payment-script-file order-book-contract.plutus --testnet-magic 2 --out-file validator.addr

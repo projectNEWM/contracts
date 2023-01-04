@@ -29,12 +29,13 @@ module DataTypes
   ( OrderBookData (..)
   , IncreaseADA   (..)
   , SwapData      (..)
-  , updateOrderBookData
+  , checkNewOrderBookData
+  , checkIfPartialSwap
   , checkMirrorredDatums
   , verifyExtraADA
   , checkIfInSlippageRange
   , checkIfInEffectiveSlippageRange
-  , calculateRatioPrice
+  -- , calculateRatioPrice
   -- testing below
   , testData1
   , testData2
@@ -77,6 +78,73 @@ data OrderBookData = OrderBookData
   -- ^ The owner is willing to pay this much incentive.
   }
 PlutusTx.unstableMakeIsData ''OrderBookData
+
+-- old == new
+instance Eq OrderBookData where
+  {-# INLINABLE (==) #-}
+  a == b = ( obPkh       a == obPkh       b ) &&
+           ( obSc        a == obSc        b ) &&
+           ( obHavePid   a == obHavePid   b ) &&
+           ( obHaveTkn   a == obHaveTkn   b ) &&
+           ( obHaveAmt   a == obHaveAmt   b ) &&
+           ( obWantPid   a == obWantPid   b ) &&
+           ( obWantTkn   a == obWantTkn   b ) &&
+           ( obWantAmt   a == obWantAmt   b ) &&
+           ( obSlippage  a == obSlippage  b ) &&
+           ( obFeeAmt    a == obFeeAmt    b ) &&
+           ( obIncentive a == obIncentive b )
+
+-- | Check the update on the order book is only changing the want token, slip, fee, and incentive information.
+checkNewOrderBookData :: OrderBookData -> OrderBookData -> Bool
+checkNewOrderBookData a b = ( obPkh     a == obPkh     b ) &&
+                            ( obSc      a == obSc      b ) &&
+                            ( obHavePid a == obHavePid b ) &&
+                            ( obHaveTkn a == obHaveTkn b ) &&
+                            ( obHaveAmt a == obHaveAmt b )
+
+-- | Check if two datums have inverse have and want tokens.
+checkMirrorredDatums :: OrderBookData -> OrderBookData -> Bool
+checkMirrorredDatums a b =  ( obHavePid a == obWantPid b ) &&
+                            ( obHaveTkn a == obWantTkn b )
+
+-- | Check if two datums are a full swap or a partial swap
+checkIfPartialSwap :: OrderBookData -> OrderBookData -> Integer
+checkIfPartialSwap thisDatum thatDatum =
+  if checkIfInSlippageRange thisDatum thatDatum
+    then 0 -- full swap
+    else 1 -- partial swap
+
+-- | Calculate if two order book dats are within their effective slippage range.
+checkIfInSlippageRange :: OrderBookData -> OrderBookData -> Bool
+checkIfInSlippageRange a b =  isIntegerInRange (obHaveAmt a) aSlip (obWantAmt b) == True && 
+                              isIntegerInRange (obHaveAmt b) bSlip (obWantAmt a) == True
+  where
+    aSlip :: Integer
+    aSlip = obSlippage a
+
+    bSlip :: Integer
+    bSlip = obSlippage b
+
+-- | Calculate if two order book dats are within their effective slippage range.
+checkIfInEffectiveSlippageRange :: OrderBookData -> OrderBookData -> Bool
+checkIfInEffectiveSlippageRange a b =  isIntegerInRange aPrice aSlip bPrice == True && 
+                                       isIntegerInRange bPrice bSlip aPrice == True
+  where
+    aPrice :: Integer
+    aPrice = effectivePrice (obHaveAmt a) (obWantAmt a)
+
+    bPrice :: Integer
+    bPrice = effectivePrice (obWantAmt b) (obHaveAmt b)
+
+    aSlip :: Integer
+    aSlip = obSlippage a
+
+    bSlip :: Integer
+    bSlip = obSlippage b
+
+-------------------------------------------------------------------------------
+-- | TEST DATA
+-------------------------------------------------------------------------------
 -- | Test data for price calculations
 testData1 :: OrderBookData
 testData1 = OrderBookData
@@ -114,7 +182,7 @@ testData3 = OrderBookData
   , obSc        = ""
   , obHavePid   = ""
   , obHaveTkn   = ""
-  , obHaveAmt   = 1260824
+  , obHaveAmt   = 1220824
   , obWantPid   = ""
   , obWantTkn   = ""
   , obWantAmt   = 1083246
@@ -132,7 +200,7 @@ testData4 = OrderBookData
   , obHaveAmt   = 1083246
   , obWantPid   = ""
   , obWantTkn   = ""
-  , obWantAmt   = 1260824
+  , obWantAmt   = 1220824
   , obSlippage  = 20
   , obFeeAmt    = 0
   , obIncentive = 0
@@ -141,59 +209,20 @@ testData4 = OrderBookData
 showTestAmts :: OrderBookData -> [(Integer, Integer, Integer)]
 showTestAmts a = [(obHaveAmt a, obWantAmt a, effectivePrice (obHaveAmt a) (obWantAmt a))]
 
-calculateRatioPrice :: OrderBookData -> OrderBookData -> Integer
-calculateRatioPrice a b = price
-  where
+-- calculateRatioPrice :: OrderBookData -> OrderBookData -> Integer
+-- calculateRatioPrice a b = price
+--   where
 
-    h1 = obHaveAmt a
-    w1 = obWantAmt a
+--     h1 = obHaveAmt a
+--     w1 = obWantAmt a
 
-    h2 = obHaveAmt b
-    w2 = obWantAmt b
+--     h2 = obHaveAmt b
+--     w2 = obWantAmt b
 
-    price = divide (h1*w2) h2
-    -- price = divide (h2*w1) h1
+--     price = divide (h1*w2) h2
+--     -- price = divide (h2*w1) h1
 
--- | Calculate if two order book dats are within their effective slippage range.
-checkIfInSlippageRange :: OrderBookData -> OrderBookData -> Bool
-checkIfInSlippageRange a b =  isIntegerInRange (obHaveAmt a) aSlip (obWantAmt b) == True && 
-                              isIntegerInRange (obHaveAmt b) bSlip (obWantAmt a) == True
-  where
-    aSlip :: Integer
-    aSlip = obSlippage a
 
-    bSlip :: Integer
-    bSlip = obSlippage b
-
--- | Calculate if two order book dats are within their effective slippage range.
-checkIfInEffectiveSlippageRange :: OrderBookData -> OrderBookData -> Bool
-checkIfInEffectiveSlippageRange a b =  isIntegerInRange aPrice aSlip bPrice == True && 
-                                       isIntegerInRange bPrice bSlip aPrice == True
-  where
-    aPrice :: Integer
-    aPrice = effectivePrice (obHaveAmt a) (obWantAmt a)
-
-    bPrice :: Integer
-    bPrice = effectivePrice (obWantAmt b) (obHaveAmt b)
-
-    aSlip :: Integer
-    aSlip = obSlippage a
-
-    bSlip :: Integer
-    bSlip = obSlippage b
-
--- | Update the order book want token, slip, fee, and incentive information.
-updateOrderBookData :: OrderBookData -> OrderBookData -> Bool
-updateOrderBookData a b = ( obPkh     a == obPkh     b ) &&
-                          ( obSc      a == obSc      b ) &&
-                          ( obHavePid a == obHavePid b ) &&
-                          ( obHaveTkn a == obHaveTkn b ) &&
-                          ( obHaveAmt a == obHaveAmt b )
-
--- | Check if two datums have inverse have and want tokens.
-checkMirrorredDatums :: OrderBookData -> OrderBookData -> Bool
-checkMirrorredDatums a b =  ( obHavePid a == obWantPid b ) &&
-                            ( obHaveTkn a == obWantTkn b )
 -------------------------------------------------------------------------------
 -- | Create the IncreaseADA object.
 -------------------------------------------------------------------------------
@@ -221,7 +250,7 @@ verifyExtraADA a b c =  ( obFeeAmt    a + (pow (-1) (iFeeDiffFlag c)) * (iFeeDif
 -- | Create the SwapData object.
 -------------------------------------------------------------------------------
 data SwapData = SwapData
-  { sTx :: PlutusV2.TxId
+  { sTx  :: PlutusV2.BuiltinByteString
   -- ^ The tx hash of the other utxo being swapped.
   , sIdx :: Integer
   -- ^ The index of the tx hash.

@@ -50,12 +50,14 @@ import           HelperFunctions
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = Swap   SwapData    |
+data CustomRedeemerType = FullSwap SwapData  |
+                          PartSwap SwapData  |
                           Update IncreaseADA |
                           Remove
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Swap,   0 )
-                                                , ( 'Update, 1 )
-                                                , ( 'Remove, 2 )
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'FullSwap, 0 )
+                                                , ( 'PartSwap, 1 )
+                                                , ( 'Update,   2 )
+                                                , ( 'Remove,   3 )
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
@@ -70,33 +72,43 @@ mkValidator datum redeemer context =
     order filling.
   -}
   case redeemer of
-    -- | Swap two utxos according to the order book method.
-    (Swap sData) ->
-      let txId = createTxOutRef (sTx sData) (sIdx sData)
+    -- | Fully Swap two utxos.
+    (FullSwap sData) -> let txId = createTxOutRef (sTx sData) (sIdx sData)
       in case getDatumByTxId txId of
-        Nothing -> traceIfFalse "getDatumByTxId Error" False
+        Nothing         -> traceIfFalse "getDatumByTxId Error" False
         Just otherDatum -> do
-          { let walletAAddr = createAddress (obPkh datum)      (obSc datum)
-          ; let walletBAddr = createAddress (obPkh otherDatum) (obSc otherDatum)
-          ; let isPart      = checkIfPartialSwap datum otherDatum
-          ; let a = traceIfFalse "Incorrect In/Outs"  $ isNInputs txInputs 2 && isNOutputs contTxOutputs isPart -- single script input
-          ; let b = traceIfFalse "No Mirrorred Pairs" $ checkMirrorredDatums datum otherDatum                   -- mirrored have and want tokens.
-          ; let c = traceIfFalse "Hold Enough Token"  $ checkIfHoldingEnough                                    -- must have what is claimed
-          ; let d = traceIfFalse "Incorrect Slippage" $ checkIfInEffectiveSlippageRange datum otherDatum        -- slippage is in range
-          ;         traceIfFalse "Swap Error"         $ all (==(True :: Bool)) [a,b,c,d]
+          { let bAddr = createAddress (obPkh otherDatum) (obSc otherDatum)
+          ; let a = traceIfFalse "Bad In/Outs"     $ isNInputs txInputs 2 && isNOutputs contTxOutputs 0       -- single script input
+          ; let b = traceIfFalse "Not A Pair"      $ checkMirrorredDatums datum otherDatum                    -- mirrored have and want tokens.
+          ; let c = traceIfFalse "Not Enough Tkns" $ checkIfHoldingEnough                                     -- must have what is claimed
+          ; let d = traceIfFalse "Bad Ful Slipp"   $ checkIfInSlippageRange datum otherDatum                  -- slippage is in range
+          ; let e = traceIfFalse "No Self Trade"   $ datum /= otherDatum                                      -- Must be different datums
+          ; let f = traceIfFalse "Value Not Swapd" $ isAddrGettingPaidExactly txOutputs bAddr validatingValue -- token must go back to wallet
+          ;         traceIfFalse "Full Swap"       $ all (==(True :: Bool)) [a,b,c,d,e,f]
+          }
+    -- | Partially Swap Two UTxOs. TODO
+    (PartSwap sData) -> let txId = createTxOutRef (sTx sData) (sIdx sData)
+      in case getDatumByTxId txId of
+        Nothing         -> traceIfFalse "getDatumByTxId Error" False
+        Just otherDatum -> do
+          { let a = traceIfFalse "Bad In/Outs"     $ isNInputs txInputs 2 && isNOutputs contTxOutputs 1       -- single script input
+          ; let b = traceIfFalse "Not A Pair"      $ checkMirrorredDatums datum otherDatum                    -- mirrored have and want tokens.
+          ; let c = traceIfFalse "Not Enough Tkns" $ checkIfHoldingEnough                                     -- must have what is claimed
+          ; let d = traceIfFalse "Bad Ful Slipp"   $ checkIfInEffectiveSlippageRange datum otherDatum         -- slippage is in range
+          ; let e = traceIfFalse "No Self Trade"   $ datum /= otherDatum                                      -- Must be different datums
+          ;         traceIfFalse "Partial Swap"    $ False -- all (==(True :: Bool)) [a,b,c,d,e]
           }
     -- | Update the order book utxo with new sale information.
-    (Update iData) ->
-      let extraAda = (pow (-1) (iExtraAdaFlag iData)) * (iExtraAda iData)
-          feeDiff  = (pow (-1) (iFeeDiffFlag  iData)) * (iFeeDiff  iData)
-          incDiff  = (pow (-1) (iIncDiffFlag  iData)) * (iIncDiff  iData)
-          additionalValue = validatingValue + adaValue extraAda + adaValue feeDiff + adaValue incDiff
+    (Update iData) -> let extraAda = (pow (-1) (iExtraAdaFlag iData)) * (iExtraAda iData)
+                          feeDiff  = (pow (-1) (iFeeDiffFlag  iData)) * (iFeeDiff  iData)
+                          incDiff  = (pow (-1) (iIncDiffFlag  iData)) * (iIncDiff  iData)
+                          additionalValue = validatingValue + adaValue extraAda + adaValue feeDiff + adaValue incDiff
       in case getContinuingDatum contTxOutputs additionalValue of
         Nothing        -> traceIfFalse "getContinuingDatum Error" False
         Just contDatum -> do
           { let a = traceIfFalse "Incorrect Signer"    $ ContextsV2.txSignedBy info (obPkh datum)           -- wallet must sign it
           ; let b = traceIfFalse "Single Script UTxO"  $ isNInputs txInputs 1 && isNOutputs contTxOutputs 1 -- single script input
-          ; let c = traceIfFalse "Incorrect New State" $ updateOrderBookData datum contDatum                -- update allowed information
+          ; let c = traceIfFalse "Incorrect New State" $ checkNewOrderBookData datum contDatum              -- update allowed information
           ; let d = traceIfFalse "Incorrect Ada Amt"   $ verifyExtraADA datum contDatum iData               -- verify the fee and incentive add up
           ;         traceIfFalse "Update Error"        $ all (==(True :: Bool)) [a,b,c,d]
           }
@@ -129,12 +141,6 @@ mkValidator datum redeemer context =
         Nothing    -> traceError "No Input to Validate"
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
     
-    checkIfPartialSwap :: OrderBookData -> OrderBookData -> Integer
-    checkIfPartialSwap thisDatum thatDatum =
-      if checkIfInSlippageRange thisDatum thatDatum
-        then 0 -- full swap
-        else 1 -- partial swap
-
     checkIfHoldingEnough :: Bool
     checkIfHoldingEnough = Value.valueOf validatingValue (obHavePid datum) (obHaveTkn datum) == (obHaveAmt datum) 
 
@@ -156,7 +162,7 @@ mkValidator datum redeemer context =
     getDatumByTxId :: PlutusV2.TxOutRef -> Maybe OrderBookData
     getDatumByTxId txId = 
       case ContextsV2.findTxInByTxOutRef txId info of
-        Nothing -> Nothing
+        Nothing   -> Nothing -- can't find anything
         Just txIn -> 
           case PlutusV2.txOutDatum $ PlutusV2.txInInfoResolved txIn of
             PlutusV2.NoOutputDatum       -> Nothing -- skip datumless
