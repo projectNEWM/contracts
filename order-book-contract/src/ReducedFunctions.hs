@@ -34,13 +34,16 @@ module ReducedFunctions
   ) where
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as V2
--- find the tx in
+
 {-# inlinable txInFromTxRef #-}
 txInFromTxRef :: [V2.TxInInfo] -> V2.TxOutRef -> V2.TxInInfo
-txInFromTxRef [] _ = traceError "Cant Find Tx In"
-txInFromTxRef (x:xs) outRef
-  | V2.txInInfoOutRef x == outRef = x
-  | otherwise                  = txInFromTxRef xs outRef
+txInFromTxRef txIns outRef = txInFromTxRef' txIns
+  where
+    txInFromTxRef' :: [V2.TxInInfo] -> V2.TxInInfo
+    txInFromTxRef' [] = traceError "Cant Find Tx In"
+    txInFromTxRef' (x:xs)
+      | V2.txInInfoOutRef x == outRef = x
+      | otherwise                     = txInFromTxRef' xs
 
 -- | Check if a transaction was signed by the given public key.
 {-# inlinable signedBy #-}
