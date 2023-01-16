@@ -5,11 +5,11 @@ source ../.env
 
 # Addresses
 sender_address=$(cat wallets/seller-wallet/payment.addr)
-# receiver_address=$(cat wallets/buyer-wallet/payment.addr)
-receiver_address="addr_test1qrupt9d9ug2ufnrrajp2q7gwvmrtzzgr80p5ug7q8nt4d66hu0s5mnhxh2853wtsgn9gdz6wuqtaqnkv0yk78p474d6qudapqh"
+receiver_address=$(cat wallets/buyer-wallet/payment.addr)
+# receiver_address="addr_test1qrupt9d9ug2ufnrrajp2q7gwvmrtzzgr80p5ug7q8nt4d66hu0s5mnhxh2853wtsgn9gdz6wuqtaqnkv0yk78p474d6qudapqh"
 
 # Define Asset to be printed here
-asset="1 df8e2ddd300b54a606611a8f20be1aef06dc38d560e00b73e57de5a1.0104a79b1ff28d52381de95b82feb2e56bec6d9533eb005b8d711353d815d4a9"
+asset="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
