@@ -49,8 +49,6 @@ library
                         OrderBookDatum
                         OrderBookRedeemer
                         ReducedFunctions
-                        DataTypes
-                        HelperFunctions
 
   build-depends:        bytestring
                       , cardano-api

@@ -31,9 +31,35 @@ module ReducedFunctions
   , findExactPayout
   , nInputs
   , nOutputs
+  , getScriptOutputs
+  , ownInput
   ) where
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as V2
+
+{-# inlinable getScriptOutputs #-}
+getScriptOutputs :: [V2.TxOut] -> V2.Address -> [V2.TxOut]
+getScriptOutputs txOuts addr' = getScriptOutputs' txOuts addr' []
+  where
+    getScriptOutputs' :: [V2.TxOut] -> V2.Address -> [V2.TxOut] -> [V2.TxOut]
+    getScriptOutputs' [] _ contOuts = contOuts
+    getScriptOutputs' (x:xs) addr contOuts
+      | V2.txOutAddress x == addr = getScriptOutputs' xs addr (x:contOuts)
+      | otherwise                       = getScriptOutputs' xs addr contOuts
+
+-- rewrite findOwnInput without higher order functions
+{-# inlinable ownInput #-}
+ownInput :: V2.ScriptContext -> V2.TxOut
+ownInput (V2.ScriptContext t_info (V2.Spending o_ref)) = getScriptInput (V2.txInfoInputs t_info) o_ref
+ownInput _ = traceError "no script input"
+
+-- get the validating script input
+{-# inlinable getScriptInput #-}
+getScriptInput :: [V2.TxInInfo] -> V2.TxOutRef -> V2.TxOut
+getScriptInput [] _ = traceError "script input not found"
+getScriptInput ((V2.TxInInfo tref ot) : tl) o_ref
+  | tref == o_ref = ot
+  | otherwise = getScriptInput tl o_ref
 
 {-# inlinable txInFromTxRef #-}
 txInFromTxRef :: [V2.TxInInfo] -> V2.TxOutRef -> V2.TxInInfo

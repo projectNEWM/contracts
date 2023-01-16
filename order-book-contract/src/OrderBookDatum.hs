@@ -28,6 +28,7 @@
 module OrderBookDatum
   ( OwnerInfo (..)
   , TokenInfo (..)
+  , createValue
   , checkValueHolds
   , checkMirrorTokens
   , SwapInfo (..)
@@ -35,6 +36,8 @@ module OrderBookDatum
   , TokenSwapInfo (..)
   , checkIfInSlippageRange
   , checkEffectiveSlippage
+  , HaveWantInfo (..)
+  , checkContValue
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -68,6 +71,9 @@ data TokenInfo = TokenInfo
   }
 PlutusTx.unstableMakeIsData ''TokenInfo
 
+createValue :: TokenInfo -> V2.Value
+createValue (TokenInfo pid tkn amt) = Value.singleton pid tkn amt
+
 -- | Check if two OrderBookDatums have inverse have and want tokens.
 checkMirrorTokens :: TokenInfo -> TokenInfo -> Bool
 checkMirrorTokens a b = ( tiPid a == tiPid b ) &&
@@ -81,6 +87,20 @@ data SwapInfo = SwapInfo
   -- ^ The owner allows this much slippage.
   }
 PlutusTx.unstableMakeIsData ''SwapInfo
+
+data HaveWantInfo = HaveWantInfo Integer Integer
+
+checkContValue :: HaveWantInfo -> HaveWantInfo -> Bool
+checkContValue (HaveWantInfo h1 w1) (HaveWantInfo h2 w2) =
+  if leftSide /= rightSide
+    then traceError "Bad Trade"
+    else leftSide && rightSide
+  where
+    leftSide :: Bool
+    leftSide = (h1 < w2) == True
+
+    rightSide :: Bool
+    rightSide = ((w1 < h2) == True)
 
 -- algebraic strucutre to hold one utxo information
 data TokenSwapInfo = TokenSwapInfo TokenInfo SwapInfo

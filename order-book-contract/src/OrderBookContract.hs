@@ -36,6 +36,7 @@ import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScrip
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
+-- import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V2.Ledger.Contexts      as V2
 import qualified Plutus.V2.Ledger.Api           as V2
 import           Plutus.Script.Utils.V2.Scripts as Utils
@@ -93,14 +94,15 @@ mkValidator datum redeemer context =
         -- | Fully Swap two utxos.
         (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
-            (Swap ptd' have' want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
-                                               !thisToken = TokenSwapInfo have sd
-                                               !thatToken = TokenSwapInfo want' sd'
+            (Swap ptd' _ want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
+                                           !thisToken = TokenSwapInfo have sd
+                                           !thatToken = TokenSwapInfo want' sd'
                                         in traceIfFalse "ins"   (isNInputs txInputs 2)                          -- double script inputs
                                         && traceIfFalse "selfy" (ptd /= ptd')                                   -- Must be different datums
                                         && traceIfFalse "pay"   (findExactPayout txOutputs otherAddr thisValue) -- token must go back to wallet
                                         && traceIfFalse "pair"  (checkMirrorTokens have want')                  -- mirrored have and want tokens.
                                         && traceIfFalse "slip"  (checkIfInSlippageRange thisToken thatToken)    -- slippage is in range
+                                        && traceIfFalse "lie"   (checkValueHolds have thisValue)                -- must have what you claim to have
 
         -- | Partially Swap Two UTxOs.
         -- TODO
@@ -109,11 +111,20 @@ mkValidator datum redeemer context =
             (Swap ptd' have' want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
                                                !thisDatum = Swap ptd have want sd
                                                !thatDatum = Swap ptd' have' want' sd'
+                                               !thisToken = TokenSwapInfo have sd
+                                               !thatToken = TokenSwapInfo want' sd'
+                                               !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
+                                               !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
+                                               !thatValue = createValue want'
                                         in traceIfFalse "ins"   (isNInputs txInputs 2)            -- double script inputs
                                         && traceIfFalse "outs"  (isNOutputs contTxOutputs 1)      -- single script output
-                                        && traceIfFalse "pair"  (checkMirrorTokens have want')    -- mirrored have and want tokens.
                                         && traceIfFalse "selfy" (ptd /= ptd')                     -- Must be different datums
+                                        && traceIfFalse "pair"  (checkMirrorTokens have want')    -- mirrored have and want tokens.
                                         && traceIfFalse "slip"  (checkEffectiveSlippage thisDatum thatDatum)         -- slippage is in range
+                                        && traceIfFalse "slip"  (not $ checkIfInSlippageRange thisToken thatToken)    -- not full swap
+                                        && traceIfFalse "lie"   (checkValueHolds have thisValue)                -- must have what you claim to have
+                                        && traceIfFalse "pay"   (checkPartialPayout thisPrice thatPrice otherAddr thatValue) -- this value goes where
+
                                         -- calculate what gets traded here
                                         -- who goes back is what doesnt get consumed
   where
@@ -126,14 +137,19 @@ mkValidator datum redeemer context =
     txOutputs :: [V2.TxOut]
     txOutputs = V2.txInfoOutputs info
     
-    contTxOutputs :: [V2.TxOut]
-    contTxOutputs = V2.getContinuingOutputs context
+
+    validatingInput :: V2.TxOut
+    validatingInput = ownInput context
 
     thisValue :: V2.Value
-    thisValue =
-      case V2.findOwnInput context of
-        Nothing    -> traceError "No Input to Validate"
-        Just input -> V2.txOutValue $ V2.txInInfoResolved input
+    thisValue = V2.txOutValue validatingInput
+    
+    scriptAddr :: V2.Address
+    scriptAddr = V2.txOutAddress validatingInput
+
+    contTxOutputs :: [V2.TxOut]
+    contTxOutputs = getScriptOutputs txOutputs scriptAddr
+
 
     createTxOutRef :: V2.BuiltinByteString -> Integer -> V2.TxOutRef
     createTxOutRef txHash index = txId
@@ -167,6 +183,11 @@ mkValidator datum redeemer context =
             Nothing     -> traceError "Bad Data"
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
 
+    checkPartialPayout :: HaveWantInfo -> HaveWantInfo -> V2.Address -> V2.Value -> Bool
+    checkPartialPayout thisPrice thatPrice otherAddr thatValue = let !partialValue = thisValue - thatValue
+      in if checkContValue thisPrice thatPrice == True
+        then (findExactPayout txOutputs otherAddr thisValue)
+        else (findExactPayout contTxOutputs scriptAddr partialValue)
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
