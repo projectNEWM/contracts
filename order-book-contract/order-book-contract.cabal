@@ -46,6 +46,9 @@ library
   hs-source-dirs:       src
 
   exposed-modules:      OrderBookContract
+                        OrderBookDatum
+                        OrderBookRedeemer
+                        ReducedFunctions
                         DataTypes
                         HelperFunctions
 

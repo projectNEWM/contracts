@@ -53,6 +53,43 @@ import           HelperFunctions         ( effectivePrice )
 -------------------------------------------------------------------------------
 -- | Create the OrderBookData object.
 -------------------------------------------------------------------------------
+data OwnerInfo = OwnerInfo
+  { ptPkh :: PlutusV2.PubKeyHash
+  -- ^ The public key hash of the owner.
+  , ptSc  :: PlutusV2.PubKeyHash
+  -- ^ The stake credential hash of the owner.
+  }
+PlutusTx.unstableMakeIsData ''OwnerInfo
+
+-- old == new
+instance Eq OwnerInfo where
+  {-# INLINABLE (==) #-}
+  a == b = ( ptPkh a == ptPkh b ) &&
+           ( ptSc  a == ptSc  b )
+
+data TokenInfo = TokenInfo
+  { tiPid   :: PlutusV2.CurrencySymbol
+  -- ^ The owner has policy id.
+  , tiTkn   :: PlutusV2.TokenName
+  -- ^ The owner has token name.
+  , tiAmt   :: Integer
+  -- ^ The owner has this amount.
+  }
+PlutusTx.unstableMakeIsData ''TokenInfo
+
+data SwapInfo = SwapInfo
+  { siSlippage  :: Integer
+  -- ^ The owner allows this much slippage.
+  , siFeeAmt    :: Integer
+  -- ^ The owner is willing to pay this much fee.
+  , siIncentive :: Integer
+  -- ^ The owner is willing to pay this much incentive.
+  }
+PlutusTx.unstableMakeIsData ''SwapInfo
+
+data OrderBookDatum = Swap OwnerInfo TokenInfo TokenInfo SwapInfo
+PlutusTx.unstableMakeIsData ''OrderBookDatum
+
 data OrderBookData = OrderBookData
   { obPkh       :: PlutusV2.PubKeyHash
   -- ^ The public key hash of the owner.
