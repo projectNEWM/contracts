@@ -4,21 +4,19 @@ set -e
 source ../.env
 
 #
-mint_path="policy/policy.script"
-#
-script_path="../cogno-contract/cogno-contract.plutus"
+script_path="../order-book-contract/order-book-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
 # collat, seller, reference
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+
+#
 collat_address=$(cat wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-#
-MINT_ASSET="1 b99c2b76eaa57f90aaf0a6c61e52210696e6662f483693e316747e1a.737461727465725f6e6674"
 
-seller_address_out="${seller_address} + 5000000 + ${MINT_ASSET}"
-echo "Mint OUTPUT: "${seller_address_out}
+seller_address_out="${seller_address} + 10000000"
+echo "Return OUTPUT: "${seller_address_out}
 #
 # exit
 #
@@ -27,7 +25,6 @@ ${cli} query utxo \
     ${network} \
     --address ${seller_address} \
     --out-file tmp/seller_utxo.json
-
 TXNS=$(jq length tmp/seller_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
@@ -42,7 +39,6 @@ ${cli} query utxo \
     ${network} \
     --address ${collat_address} \
     --out-file tmp/collat_utxo.json
-
 TXNS=$(jq length tmp/collat_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
@@ -63,7 +59,7 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
 script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
@@ -81,7 +77,7 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/remove_redeemer.json \
+    --spending-reference-tx-in-redeemer-file data/redeemer/remove_redeemer.json \
     --tx-out="${seller_address_out}" \
     --required-signer-hash ${seller_pkh} \
     --required-signer-hash ${collat_pkh} \
