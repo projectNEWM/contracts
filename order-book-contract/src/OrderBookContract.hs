@@ -79,17 +79,17 @@ mkValidator datum redeemer context =
                                    !txSigners  = V2.txInfoSignatories info
       in case redeemer of
         -- | Remove the utxo back to the wallet
-        Remove -> traceIfFalse "sign" (signedBy txSigners walletPkh)                   -- wallet must sign it
-               && traceIfFalse "pay"  (findExactPayout txOutputs walletAddr thisValue) -- token must go back to wallet
-               && traceIfFalse "ins"  (nInputs txInputs 1)                             -- a single input datum
+        Remove -> (signedBy txSigners walletPkh)                   -- wallet must sign it
+               && (findExactPayout txOutputs walletAddr thisValue) -- token must go back to wallet
+               && (nInputs txInputs 1)                             -- a single input datum
 
         -- | Update the order book utxo with new sale information.
         Update -> 
           case getOutboundDatum contTxOutputs of
-            (Swap ptd' _ _ _) -> traceIfFalse "sign"  (signedBy txSigners walletPkh) -- wallet must sign it
-                              && traceIfFalse "ins"   (isNInputs txInputs 1)         -- single script input
-                              && traceIfFalse "outs"  (isNOutputs contTxOutputs 1)   -- single script output
-                              && traceIfFalse "owner" (ptd == ptd')                  -- owner must remain
+            (Swap ptd' _ _ _) -> (signedBy txSigners walletPkh) -- wallet must sign it
+                              && (isNInputs txInputs 1)         -- single script input
+                              && (isNOutputs contTxOutputs 1)   -- single script output
+                              && (ptd == ptd')                  -- owner must remain
 
         -- | Fully Swap two utxos.
         (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
@@ -104,21 +104,17 @@ mkValidator datum redeemer context =
                                         && traceIfFalse "lie"   (checkValueHolds have thisValue)                -- must have what you claim to have
 
         -- | Partially Swap Two UTxOs.
-        -- TODO
         (PartSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
             (Swap ptd' have' want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
                                                !thisDatum = Swap ptd have want sd
                                                !thatDatum = Swap ptd' have' want' sd'
-                                              --  !thisToken = TokenSwapInfo have sd
-                                              --  !thatToken = TokenSwapInfo want' sd'
                                                !thatValue = createValue want'
-                                        in traceIfFalse "ins"   (isNInputs txInputs 2)            -- double script inputs
-                                        && traceIfFalse "outs"  (isNOutputs contTxOutputs 1)      -- single script output
-                                        && traceIfFalse "pair"  (checkMirrorTokens have want')    -- mirrored have and want tokens.
-                                        && traceIfFalse "slip"  (checkEffectiveSlippage thisDatum thatDatum)         -- slippage is in range
-                                        -- && traceIfFalse "slip"  (not $ checkIfInSlippageRange thisToken thatToken)    -- not full swap
-                                        && traceIfFalse "lie"   (checkValueHolds have thisValue)                -- must have what you claim to have
+                                        in traceIfFalse "ins"   (isNInputs txInputs 2)                                       -- double script inputs
+                                        && traceIfFalse "outs"  (isNOutputs contTxOutputs 1)                                 -- single script output
+                                        && traceIfFalse "pair"  (checkMirrorTokens have want')                               -- mirrored have and want tokens.
+                                        && traceIfFalse "slip"  (checkEffectiveSlippage thisDatum thatDatum)                 -- slippage is in range
+                                        && traceIfFalse "lie"   (checkValueHolds have thisValue)                             -- must have what you claim to have
                                         && traceIfFalse "pay"   (checkPartialPayout thisDatum thatDatum otherAddr thatValue) -- this value goes where
   where
     info :: V2.TxInfo
