@@ -170,7 +170,7 @@ checkEffectiveSlippage (Swap _ hA wA sA) (Swap _ hB wB sB) = (swapA && swapB)
     aPrice = effectivePrice (tiAmt hA) (tiAmt wA)
 
     bPrice :: Integer
-    bPrice = effectivePrice (tiAmt hB) (tiAmt wB)
+    bPrice = effectivePrice (tiAmt wB) (tiAmt hB)
 
     aSlip :: Integer
     aSlip = siSlippage sA

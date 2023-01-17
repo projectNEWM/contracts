@@ -12,7 +12,7 @@ script_address=$(${cli} address build --payment-script-file ${script_path} ${net
 # collat, seller, reference
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-script_address_out="${script_address} + 10000000"
+script_address_out="${script_address} + 20000000"
 echo "Seller OUTPUT: "${script_address_out}
 #
 # exit

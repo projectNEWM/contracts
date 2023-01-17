@@ -67,8 +67,10 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file data/datum/buyer_book_datum.json \
     --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
+script_address_out="${script_address} + 10000000"
 buyer_address_out="${buyer_address} + 10000000"
 seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
+echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #
@@ -126,6 +128,8 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file data/redeemer/buyer_part_swap_redeemer.json \
     --tx-out="${seller_address_out}" \
     --tx-out="${buyer_address_out}" \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/datum/partial_seller_book_datum.json  \
     --required-signer-hash ${collat_pkh} \
     ${network})
 
@@ -134,7 +138,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

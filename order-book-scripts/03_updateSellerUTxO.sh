@@ -16,7 +16,7 @@ collat_address=$(cat wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
 #
-script_address_out="${script_address} + 10000000"
+script_address_out="${script_address} + 20000000"
 echo "Update OUTPUT: "${script_address_out}
 #
 # exit
