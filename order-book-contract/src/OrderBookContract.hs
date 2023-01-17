@@ -113,8 +113,6 @@ mkValidator datum redeemer context =
                                                !thatDatum = Swap ptd' have' want' sd'
                                                !thisToken = TokenSwapInfo have sd
                                                !thatToken = TokenSwapInfo want' sd'
-                                               !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
-                                               !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
                                                !thatValue = createValue want'
                                         in traceIfFalse "ins"   (isNInputs txInputs 2)            -- double script inputs
                                         && traceIfFalse "outs"  (isNOutputs contTxOutputs 1)      -- single script output
@@ -123,7 +121,7 @@ mkValidator datum redeemer context =
                                         && traceIfFalse "slip"  (checkEffectiveSlippage thisDatum thatDatum)         -- slippage is in range
                                         && traceIfFalse "slip"  (not $ checkIfInSlippageRange thisToken thatToken)    -- not full swap
                                         && traceIfFalse "lie"   (checkValueHolds have thisValue)                -- must have what you claim to have
-                                        && traceIfFalse "pay"   (checkPartialPayout thisPrice thatPrice otherAddr thatValue) -- this value goes where
+                                        -- && traceIfFalse "pay"   (checkPartialPayout thisPrice thatPrice otherAddr thatValue) -- this value goes where
 
                                         -- calculate what gets traded here
                                         -- who goes back is what doesnt get consumed
@@ -172,6 +170,25 @@ mkValidator datum redeemer context =
             Nothing     -> traceError "Bad Data"
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
     
+    checkOutboundDatum :: [V2.TxOut] -> V2.Value -> OrderBookDatum -> Bool
+    checkOutboundDatum []     _   _ = traceError "Nothing Found"
+    checkOutboundDatum (x:xs) val (Swap ptd have want sd) =
+      if V2.txOutValue x == val -- strict value continue
+        then
+          case V2.txOutDatum x of
+            V2.NoOutputDatum       -> traceError "No Datum"
+            (V2.OutputDatumHash _) -> traceError "Embedded Datum"
+            -- inline datum only
+            (V2.OutputDatum (V2.Datum d)) -> 
+              case PlutusTx.fromBuiltinData d of
+                Nothing     -> traceError "Bad Data"
+                Just inline -> 
+                  case PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline of
+                    (Swap ptd' have' want' sd') -> (ptd == ptd')
+                                                && (sd == sd')
+                                                -- check that the have and want changed correctly
+        else checkOutboundDatum xs val (Swap ptd have want sd)
+
     getDatumByTxId :: V2.TxOutRef -> OrderBookDatum
     getDatumByTxId txId = 
       case V2.txOutDatum $ V2.txInInfoResolved $ txInFromTxRef txInputs txId of
@@ -183,11 +200,17 @@ mkValidator datum redeemer context =
             Nothing     -> traceError "Bad Data"
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
 
-    checkPartialPayout :: HaveWantInfo -> HaveWantInfo -> V2.Address -> V2.Value -> Bool
-    checkPartialPayout thisPrice thatPrice otherAddr thatValue = let !partialValue = thisValue - thatValue
+    checkPartialPayout :: OrderBookDatum -> OrderBookDatum -> V2.Address -> V2.Value -> Bool
+    checkPartialPayout (Swap pdt have want sd) (Swap _ have' want' _) otherAddr thatValue = 
+      let !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
+          !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
       in if checkContValue thisPrice thatPrice == True
         then (findExactPayout txOutputs otherAddr thisValue)
-        else (findExactPayout contTxOutputs scriptAddr partialValue)
+        else 
+          let !partialValue = thisValue - thatValue
+          in (findExactPayout contTxOutputs scriptAddr partialValue)
+          && (findExactPayout txOutputs otherAddr thatValue)
+          && (checkOutboundDatum contTxOutputs partialValue (Swap pdt have want sd))
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

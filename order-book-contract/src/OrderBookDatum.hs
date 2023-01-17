@@ -71,10 +71,16 @@ data TokenInfo = TokenInfo
   }
 PlutusTx.unstableMakeIsData ''TokenInfo
 
+
+-- subtractTokenInfo :: TokenInfo -> TokenInfo -> TokenInfo
+-- subtractTokenInfo (TokenInfo pid1 tkn1 amt1) (TokenInfo pid2 tkn2 amt2)
+--   | pid1 == pid2 && tkn1 == tkn2 = TokenInfo pid1 tkn1 (amt1 - amt2)
+--   | otherwise = error "Cannot subtract TokenInfo with different policy id or token name"
+
+
 createValue :: TokenInfo -> V2.Value
 createValue (TokenInfo pid tkn amt) = Value.singleton pid tkn amt
 
--- | Check if two OrderBookDatums have inverse have and want tokens.
 checkMirrorTokens :: TokenInfo -> TokenInfo -> Bool
 checkMirrorTokens a b = ( tiPid a == tiPid b ) &&
                         ( tiTkn a == tiTkn b )
@@ -87,6 +93,11 @@ data SwapInfo = SwapInfo
   -- ^ The owner allows this much slippage.
   }
 PlutusTx.unstableMakeIsData ''SwapInfo
+
+-- old == new
+instance Eq SwapInfo where
+  {-# INLINABLE (==) #-}
+  a == b = (siSlippage a == siSlippage b)
 
 data HaveWantInfo = HaveWantInfo Integer Integer
 
