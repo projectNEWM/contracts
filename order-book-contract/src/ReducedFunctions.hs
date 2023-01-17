@@ -45,7 +45,7 @@ getScriptOutputs txOuts addr' = getScriptOutputs' txOuts addr' []
     getScriptOutputs' [] _ contOuts = contOuts
     getScriptOutputs' (x:xs) addr contOuts
       | V2.txOutAddress x == addr = getScriptOutputs' xs addr (x:contOuts)
-      | otherwise                       = getScriptOutputs' xs addr contOuts
+      | otherwise                 = getScriptOutputs' xs addr contOuts
 
 -- rewrite findOwnInput without higher order functions
 {-# inlinable ownInput #-}
@@ -57,9 +57,9 @@ ownInput _ = traceError "no script input"
 {-# inlinable getScriptInput #-}
 getScriptInput :: [V2.TxInInfo] -> V2.TxOutRef -> V2.TxOut
 getScriptInput [] _ = traceError "script input not found"
-getScriptInput ((V2.TxInInfo tref ot) : tl) o_ref
+getScriptInput ((V2.TxInInfo tref ot) : xs) o_ref
   | tref == o_ref = ot
-  | otherwise = getScriptInput tl o_ref
+  | otherwise = getScriptInput xs o_ref
 
 {-# inlinable txInFromTxRef #-}
 txInFromTxRef :: [V2.TxInInfo] -> V2.TxOutRef -> V2.TxInInfo
