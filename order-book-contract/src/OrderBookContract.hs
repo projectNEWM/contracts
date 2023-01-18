@@ -91,8 +91,9 @@ mkValidator datum redeemer context =
             (Swap ptd' _ want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
                                            !thisToken = TokenSwapInfo have sd
                                            !thatToken = TokenSwapInfo want' sd'
-              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                         -- double datum inputs
-              -- && traceIfFalse "red"  (nRedeemers redeemers 2)                     -- double script spends
+              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum inputs
+              -- && traceIfFalse "red"  (nRedeemers redeemers 2)                  -- double script spends
+              && traceIfFalse "own"  (ptd /= ptd')                                -- cant reference self
               && traceIfFalse "pay"  (findPayout txOutputs otherAddr thisValue)   -- token must go back to other wallet
               && traceIfFalse "pair" (checkMirrorTokens have want')               -- mirrored have and want tokens.
               && traceIfFalse "slip" (checkIfInSlippageRange thisToken thatToken) -- slippage is in range
@@ -107,9 +108,10 @@ mkValidator datum redeemer context =
                                                !thisToken = TokenSwapInfo have sd
                                                !thatToken = TokenSwapInfo want' sd'
                                                !thatValue = createValue want'
-                in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                                         -- double datum inputs
-                -- && traceIfFalse "red"  (nRedeemers redeemers 2)                                     -- double script spends
+                in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum inputs
+                -- && traceIfFalse "red"  (nRedeemers redeemers 2)                                  -- double script spends
                 && traceIfFalse "outs" (nOutputs contTxOutputs 1)                                   -- single script output
+                && traceIfFalse "own"  (ptd /= ptd')                                                -- cant reference self
                 && traceIfFalse "pair" (checkMirrorTokens have want')                               -- mirrored have and want tokens.
                 && traceIfFalse "slip" (checkEffectiveSlippage thisDatum thatDatum)                 -- slippage is in range
                 && traceIfFalse "full" (not $ checkIfInSlippageRange thisToken thatToken)           -- not full swap
