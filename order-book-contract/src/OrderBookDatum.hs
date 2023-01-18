@@ -95,7 +95,7 @@ checkMirrorTokens a b = ( tiPid a == tiPid b ) &&
                         ( tiTkn a == tiTkn b )
 
 checkValueHolds :: TokenInfo -> V2.Value -> Bool
-checkValueHolds tkn target = Value.valueOf target (tiPid tkn) (tiTkn tkn) == (tiAmt tkn)
+checkValueHolds tkn target = Value.valueOf target (tiPid tkn) (tiTkn tkn) >= (tiAmt tkn)
 
 data SwapInfo = SwapInfo
   { siSlippage  :: Integer

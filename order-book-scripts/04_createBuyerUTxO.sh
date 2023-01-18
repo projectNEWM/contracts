@@ -10,7 +10,7 @@ script_address=$(${cli} address build --payment-script-file ${script_path} ${net
 #
 buyer_address=$(cat wallets/buyer-wallet/payment.addr)
 
-asset="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
+asset="24000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \

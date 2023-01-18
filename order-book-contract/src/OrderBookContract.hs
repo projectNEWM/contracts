@@ -29,6 +29,7 @@ import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScrip
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 -- import qualified PlutusTx.AssocMap              as AM
+import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V2.Ledger.Contexts      as V2
 import qualified Plutus.V2.Ledger.Api           as V2
@@ -85,15 +86,17 @@ mkValidator datum redeemer context =
                               && (nOutputs contTxOutputs 1)      -- single script output
                               && (ptd == ptd')                   -- owner must remain constant
 
+
         -- | Fully Swap two utxos.
         (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
             (Swap ptd' _ want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
                                            !thisToken = TokenSwapInfo have sd
                                            !thatToken = TokenSwapInfo want' sd'
+                                           !outValue = createValue have
               in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum inputs
               && traceIfFalse "own"  (ptd /= ptd')                                -- cant reference self
-              && traceIfFalse "pay"  (findPayout txOutputs otherAddr thisValue)   -- token must go back to other wallet
+              && traceIfFalse "pay"  (findPayout txOutputs otherAddr outValue)    -- token must go back to other wallet
               && traceIfFalse "pair" (checkMirrorTokens have want')               -- mirrored have and want tokens.
               && traceIfFalse "slip" (checkIfInSlippageRange thisToken thatToken) -- slippage is in range
               && traceIfFalse "lie"  (checkValueHolds have thisValue)             -- must have what you claim to have
@@ -165,7 +168,7 @@ mkValidator datum redeemer context =
     checkOutboundDatum :: [V2.TxOut] -> V2.Value -> OrderBookDatum -> Bool
     checkOutboundDatum []     _   _ = traceError "Nothing Found Cont Validation"
     checkOutboundDatum (x:xs) val (Swap ptd have want sd) =
-      if V2.txOutValue x == val -- strict value continue
+      if Value.geq (V2.txOutValue x) val -- strict value continue
         then
           case V2.txOutDatum x of
             V2.NoOutputDatum       -> traceError "No Datum Cont Validation"
@@ -198,10 +201,11 @@ mkValidator datum redeemer context =
     checkPartialPayout (Swap pdt have want sd) (Swap _ have' want' _) otherAddr thatValue = 
       let !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
           !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
+          !outValue  = createValue have
       in if checkContValue thisPrice thatPrice == True
-        then (findPayout txOutputs otherAddr thisValue) -- payout the validating value to the other address
+        then (findPayout txOutputs otherAddr outValue) -- payout the validating value to the other address
         else                                            -- else split the payout to the wscript and the other address
-          let !partialValue = thisValue - thatValue
+          let !partialValue = outValue - thatValue
               !newHave = subtractTokenInfo have want'
               !newWant = subtractTokenInfo want have'
           in (findPayout contTxOutputs scriptAddr partialValue)
