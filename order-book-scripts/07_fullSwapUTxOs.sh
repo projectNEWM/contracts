@@ -59,16 +59,24 @@ variable=${array[1]}; jq --argjson variable "$variable" '.fields[0].fields[1].in
 mv data/redeemer/seller_full_swap_redeemer-new.json data/redeemer/seller_full_swap_redeemer.json
 
 
-asset="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
+buyer_asset="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
 
-utxo_value=$(${cli} transaction calculate-min-required-utxo \
+buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-inline-datum-file data/datum/buyer_book_datum.json \
-    --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
 
-buyer_address_out="${buyer_address} + 10000000"
-seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
+seller_asset="12000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+
+seller_utxo_value=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out-inline-datum-file data/datum/seller_book_datum.json \
+    --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
+
+buyer_address_out="${buyer_address} + ${seller_utxo_value} + ${seller_asset}"
+seller_address_out="${seller_address} + ${buyer_utxo_value} + ${buyer_asset}"
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #

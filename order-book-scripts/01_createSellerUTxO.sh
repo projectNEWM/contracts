@@ -4,15 +4,22 @@ set -e
 source ../.env
 
 #
-mint_path="policy/policy.script"
-#
 script_path="../order-book-contract/order-book-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
 # collat, seller, reference
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-script_address_out="${script_address} + 20000000"
+#
+asset="12000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+
+utxo_value=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out-inline-datum-file data/datum/seller_book_datum.json \
+    --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+
+script_address_out="${script_address} + ${utxo_value} + ${asset}"
 echo "Seller OUTPUT: "${script_address_out}
 #
 # exit

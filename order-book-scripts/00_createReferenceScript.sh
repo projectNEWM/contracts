@@ -54,7 +54,7 @@ ${cli} transaction build-raw \
 
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
-echo $fee
+echo -e "\033[1;32m Fee: \033[0m" $FEE
 
 firstReturn=$((${starting_reference_lovelace} - ${order_book_value} - ${fee}))
 

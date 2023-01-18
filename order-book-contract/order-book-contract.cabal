@@ -21,17 +21,18 @@ common project-config
   default-extensions:   NoImplicitPrelude
                         OverloadedStrings
 
-  ghc-options:          -Wall
-                        -Wcompat
-                        -Wincomplete-record-updates
-                        -Wpartial-fields
-                        -Wredundant-constraints
-                        -Wincomplete-uni-patterns
-                        -Wmissing-export-lists
-                        -Wpartial-fields
-                        -Wmissing-deriving-strategies
-                        -Wunused-packages
-
+  ghc-options:
+    -Weverything -Wno-unused-do-bind -Wno-missing-kind-signatures
+    -Wno-partial-type-signatures -Wno-implicit-prelude
+    -Wno-name-shadowing -Wno-unsafe -Wno-missing-safe-haskell-mode
+    -Wno-missing-local-signatures -Wno-prepositive-qualified-module
+    -Wno-missing-import-lists -Wno-monomorphism-restriction
+    -Wno-all-missed-specializations -Wno-unrecognised-warning-flags
+    -Wno-unrecognised-pragmas -fprint-equality-relations
+    -fprint-explicit-kinds -fprint-explicit-foralls
+  
+  
+  
 common maybe-Win32
   if os(windows)
      build-depends:    Win32
@@ -58,6 +59,7 @@ library
                       , plutus-script-utils
                       , serialise
                       , useful-funcs
+                      , plutonomy
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 

@@ -28,7 +28,7 @@
 module ReducedFunctions
   ( signedBy
   , txInFromTxRef
-  , findExactPayout
+  , findPayout
   , nInputs
   , nOutputs
   , getScriptOutputs
@@ -36,6 +36,8 @@ module ReducedFunctions
   ) where
 import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api as V2
+import qualified Plutus.V1.Ledger.Value as Value
+
 
 {-# inlinable getScriptOutputs #-}
 getScriptOutputs :: [V2.TxOut] -> V2.Address -> [V2.TxOut]
@@ -81,9 +83,9 @@ signedBy list k = loop list
       | x == k = True
       | otherwise = loop xs
 
-{-# INLINABLE findExactPayout #-}
-findExactPayout :: [V2.TxOut] -> V2.Address -> V2.Value -> Bool
-findExactPayout list addr val = helper list
+{-# INLINABLE findPayout #-}
+findPayout :: [V2.TxOut] -> V2.Address -> V2.Value -> Bool
+findPayout list addr val = helper list
   where
     helper :: [V2.TxOut] -> Bool
     helper [] = False
@@ -95,7 +97,7 @@ findExactPayout list addr val = helper list
         checkAddr = V2.txOutAddress x == addr
 
         checkVal :: Bool
-        checkVal = V2.txOutValue x == val
+        checkVal = Value.geq (V2.txOutValue x) val
 
 -- | Count the number of inputs that have inline datums.
 {-# INLINABLE nInputs #-}
