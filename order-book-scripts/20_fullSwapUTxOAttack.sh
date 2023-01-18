@@ -76,7 +76,7 @@ seller_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
 
 buyer_address_out="${buyer_address} + ${seller_utxo_value} + ${seller_asset}"
-seller_address_out="${seller_address} + ${buyer_utxo_value} + ${buyer_asset}"
+seller_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #
@@ -131,7 +131,7 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/redeemer/buyer_full_swap_redeemer.json \
+    --spending-reference-tx-in-redeemer-file data/redeemer/buyer_part_swap_redeemer.json \
     --tx-out="${seller_address_out}" \
     --tx-out="${buyer_address_out}" \
     --required-signer-hash ${collat_pkh} \

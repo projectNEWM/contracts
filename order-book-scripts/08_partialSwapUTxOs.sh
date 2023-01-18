@@ -58,6 +58,7 @@ mv data/redeemer/seller_part_swap_redeemer-new.json data/redeemer/seller_part_sw
 variable=${array[1]}; jq --argjson variable "$variable" '.fields[0].fields[1].int=$variable' data/redeemer/seller_part_swap_redeemer.json > data/redeemer/seller_part_swap_redeemer-new.json
 mv data/redeemer/seller_part_swap_redeemer-new.json data/redeemer/seller_part_swap_redeemer.json
 
+exit
 
 asset="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
 

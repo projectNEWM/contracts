@@ -31,12 +31,13 @@ module ReducedFunctions
   , findPayout
   , nInputs
   , nOutputs
+  , nRedeemers
   , getScriptOutputs
   , ownInput
   ) where
 import           PlutusTx.Prelude
-import qualified Plutus.V2.Ledger.Api as V2
-import qualified Plutus.V1.Ledger.Value as Value
+import qualified Plutus.V2.Ledger.Api      as V2
+import qualified Plutus.V1.Ledger.Value    as Value
 
 
 {-# inlinable getScriptOutputs #-}
@@ -101,16 +102,24 @@ findPayout list addr val = helper list
 
 -- | Count the number of inputs that have inline datums.
 {-# INLINABLE nInputs #-}
-nInputs :: [V2.TxInInfo] -> Integer -> Bool
-nInputs utxos number = loopInputs utxos 0
+nInputs :: [V2.TxInInfo] -> V2.Address -> Integer -> Bool
+nInputs utxos addr number = loopInputs utxos 0 0
   where
-    loopInputs :: [V2.TxInInfo] -> Integer -> Bool
-    loopInputs []     !counter = counter == number
-    loopInputs (x:xs) !counter = 
-      case V2.txOutDatum $ V2.txInInfoResolved x of
-        V2.NoOutputDatum       -> loopInputs xs   counter
-        (V2.OutputDatumHash _) -> loopInputs xs   counter
-        (V2.OutputDatum _)     -> loopInputs xs ( counter + 1 ) -- inline
+    loopInputs :: [V2.TxInInfo] -> Integer -> Integer -> Bool
+    loopInputs []     !dC !sC = (dC == number) && (sC == number)
+    loopInputs (x:xs) !dC !sC = 
+      case V2.txOutDatum txInOut  of
+        V2.NoOutputDatum       -> loopInputs xs dC sC
+        (V2.OutputDatumHash _) -> loopInputs xs dC sC
+        (V2.OutputDatum _)     -> 
+          if V2.txOutAddress txInOut == addr
+            then loopInputs xs (dC + 1) (sC + 1) -- inline
+            else loopInputs xs (dC + 1) sC
+      
+      where 
+
+        txInOut :: V2.TxOut
+        txInOut = V2.txInInfoResolved x
 
 -- | Count the number of outputs that have inline datums.
 {-# INLINABLE nOutputs #-}
@@ -124,3 +133,12 @@ nOutputs utxos number = loopInputs utxos 0
         V2.NoOutputDatum       -> loopInputs xs   counter
         (V2.OutputDatumHash _) -> loopInputs xs   counter
         (V2.OutputDatum _)     -> loopInputs xs ( counter + 1 ) -- inline
+
+{-# INLINABLE nRedeemers #-}
+nRedeemers :: [(V2.ScriptPurpose, V2.Redeemer)] -> Integer -> Bool
+nRedeemers redeemers number = nRedeemers' redeemers 0
+  where
+    nRedeemers' :: [(V2.ScriptPurpose, V2.Redeemer)] -> Integer -> Bool
+    nRedeemers' []     counter = counter == number
+    nRedeemers' ((_, _):xs) counter = nRedeemers' xs ( counter + 1 )
+    -- nRedeemers' _ _ = traceError "Wrong Type Of Redeemer Being Used"
