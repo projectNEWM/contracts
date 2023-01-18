@@ -73,17 +73,17 @@ mkValidator datum redeemer context =
                                    !txSigners  = V2.txInfoSignatories info
       in case redeemer of
         -- | Remove the utxo back to the wallet
-        Remove -> (signedBy txSigners walletPkh)                   -- wallet must sign it
+        Remove -> (signedBy txSigners walletPkh)              -- wallet must sign it
                && (findPayout txOutputs walletAddr thisValue) -- token must go back to wallet
-               && (nInputs txInputs scriptAddr 1)                             -- a single input datum
+               && (nInputs txInputs scriptAddr 1)             -- a single input datum
 
         -- | Update the order book utxo with new sale information.
         Update -> 
           case getOutboundDatum contTxOutputs of
-            (Swap ptd' _ _ _) -> (signedBy txSigners walletPkh) -- wallet must sign it
-                              && (nInputs txInputs scriptAddr 1)         -- single script input
-                              && (nOutputs contTxOutputs 1)   -- single script output
-                              && (ptd == ptd')                  -- owner must remain constant
+            (Swap ptd' _ _ _) -> (signedBy txSigners walletPkh)  -- wallet must sign it
+                              && (nInputs txInputs scriptAddr 1) -- single script input
+                              && (nOutputs contTxOutputs 1)      -- single script output
+                              && (ptd == ptd')                   -- owner must remain constant
 
         -- | Fully Swap two utxos.
         (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
@@ -92,7 +92,6 @@ mkValidator datum redeemer context =
                                            !thisToken = TokenSwapInfo have sd
                                            !thatToken = TokenSwapInfo want' sd'
               in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum inputs
-              -- && traceIfFalse "red"  (nRedeemers redeemers 2)                  -- double script spends
               && traceIfFalse "own"  (ptd /= ptd')                                -- cant reference self
               && traceIfFalse "pay"  (findPayout txOutputs otherAddr thisValue)   -- token must go back to other wallet
               && traceIfFalse "pair" (checkMirrorTokens have want')               -- mirrored have and want tokens.
@@ -108,15 +107,14 @@ mkValidator datum redeemer context =
                                                !thisToken = TokenSwapInfo have sd
                                                !thatToken = TokenSwapInfo want' sd'
                                                !thatValue = createValue want'
-                in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum inputs
-                -- && traceIfFalse "red"  (nRedeemers redeemers 2)                                  -- double script spends
-                && traceIfFalse "outs" (nOutputs contTxOutputs 1)                                   -- single script output
-                && traceIfFalse "own"  (ptd /= ptd')                                                -- cant reference self
-                && traceIfFalse "pair" (checkMirrorTokens have want')                               -- mirrored have and want tokens.
-                && traceIfFalse "slip" (checkEffectiveSlippage thisDatum thatDatum)                 -- slippage is in range
-                && traceIfFalse "full" (not $ checkIfInSlippageRange thisToken thatToken)           -- not full swap
-                && traceIfFalse "lie"  (checkValueHolds have thisValue)                             -- must have what you claim to have
-                && traceIfFalse "pay"  (checkPartialPayout thisDatum thatDatum otherAddr thatValue) -- this value goes where
+              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum inputs
+              && traceIfFalse "outs" (nOutputs contTxOutputs 1)                                   -- single script output
+              && traceIfFalse "own"  (ptd /= ptd')                                                -- cant reference self
+              && traceIfFalse "pair" (checkMirrorTokens have want')                               -- mirrored have and want tokens.
+              && traceIfFalse "slip" (checkEffectiveSlippage thisDatum thatDatum)                 -- slippage is in range
+              && traceIfFalse "full" (not $ checkIfInSlippageRange thisToken thatToken)           -- not full swap
+              && traceIfFalse "lie"  (checkValueHolds have thisValue)                             -- must have what you claim to have
+              && traceIfFalse "pay"  (checkPartialPayout thisDatum thatDatum otherAddr thatValue) -- this value goes where
   where
     info :: V2.TxInfo
     info = V2.scriptContextTxInfo context

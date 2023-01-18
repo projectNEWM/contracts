@@ -115,9 +115,7 @@ nInputs utxos addr number = loopInputs utxos 0 0
           if V2.txOutAddress txInOut == addr
             then loopInputs xs (dC + 1) (sC + 1) -- inline
             else loopInputs xs (dC + 1) sC
-      
       where 
-
         txInOut :: V2.TxOut
         txInOut = V2.txInInfoResolved x
 

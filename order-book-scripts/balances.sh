@@ -19,42 +19,36 @@ ${cli} query protocol-parameters ${network} --out-file tmp/protocol.json
 ${cli} query tip ${network} | jq
 
 #
-echo
 echo -e "\033[1;35m Script Address:" 
 echo -e "\n${script_address}\n";
 ${cli} query utxo --address ${script_address} ${network}
 echo -e "\033[0m"
 
 #
-echo
 echo -e "\033[1;36m Seller Address:" 
 echo -e "\n${seller_address}\n";
 ${cli} query utxo --address ${seller_address} ${network}
 echo -e "\033[0m"
 
 #
-echo
 echo -e "\033[1;32m Buyer Address:" 
 echo -e "\n${buyer_address}\n";
 ${cli} query utxo --address ${buyer_address} ${network}
 echo -e "\033[0m"
 
 #
-echo
 echo -e "\033[1;32m Profit Address:" 
 echo -e "\n${profit_address}\n";
 ${cli} query utxo --address ${profit_address} ${network}
 echo -e "\033[0m"
 
 #
-echo
 echo -e "\033[1;34m Reference Address:" 
 echo -e "\n \033[1;34m ${reference_address}\n";
 ${cli} query utxo --address ${reference_address} ${network}
 echo -e "\033[0m"
 
 #
-echo
 echo -e "\033[1;33m Collateral Address:" 
 echo -e "\n${collat_address}\n";
 ${cli} query utxo --address ${collat_address} ${network}
