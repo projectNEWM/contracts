@@ -6,7 +6,6 @@ packages:
     minting-contract
     nft-locking-contract
     nft-minting-contract
-    marketplace-contract
     order-book-contract
 
 -- We never, ever, want this.

@@ -1,9 +1,0 @@
-{
-    "__comment1__": "The starter token for the oracle",
-    "oraclePid": "b99c2b76eaa57f90aaf0a6c61e52210696e6662f483693e316747e1a",
-    "oracleTkn": "737461727465725f6e6674",
-    "__comment2__": "the ft being traded",
-    "tokenPid": "3f1eb5125fbde17a5a5cf96be0b9863142a34f677bf84cef63c699af",
-    "tokenTkn": "537461626c65"
-  }
-  
