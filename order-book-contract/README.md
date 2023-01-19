@@ -42,7 +42,19 @@ An order may be updated at any time while in the contract. This is useful for sl
 
 ## Order Matching
 
+Anyone is allowed to match orders within the contract if and only if the two UTxOs in the swap satisfy the validation parameters for either a full swap or a partial swap. A full swap is a complete swap where another UTxO is found to be within the slippage range, resulting in both UTxOs leaving the contract to their new owners. A partial swap is a swap where one UTxO has some of the token but not the full amount, resulting in one of the UTxOs returning to the contract in an attempt to be swapped again.
+
 ### Full Swap
+
+A full swap will only occur if and only if the have of one UTxO is within the range of the want from another and visa versa. For example, lets take the scenario where two users are swapping NEWM and ADA.
+
+Lets assume, one user wants to swap 10 ADA for 1 NEWM with a slippage of 10% and another wants to swap 0.99 NEWM for 9.5 ADA with a slippage of 8.3%.
+```hs
+a = Swap pkhA (TokenInfo "" "" 10000000) (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 1000000) (SwapInfo 10)
+b = Swap pkhB (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 990000) (TokenInfo "" "" 9500000) (SwapInfo 10)
+```
+
+This is an allowed full swap because 10 ADA is within 9.5 ADA +/- 8.3% and 0.99 NEWM is within 1 NEWM +/- 10%. On both sides of the swap, each UTxO is within the correct range, resulting in a full swap where pkhB gets UTxO a and pkhA gets UTxO b. The two UTxOs are removed from the contract after a full swap.
 
 ### Partial Swap
 
