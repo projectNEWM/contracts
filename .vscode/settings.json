@@ -1,0 +1,9 @@
+{
+    "cSpell.words": [
+        "Cardano",
+        "NEWM"
+    ],
+    "cSpell.enableFiletypes": [
+        "!haskell"
+    ]
+}

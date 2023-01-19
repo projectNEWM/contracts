@@ -197,7 +197,7 @@ mkValidator datum redeemer context =
           !outValue  = createValue have
       in if checkContValue thisPrice thatPrice == True
         then (findPayout txOutputs otherAddr outValue) -- payout the validating value to the other address
-        else                                            -- else split the payout to the wscript and the other address
+        else                                            -- else split the payout to the script and the other address
           let !partialValue = outValue - thatValue
               !newHave = subtractTokenInfo have want'
               !newWant = subtractTokenInfo want have'
