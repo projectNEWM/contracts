@@ -28,7 +28,6 @@ import           Codec.Serialise
 import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScriptV2 )
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
--- import qualified PlutusTx.AssocMap              as AM
 import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V2.Ledger.Contexts      as V2
@@ -39,10 +38,9 @@ import           UsefulFuncs
 import           OrderBookDatum
 import           OrderBookRedeemer
 import           ReducedFunctions
--- import qualified Plutonomy
 {- |
   Author   : The Ancient Kraken
-  Copyright: 2022
+  Copyright: 2023
 -}
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
@@ -86,7 +84,6 @@ mkValidator datum redeemer context =
                               && (nOutputs contTxOutputs 1)      -- single script output
                               && (ptd == ptd')                   -- owner must remain constant
 
-
         -- | Fully Swap two utxos.
         (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
@@ -94,7 +91,7 @@ mkValidator datum redeemer context =
                                            !thisToken = TokenSwapInfo have sd
                                            !thatToken = TokenSwapInfo want' sd'
                                            !outValue = createValue have
-              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum inputs
+              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum script inputs
               && traceIfFalse "own"  (ptd /= ptd')                                -- cant reference self
               && traceIfFalse "pay"  (findPayout txOutputs otherAddr outValue)    -- token must go back to other wallet
               && traceIfFalse "pair" (checkMirrorTokens have want')               -- mirrored have and want tokens.
@@ -110,7 +107,7 @@ mkValidator datum redeemer context =
                                                !thisToken = TokenSwapInfo have sd
                                                !thatToken = TokenSwapInfo want' sd'
                                                !thatValue = createValue want'
-              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum inputs
+              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum script inputs
               && traceIfFalse "outs" (nOutputs contTxOutputs 1)                                   -- single script output
               && traceIfFalse "own"  (ptd /= ptd')                                                -- cant reference self
               && traceIfFalse "pair" (checkMirrorTokens have want')                               -- mirrored have and want tokens.
@@ -130,10 +127,6 @@ mkValidator datum redeemer context =
     
     validatingInput :: V2.TxOut
     validatingInput = ownInput context
-
--- | create a list of staking credential and reward in lovelace
-    -- redeemers :: [(V2.ScriptPurpose, V2.Redeemer)]
-    -- redeemers = AM.toList $ V2.txInfoRedeemers info
 
     thisValue :: V2.Value
     thisValue = V2.txOutValue validatingInput

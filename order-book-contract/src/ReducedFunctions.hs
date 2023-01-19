@@ -39,7 +39,6 @@ import           PlutusTx.Prelude
 import qualified Plutus.V2.Ledger.Api      as V2
 import qualified Plutus.V1.Ledger.Value    as Value
 
-
 {-# inlinable getScriptOutputs #-}
 getScriptOutputs :: [V2.TxOut] -> V2.Address -> [V2.TxOut]
 getScriptOutputs txOuts addr' = getScriptOutputs' txOuts addr' []
@@ -139,4 +138,3 @@ nRedeemers redeemers number = nRedeemers' redeemers 0
     nRedeemers' :: [(V2.ScriptPurpose, V2.Redeemer)] -> Integer -> Bool
     nRedeemers' []     counter = counter == number
     nRedeemers' ((_, _):xs) counter = nRedeemers' xs ( counter + 1 )
-    -- nRedeemers' _ _ = traceError "Wrong Type Of Redeemer Being Used"
