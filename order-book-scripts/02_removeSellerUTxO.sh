@@ -25,7 +25,8 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
 # seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
-seller_address_out="${seller_address} + ${utxo_value}"
+# seller_address_out="${seller_address} + ${utxo_value}"
+seller_address_out="${seller_address} + 2500000"
 echo "Return OUTPUT: "${seller_address_out}
 #
 # exit
