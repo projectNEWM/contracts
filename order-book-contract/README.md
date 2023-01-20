@@ -46,9 +46,9 @@ Anyone is allowed to match orders within the contract if and only if the two UTx
 
 ### Full Swap
 
-A full swap will only occur if and only if the have of one UTxO is within the range of the want from another and visa versa. For example, lets take the scenario where two users are swapping NEWM and ADA.
+A full swap will only occur if and only if the have token of one UTxO is within the range of the want from another and visa versa.
 
-Lets assume, one user wants to swap 10 ADA for 1 NEWM with a slippage of 10% and another wants to swap 0.99 NEWM for 9.5 ADA with a slippage of 8.3%.
+For example, lets take the scenario where two users are swapping NEWM and ADA. Lets assume, one user wants to swap 10 ADA for 1 NEWM with a slippage of 10% and another wants to swap 0.99 NEWM for 9.5 ADA with a slippage of 8.3%.
 ```hs
 a = Swap pkhA (TokenInfo "" "" 10000000) (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 1000000) (SwapInfo 10)
 b = Swap pkhB (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 990000) (TokenInfo "" "" 9500000) (SwapInfo 10)
@@ -58,7 +58,25 @@ This is an allowed full swap because 10 ADA is within 9.5 ADA +/- 8.3% and 0.99 
 
 ### Partial Swap
 
+A partial swap will only occur if and only if two UTxOs lay along the same effective price line and have opposite have and want tokens within the correct range. It is very similar to the full swap but result in one of the UTxOs returning to the contract for additional swaps.
+
+Like the full swap example, lets investigate the scenario where two users are going to complete a partial swap. Lets assume, one user wants to swap 10 ADA for 1 NEWM with a slippage of 10% and another wants to swap 0.5 NEWM for 5 ADA with a slippage of 10%.
+```hs
+a = Swap pkhA (TokenInfo "" "" 10000000) (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 1000000) (SwapInfo 10)
+b = Swap pkhB (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 500000) (TokenInfo "" "" 5000000) (SwapInfo 10)
+```
+
+This is not a full swap because the two UTxOs are not within their respected slippage ranges but it is a partial swap because the effective price on both UTxOs lay on the same line. The effective price here is 0.1 NEWM per ADA. This validation will result in pkhA getting UTxO b and pkhB getting 5 ADA from UTxO a while returning a new UTxO to the script as shown below.
+
+```hs
+c = Swap pkhA (TokenInfo "" "" 5000000) (TokenInfo "682fe60c9918842b3323c43b5144bc3d52a23bd2fb81345560d73f63" "4e45574d" 500000) (SwapInfo 10)
+```
+
+This is the returning UTxO from the user pkhA, resulting in a new potential swap with another UTxO inside the contract.
+
 ## Order Book Bot
+
+- TODO
 
 ## Build Instructions
 
