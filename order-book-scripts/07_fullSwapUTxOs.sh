@@ -67,17 +67,18 @@ buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
     # --tx-out-inline-datum-file data/datum/buyer_book_datum.json \
 
-seller_asset="24000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+seller_asset="100000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 seller_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-file data/datum/seller_book_datum.json \
     --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
+    # --tx-out-inline-datum-file data/datum/seller_book_datum.json \
 
-# buyer_address_out="${buyer_address} + ${seller_utxo_value} + ${seller_asset}"
-buyer_address_out="${buyer_address} + 1250000"
-seller_address_out="${seller_address} + ${buyer_utxo_value} + ${buyer_asset}"
+buyer_address_out="${buyer_address} + ${seller_utxo_value} + ${seller_asset}"
+# buyer_address_out="${buyer_address} + 1250000"
+# seller_address_out="${seller_address} + ${buyer_utxo_value} + ${buyer_asset}"
+seller_address_out="${seller_address} + 10000000000"
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #

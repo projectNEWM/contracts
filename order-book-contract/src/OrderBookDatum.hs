@@ -35,8 +35,8 @@ module OrderBookDatum
   , SwapInfo (..)
   , OrderBookDatum (..)
   , TokenSwapInfo (..)
-  , checkIfInSlippageRange
-  , checkEffectiveSlippage
+  , inSlipRange
+  , inEffectiveRange
   , HaveWantInfo (..)
   , checkContValue
   ) where
@@ -126,8 +126,8 @@ checkContValue (HaveWantInfo h1 w1) (HaveWantInfo h2 w2) =
 data TokenSwapInfo = TokenSwapInfo TokenInfo SwapInfo
 
 -- | Calculate if two order book dats are within their effective slippage range.
-checkIfInSlippageRange :: TokenSwapInfo -> TokenSwapInfo -> Bool
-checkIfInSlippageRange (TokenSwapInfo tA sA) (TokenSwapInfo tB sB) = (swapA && swapB)
+inSlipRange :: TokenSwapInfo -> TokenSwapInfo -> Bool
+inSlipRange (TokenSwapInfo tA sA) (TokenSwapInfo tB sB) = (swapA && swapB)
   where
     swapA :: Bool
     swapA = isIntegerInRange (tiAmt tA) aSlip (tiAmt tB) == True
@@ -157,8 +157,8 @@ effectivePrice haveAmt wantAmt = price
         price = divide scaledHaveAmt wantAmt
 
 -- | Calculate if two order book dats are within their effective slippage range.
-checkEffectiveSlippage :: OrderBookDatum -> OrderBookDatum -> Bool
-checkEffectiveSlippage (Swap _ hA wA sA) (Swap _ hB wB sB) = (swapA && swapB)
+inEffectiveRange :: OrderBookDatum -> OrderBookDatum -> Bool
+inEffectiveRange (Swap _ hA wA sA) (Swap _ hB wB sB) = (swapA && swapB)
   where
     swapA :: Bool
     swapA = isIntegerInRange aPrice aSlip bPrice == True

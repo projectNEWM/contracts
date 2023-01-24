@@ -16,9 +16,12 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-inline-datum-file data/datum/buyer_book_datum.json \
-    --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
+    # --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-script_address_out="${script_address} + ${utxo_value} + ${asset}"
+ada_value=$((${utxo_value} + 10000000000))
+# script_address_out="${script_address} + ${utxo_value} + ${asset}"
+script_address_out="${script_address} + ${ada_value}"
 echo "Buyer OUTPUT: "${script_address_out}
 #
 # exit
@@ -34,8 +37,14 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
+# TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
+# buyer_tx_in=${TXIN::-8}
+
+TXIN=$(jq -r --arg alltxin "" 'to_entries[] | select(.value.value | length < 2) | .key | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
 buyer_tx_in=${TXIN::-8}
+
+# echo $buyer_tx_in
+# exit
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"

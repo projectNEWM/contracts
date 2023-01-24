@@ -20,12 +20,12 @@
 {-# LANGUAGE TypeOperators         #-}
 module OrderBookContract
   ( orderBookContractScript
-  , orderBookContractScriptShortBs
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import           Codec.Serialise
-import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScriptV2 )
+import           Cardano.Api.Shelley            ( PlutusScript (..)
+                                                , PlutusScriptV2 )
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Value         as Value
@@ -45,10 +45,11 @@ import           ReducedFunctions
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = FullSwap UTxOData |
-                          PartSwap UTxOData |
-                          Update            |
-                          Remove
+data CustomRedeemerType 
+  = FullSwap UTxOData
+  | PartSwap UTxOData
+  | Update
+  | Remove
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'FullSwap, 0 )
                                                 , ( 'PartSwap, 1 )
                                                 , ( 'Update,   2 )
@@ -65,56 +66,71 @@ mkValidator datum redeemer context =
     This contract allows an order book style dex to be built on Cardano with
     minimal batching required. It will allow mirrored swaps as well as partial
     order filling.
+
+    The variable thisValue is the currently validating value.
   -}
   case datum of
-    (Swap ptd have want sd) -> let !walletPkh  = ptPkh ptd
-                                   !walletAddr = createAddress walletPkh (ptSc ptd)
-                                   !txSigners  = V2.txInfoSignatories info
+    (Swap ptd have want sd) ->
+      let !walletPkh  = ptPkh ptd
+          !walletAddr = createAddress walletPkh (ptSc ptd)
+          !txSigners  = V2.txInfoSignatories info
       in case redeemer of
-        -- | Remove the utxo back to the wallet
-        Remove -> (signedBy txSigners walletPkh)              -- wallet must sign it
-               && (findPayout txOutputs walletAddr thisValue) -- token must go back to wallet
-               && (nInputs txInputs scriptAddr 1)             -- a single input datum
+        
+        -- | Remove the UTxO back to the wallet
+        Remove -> 
+          traceIfFalse "sig" (signedBy txSigners walletPkh)           &&  -- wallet must sign
+          traceIfFalse "pay" (findPayout txOuts walletAddr thisValue) &&  -- must pay to wallet
+          traceIfFalse "ins" (nInputs txInputs scriptAddr 1)                 -- single input datum
 
-        -- | Update the order book utxo with new sale information.
+        -- | Update the UTxO with new swap information.
         Update -> 
           case getOutboundDatum contTxOutputs of
-            (Swap ptd' _ _ _) -> (signedBy txSigners walletPkh)  -- wallet must sign it
-                              && (nInputs txInputs scriptAddr 1) -- single script input
-                              && (nOutputs contTxOutputs 1)      -- single script output
-                              && (ptd == ptd')                   -- owner must remain constant
+            (Swap ptd' _ _ _) -> 
+              traceIfFalse "sig" (signedBy txSigners walletPkh)  &&  -- wallet must sign it
+              traceIfFalse "ins" (nInputs txInputs scriptAddr 1) &&  -- single script input
+              traceIfFalse "out" (nOutputs contTxOutputs 1)      &&  -- single script output
+              traceIfFalse "own" (ptd == ptd')                       -- owner remains constant
 
-        -- | Fully Swap two utxos.
-        (FullSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
+        -- | Fully swap two UTxOs.
+        (FullSwap utxo) ->
+          let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
-            (Swap ptd' _ want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
-                                           !thisToken = TokenSwapInfo have sd
-                                           !thatToken = TokenSwapInfo want' sd'
-                                           !outValue = createValue have
-              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)              -- double datum script inputs
-              && traceIfFalse "own"  (ptd /= ptd')                                -- cant reference self
-              && traceIfFalse "pay"  (findPayout txOutputs otherAddr outValue)    -- token must go back to other wallet
-              && traceIfFalse "pair" (checkMirrorTokens have want')               -- mirrored have and want tokens.
-              && traceIfFalse "slip" (checkIfInSlippageRange thisToken thatToken) -- slippage is in range
-              && traceIfFalse "lie"  (checkValueHolds have thisValue)             -- must have what you claim to have
+            (Swap ptd' _ want' sd') ->
+              let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
+                  !thisToken = TokenSwapInfo have sd
+                  !thatToken = TokenSwapInfo want' sd'
+                  !outValue = createValue have
+              in
+                traceIfFalse "ins" (nInputs txInputs scriptAddr 2)        &&  -- 2 script inputs
+                traceIfFalse "own" (ptd /= ptd')                          &&  -- cant ref self
+                traceIfFalse "pay" (findPayout txOuts otherAddr outValue) &&  -- token is paid
+                traceIfFalse "mir" (checkMirrorTokens have want')         &&  -- mirror tkn only
+                traceIfFalse "sli" (inSlipRange thisToken thatToken)      &&  -- slip in range
+                traceIfFalse "lie" (checkValueHolds have thisValue)           -- must have token
 
-        -- | Partially Swap Two UTxOs.
-        (PartSwap utxo) -> let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
+        -- | Partially swap two UTxOs.
+        (PartSwap utxo) ->
+          let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
           in case getDatumByTxId txId of
-            (Swap ptd' have' want' sd') -> let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
-                                               !thisDatum = Swap ptd have want sd
-                                               !thatDatum = Swap ptd' have' want' sd'
-                                               !thisToken = TokenSwapInfo have sd
-                                               !thatToken = TokenSwapInfo want' sd'
-                                               !thatValue = createValue want'
-              in traceIfFalse "ins"  (nInputs txInputs scriptAddr 2)                              -- double datum script inputs
-              && traceIfFalse "outs" (nOutputs contTxOutputs 1)                                   -- single script output
-              && traceIfFalse "own"  (ptd /= ptd')                                                -- cant reference self
-              && traceIfFalse "pair" (checkMirrorTokens have want')                               -- mirrored have and want tokens.
-              && traceIfFalse "slip" (checkEffectiveSlippage thisDatum thatDatum)                 -- slippage is in range
-              && traceIfFalse "full" (not $ checkIfInSlippageRange thisToken thatToken)           -- not full swap
-              && traceIfFalse "lie"  (checkValueHolds have thisValue)                             -- must have what you claim to have
-              && traceIfFalse "pay"  (checkPartialPayout thisDatum thatDatum otherAddr thatValue) -- this value goes where
+            (Swap ptd' have' want' sd') -> 
+              let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
+                  !thisDatum = Swap ptd have want sd
+                  !thatDatum = Swap ptd' have' want' sd'
+                  !thisToken = TokenSwapInfo have sd
+                  !thatToken = TokenSwapInfo want' sd'
+                  !thatValue = createValue want'
+              in
+                traceIfFalse "ins" (nInputs txInputs scriptAddr 2)         &&  -- 2 script inputs
+                traceIfFalse "out" (nOutputs contTxOutputs 1)              &&  -- 1 script output
+                traceIfFalse "own" (ptd /= ptd')                           &&  -- cant ref self
+                traceIfFalse "mir" (checkMirrorTokens have want')          &&  -- mirrored tokens
+                traceIfFalse "eff" (inEffectiveRange thisDatum thatDatum)  &&  -- slipp in range
+                traceIfFalse "sli" (not $ inSlipRange thisToken thatToken) &&  -- not full swap
+                traceIfFalse "lie" (checkValueHolds have thisValue)        &&  -- must have tkn
+                traceIfFalse "par" (checkPartialPayout                         -- part payback
+                  thisDatum thatDatum
+                  otherAddr thatValue
+                ) 
   where
     info :: V2.TxInfo
     info = V2.scriptContextTxInfo context
@@ -122,8 +138,8 @@ mkValidator datum redeemer context =
     txInputs :: [V2.TxInInfo]
     txInputs = V2.txInfoInputs info
 
-    txOutputs :: [V2.TxOut]
-    txOutputs = V2.txInfoOutputs info
+    txOuts :: [V2.TxOut]
+    txOuts = V2.txInfoOutputs info
     
     validatingInput :: V2.TxOut
     validatingInput = ownInput context
@@ -135,7 +151,7 @@ mkValidator datum redeemer context =
     scriptAddr = V2.txOutAddress validatingInput
 
     contTxOutputs :: [V2.TxOut]
-    contTxOutputs = getScriptOutputs txOutputs scriptAddr
+    contTxOutputs = getScriptOutputs txOuts scriptAddr
 
     createTxOutRef :: V2.BuiltinByteString -> Integer -> V2.TxOutRef
     createTxOutRef txHash index = txId
@@ -147,38 +163,43 @@ mkValidator datum redeemer context =
           }
 
     getOutboundDatum :: [V2.TxOut] -> OrderBookDatum
-    getOutboundDatum []     = traceError "Nothing Found On Cont"
-    getOutboundDatum (x:xs) =
-      case V2.txOutDatum x of
-        V2.NoOutputDatum       -> getOutboundDatum xs
-        (V2.OutputDatumHash _) -> traceError "Embedded Datum On Cont"
-        -- inline datum only
-        (V2.OutputDatum (V2.Datum d)) -> 
-          case PlutusTx.fromBuiltinData d of
-            Nothing     -> traceError "Bad Data On Cont"
-            Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
-    
-    checkOutboundDatum :: [V2.TxOut] -> V2.Value -> OrderBookDatum -> Bool
-    checkOutboundDatum []     _   _ = traceError "Nothing Found Cont Validation"
-    checkOutboundDatum (x:xs) val (Swap ptd have want sd) =
-      if Value.geq (V2.txOutValue x) val -- strict value continue
-        then
+    getOutboundDatum outs = getOutboundDatum' outs
+      where
+        getOutboundDatum' :: [V2.TxOut] -> OrderBookDatum
+        getOutboundDatum' []     = traceError "Nothing Found On Cont"
+        getOutboundDatum' (x:xs) =
           case V2.txOutDatum x of
-            V2.NoOutputDatum       -> traceError "No Datum Cont Validation"
-            (V2.OutputDatumHash _) -> traceError "Embedded Datum Cont Validation"
+            V2.NoOutputDatum       -> getOutboundDatum' xs
+            (V2.OutputDatumHash _) -> traceError "Embedded Datum On Cont"
             -- inline datum only
             (V2.OutputDatum (V2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> traceError "Bad Data Cont Validation"
-                Just inline -> 
-                  case PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline of
-                    (Swap ptd' have' want' sd') -> (ptd == ptd')
-                                                && (sd == sd')
-                                                && (have == have')
-                                                && (want == want')
-        else checkOutboundDatum xs val (Swap ptd have want sd)
+                Nothing     -> traceError "Bad Data On Cont"
+                Just inline ->
+                  PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
+    
+    checkOutboundDatum :: [V2.TxOut] -> V2.Value -> OrderBookDatum -> Bool
+    checkOutboundDatum outs val dat = checkOutboundDatum' outs val dat
+      where
+        checkOutboundDatum' :: [V2.TxOut] -> V2.Value -> OrderBookDatum -> Bool
+        checkOutboundDatum' []     _   _ = traceError "Nothing Found On Check"
+        checkOutboundDatum' (x:xs) val (Swap ptd have want sd)
+          | Value.geq (V2.txOutValue x) val =
+            case V2.txOutDatum x of
+              V2.NoOutputDatum              -> traceError "No Datum Validation"
+              (V2.OutputDatumHash _)        -> traceError "Embed Datum Validation"
+              (V2.OutputDatum (V2.Datum d)) -> -- inline datum only
+                case PlutusTx.fromBuiltinData d of
+                  Nothing     -> traceError "Bad Data Cont Validation"
+                  Just inline -> 
+                    case PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline of
+                      (Swap ptd' have' want' sd') -> 
+                        (ptd  == ptd')  &&
+                        (sd   == sd')   &&
+                        (have == have') &&
+                        (want == want') 
+          | otherwise = checkOutboundDatum' xs val (Swap ptd have want sd)
 
-    -- this needs to not be able to reference the txId that is being spent
     getDatumByTxId :: V2.TxOutRef -> OrderBookDatum
     getDatumByTxId txId = 
       case V2.txOutDatum $ V2.txInInfoResolved $ txInFromTxRef txInputs txId of
@@ -191,19 +212,24 @@ mkValidator datum redeemer context =
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
 
     checkPartialPayout :: OrderBookDatum -> OrderBookDatum -> V2.Address -> V2.Value -> Bool
-    checkPartialPayout (Swap pdt have want sd) (Swap _ have' want' _) otherAddr thatValue = 
+    checkPartialPayout 
+      (Swap pdt have want sd) (Swap _ have' want' _) otherAddr thatValue =
       let !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
           !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
           !outValue  = createValue have
-      in if checkContValue thisPrice thatPrice == True
-        then (findPayout txOutputs otherAddr outValue) -- payout the validating value to the other address
-        else                                            -- else split the payout to the script and the other address
+      in
+        if checkContValue thisPrice thatPrice == True
+        then (findPayout txOuts otherAddr outValue) -- pay the validating value
+        else                                        -- split the return
           let !partialValue = outValue - thatValue
               !newHave = subtractTokenInfo have want'
               !newWant = subtractTokenInfo want have'
-          in (findPayout contTxOutputs scriptAddr partialValue)
-          && (findPayout txOutputs otherAddr thatValue)
-          && (checkOutboundDatum contTxOutputs partialValue (Swap pdt newHave newWant sd))
+          in
+            (findPayout contTxOutputs scriptAddr partialValue)          &&
+            (findPayout txOuts otherAddr thatValue)                     &&
+            (checkOutboundDatum
+              contTxOutputs partialValue (Swap pdt newHave newWant sd)
+            ) 
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
@@ -223,16 +249,3 @@ orderBookContractScriptShortBs = SBS.toShort . LBS.toStrict $ serialise script
 
 orderBookContractScript :: PlutusScript PlutusScriptV2
 orderBookContractScript = PlutusScriptSerialised orderBookContractScriptShortBs
------------ plutonomy makes it cost more for some reason
--- wrappedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
--- wrappedValidator x y z = check (mkValidator (V2.unsafeFromBuiltinData x) (V2.unsafeFromBuiltinData y) (V2.unsafeFromBuiltinData z))
-
--- validator :: Validator
--- -- validator = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
--- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
-
--- orderBookContractScriptShortBs :: SBS.ShortByteString
--- orderBookContractScriptShortBs = SBS.toShort . LBS.toStrict $ serialise validator
-
--- orderBookContractScript :: PlutusScript PlutusScriptV2
--- orderBookContractScript = PlutusScriptSerialised orderBookContractScriptShortBs

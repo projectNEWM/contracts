@@ -16,7 +16,7 @@ collat_address=$(cat wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
 #
-asset="24000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+asset="100000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -24,9 +24,9 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file data/datum/seller_book_datum.json \
     --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-# seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
+seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
 # seller_address_out="${seller_address} + ${utxo_value}"
-seller_address_out="${seller_address} + 2500000"
+# seller_address_out="${seller_address} + 2500000"
 echo "Return OUTPUT: "${seller_address_out}
 #
 # exit

@@ -22,9 +22,13 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-inline-datum-file data/datum/buyer_book_datum.json \
-    --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
+    # --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-buyer_address_out="${buyer_address} + ${utxo_value} + ${asset}"
+ada_value=$((${utxo_value} + 10000000000))
+
+# buyer_address_out="${buyer_address} + ${utxo_value} + ${asset}"
+buyer_address_out="${buyer_address} + ${ada_value}"
 echo "Return OUTPUT: "${buyer_address_out}
 #
 # exit
