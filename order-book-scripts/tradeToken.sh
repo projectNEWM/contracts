@@ -9,7 +9,7 @@ receiver_address=$(cat wallets/seller-wallet/payment.addr)
 # receiver_address="addr_test1qppp0mcjel3kztftz36k0cc5j77qcz4vt0udvc3fzzz9djeq7v27xnzv5664myxhzfvgj5tlymus096u0y7xfrx9sazqpvjzrv"
 
 # Define Asset to be printed here
-assetA="16000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+assetA="100000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 assetB="12345 6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -17,7 +17,9 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} + 5000000 + ${assetA}" | tr -dc '0-9')
 
-change_to_be_traded="${sender_address} + ${min_utxo} + ${assetB}"
+# change_to_be_traded="${sender_address} + ${min_utxo} + ${assetB}"
+change_to_be_traded="${sender_address} + ${min_utxo} + ${assetA}"
+# token_to_be_traded="${receiver_address} + 10000000000"
 token_to_be_traded="${receiver_address} + ${min_utxo} + ${assetA}"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}

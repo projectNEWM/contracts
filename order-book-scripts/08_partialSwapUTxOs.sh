@@ -83,8 +83,8 @@ script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
 
 
-returning_asset="84000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
-payment_asset="10000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+returning_asset="50000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+payment_asset="50000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -96,7 +96,7 @@ buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
 # seller_address_out="${seller_address} + ${buyer_utxo_value} + ${buyer_asset}"
 script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
 buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${payment_asset}"
-seller_address_out="${seller_address} + 1000000000"
+seller_address_out="${seller_address} + 5000000000"
 echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}

@@ -25,7 +25,7 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${script_address} + 5000000" | tr -dc '0-9')
     # --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-ada_value=$((${utxo_value} + 10000000000))
+ada_value=$((${utxo_value} + 5000000000))
 
 # buyer_address_out="${buyer_address} + ${utxo_value} + ${asset}"
 buyer_address_out="${buyer_address} + ${ada_value}"

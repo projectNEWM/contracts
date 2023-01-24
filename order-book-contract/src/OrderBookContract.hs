@@ -69,90 +69,99 @@ mkValidator datum redeemer context =
 
     The variable thisValue is the currently validating value.
   -}
-  case datum of
-    (Swap ptd have want sd) ->
+  case (datum, redeemer) of
+    
+    -- | Remove the UTxO back to the wallet
+    (Swap ptd _ _ _, Remove) ->
       let !walletPkh  = ptPkh ptd
           !walletAddr = createAddress walletPkh (ptSc ptd)
+          !info       = V2.scriptContextTxInfo context
           !txSigners  = V2.txInfoSignatories info
-      in case redeemer of
-        
-        -- | Remove the UTxO back to the wallet
-        Remove -> 
-          traceIfFalse "sig" (signedBy txSigners walletPkh)           &&  -- wallet must sign
-          traceIfFalse "pay" (findPayout txOuts walletAddr thisValue) &&  -- must pay to wallet
-          traceIfFalse "ins" (nInputs txInputs scriptAddr 1)                 -- single input datum
+          !txIns      = V2.txInfoInputs info
+          !txOuts     = V2.txInfoOutputs info
+          !validInput = ownInput context
+          !thisValue  = V2.txOutValue validInput
+          !scriptAddr = V2.txOutAddress validInput
+      in
+        (signedBy txSigners walletPkh)           &&  -- wallet must sign
+        (findPayout txOuts walletAddr thisValue) &&  -- must pay to wallet
+        (nInputs txIns scriptAddr 1)                 -- single input datum
 
-        -- | Update the UTxO with new swap information.
-        Update -> 
-          case getOutboundDatum contTxOutputs of
-            (Swap ptd' _ _ _) -> 
-              traceIfFalse "sig" (signedBy txSigners walletPkh)  &&  -- wallet must sign it
-              traceIfFalse "ins" (nInputs txInputs scriptAddr 1) &&  -- single script input
-              traceIfFalse "out" (nOutputs contTxOutputs 1)      &&  -- single script output
-              traceIfFalse "own" (ptd == ptd')                       -- owner remains constant
+    -- | Update the UTxO with new swap information.
+    (Swap ptd _ _ _, Update) ->
+      let !walletPkh  = ptPkh ptd
+          !info       = V2.scriptContextTxInfo context
+          !txSigners  = V2.txInfoSignatories info
+          !txIns      = V2.txInfoInputs info
+          !txOuts     = V2.txInfoOutputs info
+          !validInput = ownInput context
+          !scriptAddr = V2.txOutAddress validInput
+          !contOuts   = getScriptOutputs txOuts scriptAddr
+      in case getOutboundDatum contOuts of
+        (Swap ptd' _ _ _) -> 
+          (signedBy txSigners walletPkh) &&  -- wallet must sign it
+          (nInputs txIns scriptAddr 1)   &&  -- single script input
+          (nOutputs contOuts 1)          &&  -- single script output
+          (ptd == ptd')                      -- owner remains constant
 
-        -- | Fully swap two UTxOs.
-        (FullSwap utxo) ->
-          let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
-          in case getDatumByTxId txId of
-            (Swap ptd' _ want' sd') ->
-              let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
-                  !thisToken = TokenSwapInfo have sd
-                  !thatToken = TokenSwapInfo want' sd'
-                  !outValue = createValue have
-              in
-                traceIfFalse "ins" (nInputs txInputs scriptAddr 2)        &&  -- 2 script inputs
-                traceIfFalse "own" (ptd /= ptd')                          &&  -- cant ref self
-                traceIfFalse "pay" (findPayout txOuts otherAddr outValue) &&  -- token is paid
-                traceIfFalse "mir" (checkMirrorTokens have want')         &&  -- mirror tkn only
-                traceIfFalse "sli" (inSlipRange thisToken thatToken)      &&  -- slip in range
-                traceIfFalse "lie" (checkValueHolds have thisValue)           -- must have token
+    -- | Fully swap two UTxOs.
+    (Swap ptd have _ sd, FullSwap utxo) ->
+      let !txId       = createTxOutRef (uTx utxo) (uIdx utxo)
+          !info       = V2.scriptContextTxInfo context
+          !txIns      = V2.txInfoInputs info
+          !txOuts     = V2.txInfoOutputs info
+          !validInput = ownInput context
+          !thisValue  = V2.txOutValue validInput
+          !scriptAddr = V2.txOutAddress validInput
+      in case getDatumByTxId txIns txId of
+        (Swap ptd' _ want' sd') ->
+          let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
+              !thisToken = TokenSwapInfo have sd
+              !thatToken = TokenSwapInfo want' sd'
+              !outValue = createValue have
+          in
+            traceIfFalse "ins" (nInputs txIns scriptAddr 2)           &&  -- 2 script inputs
+            traceIfFalse "own" (ptd /= ptd')                          &&  -- cant ref self
+            traceIfFalse "pay" (findPayout txOuts otherAddr outValue) &&  -- token is paid
+            traceIfFalse "mir" (checkMirrorTokens have want')         &&  -- mirror tkn only
+            traceIfFalse "sli" (inSlipRange thisToken thatToken)      &&  -- slip in range
+            traceIfFalse "lie" (checkValueHolds have thisValue)           -- must have token
+    
 
-        -- | Partially swap two UTxOs.
-        (PartSwap utxo) ->
-          let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
-          in case getDatumByTxId txId of
-            (Swap ptd' have' want' sd') -> 
-              let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
-                  !thisDatum = Swap ptd have want sd
-                  !thatDatum = Swap ptd' have' want' sd'
-                  !thisToken = TokenSwapInfo have sd
-                  !thatToken = TokenSwapInfo want' sd'
-                  !thatValue = createValue want'
-              in
-                traceIfFalse "ins" (nInputs txInputs scriptAddr 2)         &&  -- 2 script inputs
-                traceIfFalse "out" (nOutputs contTxOutputs 1)              &&  -- 1 script output
-                traceIfFalse "own" (ptd /= ptd')                           &&  -- cant ref self
-                traceIfFalse "mir" (checkMirrorTokens have want')          &&  -- mirrored tokens
-                traceIfFalse "eff" (inEffectiveRange thisDatum thatDatum)  &&  -- slipp in range
-                traceIfFalse "sli" (not $ inSlipRange thisToken thatToken) &&  -- not full swap
-                traceIfFalse "lie" (checkValueHolds have thisValue)        &&  -- must have tkn
-                traceIfFalse "par" (checkPartialPayout                         -- part payback
-                  thisDatum thatDatum
-                  otherAddr thatValue
-                ) 
+    -- | Partially swap two UTxOs.
+    (Swap ptd have want sd, PartSwap utxo) ->
+      let !txId = createTxOutRef (uTx utxo) (uIdx utxo)
+          !info       = V2.scriptContextTxInfo context
+          !txIns      = V2.txInfoInputs info
+          !txOuts     = V2.txInfoOutputs info
+          !validInput = ownInput context
+          !thisValue  = V2.txOutValue validInput
+          !scriptAddr = V2.txOutAddress validInput
+          !contOuts   = getScriptOutputs txOuts scriptAddr
+      in case getDatumByTxId txIns txId of
+        (Swap ptd' have' want' sd') -> 
+          let !otherAddr = createAddress (ptPkh ptd') (ptSc ptd')
+              !thisDatum = Swap ptd have want sd
+              !thatDatum = Swap ptd' have' want' sd'
+              !thisToken = TokenSwapInfo have sd
+              !thatToken = TokenSwapInfo want' sd'
+              !thatValue = createValue want'
+          in
+            traceIfFalse "ins" (nInputs txIns scriptAddr 2)            &&  -- 2 script inputs
+            traceIfFalse "out" (nOutputs contOuts 1)                   &&  -- 1 script output
+            traceIfFalse "own" (ptd /= ptd')                           &&  -- cant ref self
+            traceIfFalse "mir" (checkMirrorTokens have want')          &&  -- mirrored tokens
+            traceIfFalse "eff" (inEffectiveRange thisDatum thatDatum)  &&  -- slipp in range
+            traceIfFalse "sli" (not $ inSlipRange thisToken thatToken) &&  -- not full swap
+            traceIfFalse "lie" (checkValueHolds have thisValue)        &&  -- must have tkn
+            traceIfFalse "par" (isPartialPay 
+                                  thisDatum thatDatum 
+                                  otherAddr scriptAddr
+                                  thatValue
+                                  txOuts contOuts
+                               ) -- part payback
+  
   where
-    info :: V2.TxInfo
-    info = V2.scriptContextTxInfo context
-
-    txInputs :: [V2.TxInInfo]
-    txInputs = V2.txInfoInputs info
-
-    txOuts :: [V2.TxOut]
-    txOuts = V2.txInfoOutputs info
-    
-    validatingInput :: V2.TxOut
-    validatingInput = ownInput context
-
-    thisValue :: V2.Value
-    thisValue = V2.txOutValue validatingInput
-    
-    scriptAddr :: V2.Address
-    scriptAddr = V2.txOutAddress validatingInput
-
-    contTxOutputs :: [V2.TxOut]
-    contTxOutputs = getScriptOutputs txOuts scriptAddr
-
     createTxOutRef :: V2.BuiltinByteString -> Integer -> V2.TxOutRef
     createTxOutRef txHash index = txId
       where
@@ -200,9 +209,9 @@ mkValidator datum redeemer context =
                         (want == want') 
           | otherwise = checkOutboundDatum' xs val (Swap ptd have want sd)
 
-    getDatumByTxId :: V2.TxOutRef -> OrderBookDatum
-    getDatumByTxId txId = 
-      case V2.txOutDatum $ V2.txInInfoResolved $ txInFromTxRef txInputs txId of
+    getDatumByTxId :: [V2.TxInInfo] -> V2.TxOutRef -> OrderBookDatum
+    getDatumByTxId txIns txId = 
+      case V2.txOutDatum $ V2.txInInfoResolved $ txInFromTxRef txIns txId of
         V2.NoOutputDatum       -> traceError "No Datum On TxId"
         (V2.OutputDatumHash _) -> traceError "Embedded Datum On TxId"
         -- inline datum only
@@ -211,9 +220,20 @@ mkValidator datum redeemer context =
             Nothing     -> traceError "Bad Data On TxId"
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
 
-    checkPartialPayout :: OrderBookDatum -> OrderBookDatum -> V2.Address -> V2.Value -> Bool
-    checkPartialPayout 
-      (Swap pdt have want sd) (Swap _ have' want' _) otherAddr thatValue =
+    isPartialPay 
+      :: OrderBookDatum 
+      -> OrderBookDatum 
+      -> V2.Address 
+      -> V2.Address 
+      -> V2.Value
+      -> [V2.TxOut] -- all outputs
+      -> [V2.TxOut] -- continue outputs
+      -> Bool
+    isPartialPay
+      (Swap pdt have want sd) (Swap _ have' want' _)
+      otherAddr scriptAddr
+      thatValue 
+      txOuts contOuts =
       let !thisPrice = HaveWantInfo (tiAmt have) (tiAmt want)
           !thatPrice = HaveWantInfo (tiAmt have') (tiAmt want')
           !outValue  = createValue have
@@ -225,11 +245,9 @@ mkValidator datum redeemer context =
               !newHave = subtractTokenInfo have want'
               !newWant = subtractTokenInfo want have'
           in
-            (findPayout contTxOutputs scriptAddr partialValue)          &&
-            (findPayout txOuts otherAddr thatValue)                     &&
-            (checkOutboundDatum
-              contTxOutputs partialValue (Swap pdt newHave newWant sd)
-            ) 
+            (findPayout contOuts scriptAddr partialValue)                           &&
+            (findPayout txOuts otherAddr thatValue)                                 &&
+            (checkOutboundDatum contOuts partialValue (Swap pdt newHave newWant sd)) 
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
