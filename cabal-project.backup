@@ -6,7 +6,6 @@ packages:
     minting-contract
     nft-locking-contract
     nft-minting-contract
-    marketplace-contract
     order-book-contract
 
 -- We never, ever, want this.
@@ -340,3 +339,11 @@ source-repository-package
   location: https://github.com/logicalmechanism/cogno
   tag: 5f67a2fff3b17b33f08de3c33e072fe4e18ef84f
   subdir: cogno-contract
+
+source-repository-package
+  type: git
+  location: https://github.com/well-typed/plutonomy.git
+  tag: 6c01302ba8cf3be4f71617e106cd5ef7ed10fc63
+
+package plutonomy
+  flags: +plutus-f680ac697

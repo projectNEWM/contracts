@@ -24,17 +24,16 @@ module OrderBookContract
 import qualified PlutusTx
 import           PlutusTx.Prelude
 import           Codec.Serialise
-import           Cardano.Api.Shelley            ( PlutusScript (..)
-                                                , PlutusScriptV2 )
-import qualified Data.ByteString.Lazy           as LBS
-import qualified Data.ByteString.Short          as SBS
-import qualified Plutus.V1.Ledger.Value         as Value
-import qualified Plutus.V1.Ledger.Scripts       as Scripts
-import qualified Plutus.V2.Ledger.Contexts      as V2
-import qualified Plutus.V2.Ledger.Api           as V2
-import           Plutus.Script.Utils.V2.Scripts as Utils
+import           Cardano.Api.Shelley                             ( PlutusScript (..)
+                                                                 , PlutusScriptV2 )
+import qualified Data.ByteString.Lazy                            as LBS
+import qualified Data.ByteString.Short                           as SBS
+import qualified Plutus.V1.Ledger.Value                          as Value
+import qualified Plutus.V1.Ledger.Scripts                        as Scripts
+import qualified Plutus.V2.Ledger.Contexts                       as V2
+import qualified Plutus.V2.Ledger.Api                            as V2
+import           Plutus.Script.Utils.V2.Typed.Scripts.Validators as Utils
 import           UsefulFuncs
--- new stuff
 import           OrderBookDatum
 import           OrderBookRedeemer
 import           ReducedFunctions
@@ -126,7 +125,6 @@ mkValidator datum redeemer context =
             traceIfFalse "mir" (checkMirrorTokens have want')         &&  -- mirror tkn only
             traceIfFalse "sli" (inSlipRange thisToken thatToken)      &&  -- slip in range
             traceIfFalse "lie" (checkValueHolds have thisValue)           -- must have token
-    
 
     -- | Partially swap two UTxOs.
     (Swap ptd have want sd, PartSwap utxo) ->
@@ -221,13 +219,13 @@ mkValidator datum redeemer context =
             Just inline -> PlutusTx.unsafeFromBuiltinData @OrderBookDatum inline
 
     isPartialPay 
-      :: OrderBookDatum 
-      -> OrderBookDatum 
-      -> V2.Address 
-      -> V2.Address 
-      -> V2.Value
-      -> [V2.TxOut] -- all outputs
-      -> [V2.TxOut] -- continue outputs
+      :: OrderBookDatum  -- this datum
+      -> OrderBookDatum  -- that datum
+      -> V2.Address      -- other address
+      -> V2.Address      -- script address
+      -> V2.Value        -- other value
+      -> [V2.TxOut]      -- all outputs
+      -> [V2.TxOut]      -- continue outputs
       -> Bool
     isPartialPay
       (Swap pdt have want sd) (Swap _ have' want' _)
@@ -245,8 +243,8 @@ mkValidator datum redeemer context =
               !newHave = subtractTokenInfo have want'
               !newWant = subtractTokenInfo want have'
           in
-            (findPayout contOuts scriptAddr partialValue)                           &&
-            (findPayout txOuts otherAddr thatValue)                                 &&
+            (findPayout contOuts scriptAddr partialValue)                            &&
+            (findPayout txOuts otherAddr thatValue)                                  &&
             (checkOutboundDatum contOuts partialValue (Swap pdt newHave newWant sd)) 
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
