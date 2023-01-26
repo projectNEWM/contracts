@@ -24,9 +24,33 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file data/datum/sale_datum.json \
     --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-seller_address_out="${seller_address} + ${utxo_value} + ${asset}"
-# seller_address_out="${seller_address} + ${utxo_value}"
-# seller_address_out="${seller_address} + 2500000"
+echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
+${cli} query utxo \
+    --address ${script_address} \
+    ${network} \
+    --out-file tmp/script_utxo.json
+# transaction variables
+TXNS=$(jq length tmp/script_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
+   exit;
+fi
+
+TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
+seller_utxo=${TXIN::-8}
+echo SELLER UTXO ${seller_utxo}
+
+pid="0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52"
+tkn="5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+CURRENT_VALUE=$(jq -r --arg sellerPkh "${seller_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .value.value[$pid][$tkn]' tmp/script_utxo.json)
+echo $VALUE
+
+if [[ retAmt -eq 0 ]] ; then
+    seller_address_out="${seller_address} + ${utxo_value}"
+else
+    seller_address_out="${seller_address} + ${utxo_value} + ${returning_asset}"
+fi
+
 echo "Return OUTPUT: "${seller_address_out}
 #
 # exit

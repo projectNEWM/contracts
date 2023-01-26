@@ -74,15 +74,7 @@ createValue :: TokenInfo -> V2.Value
 createValue (TokenInfo pid tkn amt) = Value.singleton pid tkn amt
 
 multiplyValue :: TokenInfo -> Integer -> V2.Value
-multiplyValue tkn amt = loop (createValue tkn) (emptyValue tkn) amt
-  where
-    emptyValue :: TokenInfo -> V2.Value
-    emptyValue (TokenInfo pid tkn _) = Value.singleton pid tkn 0
-
-    loop :: V2.Value -> V2.Value -> Integer -> V2.Value
-    loop val holder amt
-      | amt == 0 = holder
-      | otherwise = loop val (holder <> val) (amt -1)
+multiplyValue (TokenInfo pid tkn amt) mul = Value.singleton pid tkn (amt*mul)
 
 -- owner, what they get, what you get
 data FractionalSaleDatum = Sale OwnerInfo TokenInfo TokenInfo

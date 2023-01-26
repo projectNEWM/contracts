@@ -4,8 +4,8 @@ set -e
 source ../.env
 
 # Addresses
-sender_address=$(cat wallets/seller-wallet/payment.addr)
-receiver_address=$(cat wallets/buyer-wallet/payment.addr)
+sender_address=$(cat wallets/buyer-wallet/payment.addr)
+receiver_address=$(cat wallets/seller-wallet/payment.addr)
 # receiver_address="addr_test1qppp0mcjel3kztftz36k0cc5j77qcz4vt0udvc3fzzz9djeq7v27xnzv5664myxhzfvgj5tlymus096u0y7xfrx9sazqpvjzrv"
 
 # Define Asset to be printed here
@@ -18,9 +18,9 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${receiver_address} + 5000000 + ${assetA}" | tr -dc '0-9')
 
 # change_to_be_traded="${sender_address} + ${min_utxo} + ${assetB}"
-change_to_be_traded="${sender_address} + ${min_utxo} + ${assetA}"
-token_to_be_traded="${receiver_address} + 10000000000"
-# token_to_be_traded="${receiver_address} + ${min_utxo} + ${assetA}"
+# change_to_be_traded="${sender_address} + ${min_utxo} + ${assetA}"
+# token_to_be_traded="${receiver_address} + 10000000000"
+token_to_be_traded="${receiver_address} + ${min_utxo} + ${assetA}"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 echo -e "\nChange:\n" ${change_to_be_traded}
@@ -50,9 +50,9 @@ FEE=$(${cli} transaction build \
     --change-address ${sender_address} \
     --tx-in ${seller_tx_in} \
     --tx-out="${token_to_be_traded}" \
-    --tx-out="${change_to_be_traded}" \
     ${network})
 
+    # --tx-out="${change_to_be_traded}" \
     # --tx-out-inline-datum-file data/datum/attack_book_datum.json \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -63,7 +63,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     ${network}

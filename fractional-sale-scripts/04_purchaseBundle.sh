@@ -79,8 +79,11 @@ script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
 
 returning_asset="${retAmt} 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
-
-script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
+if [[ retAmt -eq 0 ]] ; then
+    script_address_out="${script_address} + ${script_utxo_value}"
+else
+    script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
+fi
 buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
 seller_address_out="${seller_address} + ${payAmt}"
 echo "Script OUTPUT: "${script_address_out}
