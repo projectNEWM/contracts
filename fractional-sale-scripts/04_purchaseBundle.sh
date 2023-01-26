@@ -34,8 +34,12 @@ TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | se
 seller_utxo=${TXIN::-8}
 echo SELLER UTXO ${seller_utxo}
 
-pid="0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52"
-tkn="5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+#
+pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
+total_amt=100000000000000
+default_asset="${total_amt} ${pid}.${tkn}"
+
 CURRENT_VALUE=$(jq -r --arg sellerPkh "${seller_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .value.value[$pid][$tkn]' tmp/script_utxo.json)
 echo $VALUE
 
@@ -57,29 +61,29 @@ bundleSize=${1}
 variable=${bundleSize}; jq --argjson variable "$variable" '.fields[0].fields[0].int=$variable' data/redeemer/purchase_redeemer.json > data/redeemer/purchase_redeemer-new.json
 mv data/redeemer/purchase_redeemer-new.json data/redeemer/purchase_redeemer.json
 
-buyAmt=$((${bundleSize} * 1000000000000))
-payAmt=$((${bundleSize} * 100000000))
+bSize=$(jq -r '.fields[1].fields[2].int' data/datum/sale_datum.json)
+pSize=$(jq -r '.fields[2].fields[2].int' data/datum/sale_datum.json)
+
+buyAmt=$((${bundleSize} * ${bSize}))
+payAmt=$((${bundleSize} * ${pSize}))
 retAmt=$((${CURRENT_VALUE} - ${buyAmt}))
 
 
-buyer_asset="${buyAmt} 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
-
+buyer_asset="${buyAmt} ${pid}.${tkn}"
 buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
 
-seller_asset="100000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
-
 script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-inline-datum-file data/datum/sale_datum.json \
-    --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
-returning_asset="${retAmt} 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+returning_asset="${retAmt} ${pid}.${tkn}"
 
-if [[ retAmt -eq 0 ]] ; then
+if [[ retAmt -le 0 ]] ; then
     script_address_out="${script_address} + ${script_utxo_value}"
 else
     script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
@@ -90,7 +94,7 @@ echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #
-# exit
+exit
 #
 # Get tx payer info
 echo -e "\033[0;36m Gathering Batcher Bot UTxO Information  \033[0m"
@@ -165,3 +169,5 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     ${network} \
     --tx-file tmp/tx.signed
+
+echo "Tx Hash" $(${cli} transaction txid --tx-file tmp/tx.signed)

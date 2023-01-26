@@ -5,7 +5,6 @@ packages:
     minting-contract
     nft-locking-contract
     nft-minting-contract
-    order-book-contract
     fractional-sale-contract
 
 -- You never, ever, want this.

@@ -28,7 +28,6 @@ import           Cardano.Api.Shelley                             ( PlutusScript 
                                                                  , PlutusScriptV2 )
 import qualified Data.ByteString.Lazy                            as LBS
 import qualified Data.ByteString.Short                           as SBS
-import qualified Plutus.V1.Ledger.Value                          as Value
 import qualified Plutus.V1.Ledger.Scripts                        as Scripts
 import qualified Plutus.V2.Ledger.Contexts                       as V2
 import qualified Plutus.V2.Ledger.Api                            as V2
@@ -60,7 +59,9 @@ mkValidator :: FractionalSaleDatum -> CustomRedeemerType -> V2.ScriptContext -> 
 mkValidator datum redeemer context =
   {- | Fractional Sale Contract
 
-    This contract handles the initial sale of fractional tokens.
+    This contract handles the initial sale of fractional tokens. A seller creates a
+    sale by defining a bundle size and a price per bundle. The maximum bundle size
+    is fixed in this contract to 10.
   -}
   case (datum, redeemer) of
     
@@ -115,6 +116,7 @@ mkValidator datum redeemer context =
         traceIfFalse "ins" (nInputs txIns scriptAddr 1)                     &&  -- 2 script inputs
         traceIfFalse "out" (nOutputs contOuts 1)                            &&  -- 1 script output
         traceIfFalse "val" (validBundle sd)                                 &&  -- valid bundle size
+        traceIfFalse "zer" (checkEmptyTokenInfo bSize)                      &&  -- valid bundle token
         traceIfFalse "pay" (findPayout txOuts walletAddr outValue)          &&  -- token is paid
         traceIfFalse "dat" (checkOutboundDatum contOuts retValue thisDatum)     -- datum is correct
   where
@@ -124,7 +126,8 @@ mkValidator datum redeemer context =
         checkOutboundDatum' :: [V2.TxOut] -> V2.Value -> FractionalSaleDatum -> Bool
         checkOutboundDatum' []     _   _ = traceError "Nothing Found"
         checkOutboundDatum' (x:xs) val (Sale ptd bSize pay)
-          | Value.geq (V2.txOutValue x) val =
+          -- | Value.geq (V2.txOutValue x) val =
+          | V2.txOutValue x == val =
             case V2.txOutDatum x of
               V2.NoOutputDatum              -> traceError "No Datum Validation"
               (V2.OutputDatumHash _)        -> traceError "Embed Datum Validation"

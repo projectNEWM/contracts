@@ -11,15 +11,18 @@ script_address=$(${cli} address build --payment-script-file ${script_path} ${net
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
 #
-asset="100000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
+total_amt=100000000000000
+default_asset="${total_amt} ${pid}.${tkn}"
 
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out-inline-datum-file data/datum/sale_datum.json \
-    --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
-script_address_out="${script_address} + ${utxo_value} + ${asset}"
+script_address_out="${script_address} + ${utxo_value} + ${default_asset}"
 echo "Seller OUTPUT: "${script_address_out}
 #
 # exit

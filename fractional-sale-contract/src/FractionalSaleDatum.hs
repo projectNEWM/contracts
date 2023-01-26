@@ -28,8 +28,8 @@
 module FractionalSaleDatum
   ( OwnerInfo (..)
   , TokenInfo (..)
-  , createValue
   , multiplyValue
+  , checkEmptyTokenInfo
   , FractionalSaleDatum (..)
   ) where
 import qualified PlutusTx
@@ -70,12 +70,12 @@ instance Eq TokenInfo where
            ( tiTkn a == tiTkn b ) &&
            ( tiAmt a == tiAmt b )
 
-createValue :: TokenInfo -> V2.Value
-createValue (TokenInfo pid tkn amt) = Value.singleton pid tkn amt
+checkEmptyTokenInfo :: TokenInfo -> Bool
+checkEmptyTokenInfo (TokenInfo _ _ amt) = amt > 0
 
 multiplyValue :: TokenInfo -> Integer -> V2.Value
 multiplyValue (TokenInfo pid tkn amt) mul = Value.singleton pid tkn (amt*mul)
 
--- owner, what they get, what you get
+-- owner, token for a bundle, cost for a bundle
 data FractionalSaleDatum = Sale OwnerInfo TokenInfo TokenInfo
 PlutusTx.unstableMakeIsData ''FractionalSaleDatum
