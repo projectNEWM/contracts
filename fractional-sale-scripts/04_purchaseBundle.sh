@@ -52,16 +52,17 @@ if [[ ${1} -gt 10 ]] ; then
     exit
 fi
 
-# # update the starting lock time
-# variable=${startTime}; jq --argjson variable "$variable" '.fields[2].int=$variable' data/datum/stake-datum.json > data/datum/stake-datum-new.json
-# mv data/datum/stake-datum-new.json data/datum/stake-datum.json
+bundleSize=${1}
+# update the starting lock time
+variable=${bundleSize}; jq --argjson variable "$variable" '.fields[0].fields[0].int=$variable' data/redeemer/purchase_redeemer.json > data/redeemer/purchase_redeemer-new.json
+mv data/redeemer/purchase_redeemer-new.json data/redeemer/purchase_redeemer.json
+
+buyAmt=$((${bundleSize} * 1000000000000))
+payAmt=$((${bundleSize} * 100000000))
+retAmt=$((${CURRENT_VALUE} - ${buyAmt}))
 
 
-exit
-
-
-
-buyer_asset="1000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+buyer_asset="${buyAmt} 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -76,12 +77,12 @@ script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file data/datum/sale_datum.json \
     --tx-out="${script_address} + 5000000 + ${seller_asset}" | tr -dc '0-9')
 
-returning_asset="99000000000000 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
+returning_asset="${retAmt} 0ed672eef8d5d58a6fbce91327baa25636a8ff97af513e3481c97c52.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6734"
 
 
 script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
 buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
-seller_address_out="${seller_address} + 100000000"
+seller_address_out="${seller_address} + ${payAmt}"
 echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
@@ -101,7 +102,7 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
+TXIN=$(jq -r --arg alltxin "" 'to_entries[] | select(.value.value | length < 2) | .key | . + $alltxin + " --tx-in"' tmp/buyer_utxo.json)
 buyer_tx_in=${TXIN::-8}
 
 # collat info
@@ -145,11 +146,11 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/profit-wallet/payment.skey \
+    --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
