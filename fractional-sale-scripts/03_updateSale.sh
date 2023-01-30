@@ -140,3 +140,5 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     ${network} \
     --tx-file tmp/tx.signed
+
+echo "Tx Hash" $(${cli} transaction txid --tx-file tmp/tx.signed)

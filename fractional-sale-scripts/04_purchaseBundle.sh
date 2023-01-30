@@ -94,7 +94,7 @@ echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${seller_address_out}
 #
-exit
+# exit
 #
 # Get tx payer info
 echo -e "\033[0;36m Gathering Batcher Bot UTxO Information  \033[0m"

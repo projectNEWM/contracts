@@ -79,7 +79,7 @@ mkValidator datum redeemer context =
       in
         (signedBy txSigners walletPkh)           &&  -- wallet must sign
         (findPayout txOuts walletAddr thisValue) &&  -- must pay to wallet
-        (nInputs txIns scriptAddr 1)                 -- single input datum
+        (nInputs txIns scriptAddr 1)                 -- 1 script input
     
     -- | Update the sale
     (Sale ptd _ _, Update) ->
@@ -94,8 +94,8 @@ mkValidator datum redeemer context =
       in case getOutboundDatum contOuts of
         (Sale ptd' _ _) -> 
           (signedBy txSigners walletPkh) &&  -- wallet must sign it
-          (nInputs txIns scriptAddr 1)   &&  -- single script input
-          (nOutputs contOuts 1)          &&  -- single script output
+          (nInputs txIns scriptAddr 1)   &&  -- 1 script input
+          (nOutputs contOuts 1)          &&  -- 1 script output
           (ptd == ptd')                      -- owner remains constant
     
     -- | Purchase from the sale
@@ -113,27 +113,27 @@ mkValidator datum redeemer context =
           !retValue   = thisValue - multiplyValue bSize bAmt
           !thisDatum  = Sale ptd bSize pay
       in
-        traceIfFalse "ins" (nInputs txIns scriptAddr 1)                     &&  -- 2 script inputs
-        traceIfFalse "out" (nOutputs contOuts 1)                            &&  -- 1 script output
-        traceIfFalse "val" (validBundle sd)                                 &&  -- valid bundle size
-        traceIfFalse "zer" (checkEmptyTokenInfo bSize)                      &&  -- valid bundle token
-        traceIfFalse "pay" (findPayout txOuts walletAddr outValue)          &&  -- token is paid
-        traceIfFalse "dat" (checkOutboundDatum contOuts retValue thisDatum)     -- datum is correct
+        (nInputs txIns scriptAddr 1)                     &&  -- 2 script inputs
+        (nOutputs contOuts 1)                            &&  -- 1 script output
+        (validBundle sd)                                 &&  -- valid bundle size
+        (checkEmptyTokenInfo bSize)                      &&  -- valid bundle token
+        (findPayout txOuts walletAddr outValue)          &&  -- token is paid
+        (checkOutboundDatum contOuts retValue thisDatum)     -- datum is correct
   where
+    -- gets the first inline datum that is holding a specific value
     checkOutboundDatum :: [V2.TxOut] -> V2.Value -> FractionalSaleDatum -> Bool
     checkOutboundDatum outs val dat = checkOutboundDatum' outs val dat
       where
         checkOutboundDatum' :: [V2.TxOut] -> V2.Value -> FractionalSaleDatum -> Bool
         checkOutboundDatum' []     _   _ = traceError "Nothing Found"
         checkOutboundDatum' (x:xs) val (Sale ptd bSize pay)
-          -- | Value.geq (V2.txOutValue x) val =
           | V2.txOutValue x == val =
             case V2.txOutDatum x of
-              V2.NoOutputDatum              -> traceError "No Datum Validation"
-              (V2.OutputDatumHash _)        -> traceError "Embed Datum Validation"
+              V2.NoOutputDatum              -> traceError "No Datum"
+              (V2.OutputDatumHash _)        -> traceError "Embed Datum"
               (V2.OutputDatum (V2.Datum d)) -> -- inline datum only
                 case PlutusTx.fromBuiltinData d of
-                  Nothing     -> traceError "Bad Data Cont Validation"
+                  Nothing     -> traceError "Bad Data"
                   Just inline -> 
                     case PlutusTx.unsafeFromBuiltinData @FractionalSaleDatum inline of
                       (Sale ptd' bSize' pay') -> 
@@ -147,15 +147,15 @@ mkValidator datum redeemer context =
     getOutboundDatum outs = getOutboundDatum' outs
       where
         getOutboundDatum' :: [V2.TxOut] -> FractionalSaleDatum
-        getOutboundDatum' []     = traceError "Nothing Found On Cont"
+        getOutboundDatum' []     = traceError "Nothing Found"
         getOutboundDatum' (x:xs) =
           case V2.txOutDatum x of
             V2.NoOutputDatum       -> getOutboundDatum' xs
-            (V2.OutputDatumHash _) -> traceError "Embedded Datum On Cont"
+            (V2.OutputDatumHash _) -> traceError "Embedded Datum"
             -- inline datum only
             (V2.OutputDatum (V2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> traceError "Bad Data On Cont"
+                Nothing     -> traceError "Bad Data"
                 Just inline ->
                   PlutusTx.unsafeFromBuiltinData @FractionalSaleDatum inline
 -------------------------------------------------------------------------------
