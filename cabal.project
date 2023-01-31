@@ -5,7 +5,7 @@ packages:
     minting-contract
     nft-locking-contract
     nft-minting-contract
-    fractional-sale-contract
+    prove-human-contract
 
 -- You never, ever, want this.
 write-ghc-environment-files: never

@@ -3,10 +3,10 @@ set -e
 source ../.env
 
 #
-script_path="../fractional-sale-contract/fractional-sale-contract.plutus"
+script_path="../prove-human-contract/prove-human-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
-# collat, seller, reference
+#
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
@@ -34,64 +34,13 @@ TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | se
 seller_utxo=${TXIN::-8}
 echo SELLER UTXO ${seller_utxo}
 
-#
-pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
-total_amt=100000000000000
-default_asset="${total_amt} ${pid}.${tkn}"
-
-CURRENT_VALUE=$(jq -r --arg sellerPkh "${seller_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .value.value[$pid][$tkn]' tmp/script_utxo.json)
-echo $VALUE
-
-if [[ $# -eq 0 ]] ; then
-    echo -e "\n \033[0;31m Please Supply A Bundle Amount \033[0m \n";
-    exit
-fi
-if [[ ${1} -eq 0 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Greater Than Zero \033[0m \n";
-    exit
-fi
-if [[ ${1} -gt 10 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To Ten \033[0m \n";
-    exit
-fi
-
-bundleSize=${1}
-# update the starting lock time
-variable=${bundleSize}; jq --argjson variable "$variable" '.fields[0].fields[0].int=$variable' data/redeemer/purchase_redeemer.json > data/redeemer/purchase_redeemer-new.json
-mv data/redeemer/purchase_redeemer-new.json data/redeemer/purchase_redeemer.json
-
-bSize=$(jq -r '.fields[1].fields[2].int' data/datum/sale_datum.json)
-pSize=$(jq -r '.fields[2].fields[2].int' data/datum/sale_datum.json)
-
-buyAmt=$((${bundleSize} * ${bSize}))
-payAmt=$((${bundleSize} * ${pSize}))
-retAmt=$((${CURRENT_VALUE} - ${buyAmt}))
-
-
-buyer_asset="${buyAmt} ${pid}.${tkn}"
-buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
+utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out="${script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
+    --tx-out-inline-datum-file data/datum/datum.json \
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
 
-script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-file data/datum/sale_datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
-
-returning_asset="${retAmt} ${pid}.${tkn}"
-
-if [[ retAmt -le 0 ]] ; then
-    script_address_out="${script_address} + ${script_utxo_value}"
-else
-    script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
-fi
-buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
-seller_address_out="${seller_address} + ${payAmt}"
-echo "Script OUTPUT: "${script_address_out}
-echo "Buyer OUTPUT: "${buyer_address_out}
+seller_address_out="${seller_address} + ${utxo_value}"
 echo "Seller OUTPUT: "${seller_address_out}
 #
 # exit
@@ -140,11 +89,8 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/redeemer/purchase_redeemer.json \
+    --spending-reference-tx-in-redeemer-file data/redeemer/prove_redeemer.json \
     --tx-out="${seller_address_out}" \
-    --tx-out="${buyer_address_out}" \
-    --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/datum/sale_datum.json  \
     --required-signer-hash ${collat_pkh} \
     ${network})
 

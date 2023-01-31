@@ -1,6 +1,6 @@
 cabal-version: 2.4
 
-name:                   fractional-sale-contract
+name:                   prove-human-contract
 version:                0
 description:            A plutus script for retreiving funds.
 author:                 The Ancient Kraken
@@ -46,10 +46,10 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      FractionalSaleContract
-                        FractionalSaleDatum
-                        FractionalSaleRedeemer
-                        ReducedFunctions
+  exposed-modules:      ProveHumanContract
+                        ProveHumanDatum
+                        ProveHumanRedeemer
+                        GraphFunctions
 
   build-depends:        bytestring
                       , cardano-api
@@ -62,10 +62,10 @@ library
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
-executable fractional-sale-contract
+executable prove-human-contract
   import:               base, project-config
   hs-source-dirs:       app
-  main-is:              fractional-sale-contract.hs
+  main-is:              prove-human-contract.hs
   
   ghc-options:          -threaded 
                         -rtsopts 
@@ -73,5 +73,5 @@ executable fractional-sale-contract
                         -O2
 
   build-depends:        cardano-api
-                      , fractional-sale-contract
+                      , prove-human-contract
 

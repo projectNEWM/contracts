@@ -1,15 +1,15 @@
 rm validator.addr
 rm validator.hash
 rm validator.bytes
-rm fractional-sale-contract.plutus
+rm prove-human-contract.plutus
 
 # build the script
 cabal build -w ghc-8.10.7
-cabal run fractional-sale-contract
+cabal run prove-human-contract
 
 #
-cardano-cli address build --payment-script-file fractional-sale-contract.plutus --testnet-magic 2 --out-file validator.addr
-cardano-cli transaction policyid --script-file fractional-sale-contract.plutus > validator.hash
+cardano-cli address build --payment-script-file prove-human-contract.plutus --testnet-magic 2 --out-file validator.addr
+cardano-cli transaction policyid --script-file prove-human-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 
 #

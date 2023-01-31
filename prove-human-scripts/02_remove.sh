@@ -4,10 +4,10 @@ set -e
 source ../.env
 
 #
-script_path="../fractional-sale-contract/fractional-sale-contract.plutus"
+script_path="../prove-human-contract/prove-human-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
-# collat, seller, reference
+#
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
@@ -15,16 +15,11 @@ seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/sel
 collat_address=$(cat wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
-pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
-total_amt=100000000000000
-default_asset="${total_amt} ${pid}.${tkn}"
-
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-file data/datum/sale_datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
+    --tx-out-inline-datum-file data/datum/datum.json \
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -41,16 +36,7 @@ fi
 TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-CURRENT_VALUE=$(jq -r --arg sellerPkh "${seller_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .value.value[$pid][$tkn]' tmp/script_utxo.json)
-
-returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
-
-if [[ CURRENT_VALUE -le 0 ]] ; then
-    seller_address_out="${seller_address} + ${utxo_value}"
-else
-    seller_address_out="${seller_address} + ${utxo_value} + ${returning_asset}"
-fi
-
+seller_address_out="${seller_address} + ${utxo_value}"
 echo "Return OUTPUT: "${seller_address_out}
 #
 # exit

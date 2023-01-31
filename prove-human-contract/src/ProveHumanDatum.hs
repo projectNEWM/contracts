@@ -25,24 +25,38 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module FractionalSaleRedeemer
-  ( SaleData (..)
-  , validBundle
+module ProveHumanDatum
+  ( OwnerInfo (..)
+  , GraphInfo (..)
+  , ProveHumanDatum (..)
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
-import qualified Plutus.V2.Ledger.Api as V2
+import qualified Plutus.V2.Ledger.Api   as V2
 -------------------------------------------------------------------------------
--- | Create the SwapData object.
+-- | Create the OrderBookData object.
 -------------------------------------------------------------------------------
-data SaleData = SaleData
-  { bundleSize :: Integer
-  -- ^ The amount of bunder the buyer wants to buy.
+data OwnerInfo = OwnerInfo
+  { ptPkh :: V2.PubKeyHash
+  -- ^ The public key hash of the owner.
+  , ptSc  :: V2.PubKeyHash
+  -- ^ The stake credential hash of the owner.
   }
-PlutusTx.unstableMakeIsData ''SaleData
+PlutusTx.unstableMakeIsData ''OwnerInfo
 
-maxBundleSize :: Integer
-maxBundleSize = 10
+-- old == new
+instance Eq OwnerInfo where
+  {-# INLINABLE (==) #-}
+  a == b = ( ptPkh a == ptPkh b ) &&
+           ( ptSc  a == ptSc  b )
 
-validBundle :: SaleData -> Bool
-validBundle (SaleData bs) = bs > 0 && bs <= maxBundleSize
+data GraphInfo = GraphInfo
+  { giString :: V2.BuiltinByteString
+  -- ^ 
+  }
+PlutusTx.unstableMakeIsData ''GraphInfo
+
+
+-- owner, token for a bundle, cost for a bundle
+data ProveHumanDatum = Proof OwnerInfo GraphInfo
+PlutusTx.unstableMakeIsData ''ProveHumanDatum

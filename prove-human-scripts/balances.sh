@@ -4,7 +4,7 @@ set -e
 source ../.env
 
 #
-script_path="../fractional-sale-contract/fractional-sale-contract.plutus"
+script_path="../prove-human-contract/prove-human-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
 #

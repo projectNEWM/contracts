@@ -4,25 +4,19 @@ set -e
 source ../.env
 
 #
-script_path="../fractional-sale-contract/fractional-sale-contract.plutus"
+script_path="../prove-human-contract/prove-human-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
 
 # collat, seller, reference
 seller_address=$(cat wallets/seller-wallet/payment.addr)
 
-#
-pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
-total_amt=100000000000000
-default_asset="${total_amt} ${pid}.${tkn}"
-
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-file data/datum/sale_datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
+    --tx-out-inline-datum-file data/datum/datum.json \
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
 
-script_address_out="${script_address} + ${utxo_value} + ${default_asset}"
+script_address_out="${script_address} + ${utxo_value}"
 echo "Seller OUTPUT: "${script_address_out}
 #
 # exit
@@ -50,7 +44,7 @@ FEE=$(${cli} transaction build \
     --change-address ${seller_address} \
     --tx-in ${seller_tx_in} \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/datum/sale_datum.json  \
+    --tx-out-inline-datum-file data/datum/datum.json  \
     ${network})
 
 IFS=':' read -ra VALUE <<< "${FEE}"

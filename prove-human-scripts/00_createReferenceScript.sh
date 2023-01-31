@@ -3,23 +3,23 @@ set -e
 
 source ../.env
 
-fractional_sale_script_path="../fractional-sale-contract/fractional-sale-contract.plutus"
+prove_human_script_path="../prove-human-contract/prove-human-contract.plutus"
 
 # Addresses
 reference_address=$(cat wallets/reference-wallet/payment.addr)
 
-fractional_sale_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+prove_human_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out-reference-script-file ${fractional_sale_script_path} \
+    --tx-out-reference-script-file ${prove_human_script_path} \
     --tx-out="${reference_address} + 5000000" | tr -dc '0-9')
-echo "Fractional Sale Min Fee" ${fractional_sale_min_utxo}
+echo "Fractional Sale Min Fee" ${prove_human_min_utxo}
 
 echo
-fractional_sale_value=$fractional_sale_min_utxo
-fractional_sale_script_reference_utxo="${reference_address} + ${fractional_sale_value}"
+prove_human_value=$prove_human_min_utxo
+prove_human_script_reference_utxo="${reference_address} + ${prove_human_value}"
 
-echo -e "\nCreating NFT Minting Reference:\n" ${fractional_sale_script_reference_utxo}
+echo -e "\nCreating NFT Minting Reference:\n" ${prove_human_script_reference_utxo}
 #
 # exit
 #
@@ -48,15 +48,15 @@ ${cli} transaction build-raw \
     --out-file tmp/tx.draft \
     --tx-in ${reference_tx_in} \
     --tx-out="${reference_address} + ${starting_reference_lovelace}" \
-    --tx-out="${fractional_sale_script_reference_utxo}" \
-    --tx-out-reference-script-file ${fractional_sale_script_path} \
+    --tx-out="${prove_human_script_reference_utxo}" \
+    --tx-out-reference-script-file ${prove_human_script_path} \
     --fee 900000
 
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file tmp/tx.draft ${network} --protocol-params-file tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 echo -e "\033[1;32m Fee: \033[0m" $fee
 
-firstReturn=$((${starting_reference_lovelace} - ${fractional_sale_value} - ${fee}))
+firstReturn=$((${starting_reference_lovelace} - ${prove_human_value} - ${fee}))
 
 ${cli} transaction build-raw \
     --babbage-era \
@@ -64,8 +64,8 @@ ${cli} transaction build-raw \
     --out-file tmp/tx.draft \
     --tx-in ${reference_tx_in} \
     --tx-out="${reference_address} + ${firstReturn}" \
-    --tx-out="${fractional_sale_script_reference_utxo}" \
-    --tx-out-reference-script-file ${fractional_sale_script_path} \
+    --tx-out="${prove_human_script_reference_utxo}" \
+    --tx-out-reference-script-file ${prove_human_script_path} \
     --fee ${fee}
 #
 # exit
