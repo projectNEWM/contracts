@@ -21,7 +21,7 @@ Another option is simply asking for just the coloring with the labels already pr
 ![Labled Graph](py/graph-labeled.png "Labled")
 
 
-The key here is asking the user to do some work to unlock the UTxO in some way interactive way that can be judge for humanity.
+The key here is asking the user to do some work to unlock the UTxO in some interactive way that can be judge for humanity.
 
 ## Validation
 
@@ -44,7 +44,7 @@ g = createGraph s
 -- [(5,[4,2,3]),(4,[1,0,5,2]),(3,[1,0,5]),(2,[5,1,4]),(1,[4,3,2]),(0,[4,3])]
 c = kColoring g
 -- [(0,0),(1,0),(2,2),(3,1),(4,1),(5,0)]
-computeMTree c
+h = computeMTree c
 -- de9bcbd8a518bbf7cbe2b691f464d053fdff3545946df6b773c23e94187a4877
 ```
 
@@ -60,7 +60,7 @@ construction = constructColoring nodes colors
 The UTxO may be unlocked if and only if
 
 ```hs
-computeMTree c == computeMTree construction
+h == computeMTree construction
 ```
 
 This is a simple prototype but the idea is there.
