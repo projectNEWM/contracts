@@ -40,7 +40,13 @@ import qualified Plutus.V1.Ledger.Value                          as Value
 import qualified Plutus.V2.Ledger.Contexts                       as ContextsV2
 import qualified Plutus.V2.Ledger.Api                            as PlutusV2
 import           Plutus.Script.Utils.V2.Typed.Scripts.Validators as Utils
-import           UsefulFuncs
+-- importing only required functions for better readability
+import qualified UsefulFuncs ( createBuiltinByteString
+                             , isNInputs
+                             , isNOutputs
+                             , isAddrGettingPaidExactly
+                             , createAddress
+                             )
 {- |
   Author   : The Ancient Kraken
   Copyright: 2023
@@ -49,11 +55,11 @@ import           UsefulFuncs
 
 {-# INLINABLE getPkh #-}
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString [157, 2, 179, 97, 157, 219, 35, 220, 208, 27, 89, 28, 183, 138, 124, 16, 79, 250, 132, 184, 223, 104, 109, 25, 147, 143, 151, 197] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [157, 2, 179, 97, 157, 219, 35, 220, 208, 27, 89, 28, 183, 138, 124, 16, 79, 250, 132, 184, 223, 104, 109, 25, 147, 143, 151, 197] }
 
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
@@ -97,15 +103,15 @@ mkValidator datum redeemer context =
   case redeemer of
     Lock -> do 
       { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh                -- newm master key
-      ; let b = traceIfFalse "Single In/Out Error" $ isNInputs txInputs 1 && isNOutputs contOutputs 1 -- 1 script input 1 script output
+      ; let b = traceIfFalse "Single In/Out Error" $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 1 -- 1 script input 1 script output
       ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
       ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs              -- value with correct datum
       ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
       }
     Unlock -> do 
       { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh                             -- newm master key
-      ; let b = traceIfFalse "Single Script Error"   $ isNInputs txInputs 1 && isNOutputs contOutputs 0              -- 1 script input 0 script output
-      ; let c = traceIfFalse "NFT Payout Error"      $ isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
+      ; let b = traceIfFalse "Single Script Error"   $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 0              -- 1 script input 0 script output
+      ; let c = traceIfFalse "NFT Payout Error"      $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
       ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                               -- burnfrac pid with tkn name
       ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
       }
@@ -131,7 +137,7 @@ mkValidator datum redeemer context =
     artistSC = cdtArtistSC datum
 
     artistAddr :: PlutusV2.Address
-    artistAddr =  createAddress artistPKH artistSC
+    artistAddr =  UsefulFuncs.createAddress artistPKH artistSC
 
     -- token info
     validatingValue :: PlutusV2.Value

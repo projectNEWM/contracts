@@ -43,17 +43,18 @@ import qualified Plutus.V1.Ledger.Address                              as Addr
 import qualified Plutus.V2.Ledger.Contexts                             as ContextsV2
 import qualified Plutus.V2.Ledger.Api                                  as PlutusV2
 import           Plutus.Script.Utils.V2.Typed.Scripts.MonetaryPolicies as Utils
-import           UsefulFuncs
+-- importing only required functions for better readability
+import qualified UsefulFuncs ( createBuiltinByteString ) 
 {-
   Author   : The Ancient Kraken
   Copyright: 2023
   Version  : Rev 2
 -}
 getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString [244, 171, 224, 222, 47, 159, 140, 36, 16, 115, 109, 69, 189, 47, 179, 77, 128, 151, 253, 141, 72, 254, 220, 62, 150, 117, 55, 0]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [244, 171, 224, 222, 47, 159, 140, 36, 16, 115, 109, 69, 189, 47, 179, 77, 128, 151, 253, 141, 72, 254, 220, 62, 150, 117, 55, 0]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
