@@ -4,15 +4,15 @@
   "scripts": [
     {
       "type": "sig",
-      "keyHash": "6fff6d33958f65022de64aabd3c16a7a7e07bad7a94a4585ce1dac76"
+      "keyHash": "9693df66caa6ae115d5f187eec6792249e645666074c4c4d73f79384"
     },
     {
       "type": "sig",
-      "keyHash": "3f16a33fa0707516f7eba4d2dfc57cd6127aa05eab72d95a1bf95263"
+      "keyHash": "d5f741060fcbaa74ee4d9e4574fcb048d3c5384ec0ce499e0889be53"
     },
     {
       "type": "sig",
-      "keyHash": "3c2fea347b1c9af08ff03e6d25e77bf02076cc65cd851e831bb68b84"
+      "keyHash": "439e52018da81413f09284d96133a059c104de462a0b1d25d3726a97"
     }
   ]
 }
