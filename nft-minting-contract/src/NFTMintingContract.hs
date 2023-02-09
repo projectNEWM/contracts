@@ -32,21 +32,21 @@ module NFTMintingContract
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
-import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScriptV2 )
-import           Codec.Serialise                ( serialise )
-import qualified Data.ByteString.Lazy           as LBS
-import qualified Data.ByteString.Short          as SBS
-import qualified Plutus.V1.Ledger.Scripts       as Scripts
-import qualified Plutus.V1.Ledger.Value         as Value
-import qualified Plutus.V1.Ledger.Address       as Addr
-import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
-import qualified Plutus.V2.Ledger.Api           as PlutusV2
-import           Plutus.Script.Utils.V2.Scripts as Utils
+import           Cardano.Api.Shelley                                   ( PlutusScript (..), PlutusScriptV2 )
+import           Codec.Serialise                                       ( serialise )
+import qualified Data.ByteString.Lazy                                  as LBS
+import qualified Data.ByteString.Short                                 as SBS
+import qualified Plutus.V1.Ledger.Scripts                              as Scripts
+import qualified Plutus.V1.Ledger.Value                                as Value
+import qualified Plutus.V1.Ledger.Address                              as Addr
+import qualified Plutus.V2.Ledger.Contexts                             as ContextsV2
+import qualified Plutus.V2.Ledger.Api                                  as PlutusV2
+import           Plutus.Script.Utils.V2.Typed.Scripts.MonetaryPolicies as Utils
 import           UsefulFuncs
 {-
   Author   : The Ancient Kraken
-  Copyright: 2022
-  Version  : Rev 1
+  Copyright: 2023
+  Version  : Rev 2
 -}
 lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString [254, 67, 217, 228, 63, 221, 205, 93, 162, 223, 115, 214, 63, 237, 245, 3, 134, 124, 239, 37, 53, 223, 12, 139, 77, 213, 19, 64] }

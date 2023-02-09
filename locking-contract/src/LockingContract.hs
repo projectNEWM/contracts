@@ -31,20 +31,20 @@ module LockingContract
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
-import           Cardano.Api.Shelley            ( PlutusScript (..), PlutusScriptV2 )
-import           Codec.Serialise                ( serialise )
-import qualified Data.ByteString.Lazy           as LBS
-import qualified Data.ByteString.Short          as SBS
-import qualified Plutus.V1.Ledger.Scripts       as Scripts
-import qualified Plutus.V1.Ledger.Value         as Value
-import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
-import qualified Plutus.V2.Ledger.Api           as PlutusV2
-import           Plutus.Script.Utils.V2.Scripts as Utils
+import           Cardano.Api.Shelley                             ( PlutusScript (..), PlutusScriptV2 )
+import           Codec.Serialise                                 ( serialise )
+import qualified Data.ByteString.Lazy                            as LBS
+import qualified Data.ByteString.Short                           as SBS
+import qualified Plutus.V1.Ledger.Scripts                        as Scripts
+import qualified Plutus.V1.Ledger.Value                          as Value
+import qualified Plutus.V2.Ledger.Contexts                       as ContextsV2
+import qualified Plutus.V2.Ledger.Api                            as PlutusV2
+import           Plutus.Script.Utils.V2.Typed.Scripts.Validators as Utils
 import           UsefulFuncs
 {- |
   Author   : The Ancient Kraken
-  Copyright: 2022
-  Version  : Rev 1
+  Copyright: 2023
+  Version  : Rev 2
 -}
 
 {-# INLINABLE getPkh #-}
