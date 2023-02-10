@@ -28,58 +28,66 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module NFTMintingContract
   ( mintingPlutusScript
-  , mintingScriptShortBs
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
-import           Cardano.Api.Shelley                                   ( PlutusScript (..), PlutusScriptV2 )
-import           Codec.Serialise                                       ( serialise )
-import qualified Data.ByteString.Lazy                                  as LBS
-import qualified Data.ByteString.Short                                 as SBS
-import qualified Plutus.V1.Ledger.Scripts                              as Scripts
-import qualified Plutus.V1.Ledger.Value                                as Value
-import qualified Plutus.V1.Ledger.Address                              as Addr
-import qualified Plutus.V2.Ledger.Contexts                             as ContextsV2
-import qualified Plutus.V2.Ledger.Api                                  as PlutusV2
-import           Plutus.Script.Utils.V2.Typed.Scripts.MonetaryPolicies as Utils
+import           Cardano.Api.Shelley       ( PlutusScript (..), PlutusScriptV2 )
+import           Codec.Serialise           ( serialise )
+import qualified Data.ByteString.Lazy      as LBS
+import qualified Data.ByteString.Short     as SBS
+import qualified Plutus.V1.Ledger.Scripts  as Scripts
+import qualified Plutus.V1.Ledger.Value    as Value
+import qualified Plutus.V1.Ledger.Address  as Addr
+import qualified Plutus.V2.Ledger.Contexts as ContextsV2
+import qualified Plutus.V2.Ledger.Api      as PlutusV2
+import qualified Plutonomy
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( createBuiltinByteString
                              , integerAsByteString
                              , checkValidMultisig
                              )
--- import LockStarterNFTContract (CustomDatumType (..))
 {-
   Author   : The Ancient Kraken
   Copyright: 2023
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------------
+-- | The starter token information.
+-------------------------------------------------------------------------------
+-- CurrencySymbol for the starter token.
 lockPid :: PlutusV2.CurrencySymbol
 lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
-
+-- TokenName for the starter token.
 lockTkn :: PlutusV2.TokenName
 lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = UsefulFuncs.createBuiltinByteString [78, 69, 87, 77, 95] }
-
--- check for nft here
-tokenValue :: PlutusV2.Value
-tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
-
+-- Value for the starter token.
+lockValue :: PlutusV2.Value
+lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
+-------------------------------------------------------------------------------
+-- | The validator hash of the LockStarterNFTContract.
+-------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [0, 126, 192, 43, 66, 60, 54, 246, 23, 41, 74, 155, 104, 176, 84, 180, 39, 55, 142, 155, 20, 84, 171, 35, 162, 128, 205, 162]
-
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [116, 118, 165, 83, 102, 173, 50, 232, 176, 130, 180, 162, 150, 159, 148, 248, 21, 37, 210, 114, 163, 85, 207, 143, 101, 239, 168, 26]
+-------------------------------------------------------------------------------
+-- | The main public key hash for NEWM.
+-------------------------------------------------------------------------------
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
-
--- collat wallet
+-------------------------------------------------------------------------------
+-- | Hardcoded multisig participants.
+-------------------------------------------------------------------------------
+-- wallet 1
 multiPkh1 :: PlutusV2.PubKeyHash
 multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [150, 147, 223, 102, 202, 166, 174, 17, 93, 95, 24, 126, 236, 103, 146, 36, 158, 100, 86, 102, 7, 76, 76, 77, 115, 247, 147, 132] }
--- seller wallet
+-- wallet 2
 multiPkh2 :: PlutusV2.PubKeyHash
 multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [213, 247, 65, 6, 15, 203, 170, 116, 238, 77, 158, 69, 116, 252, 176, 72, 211, 197, 56, 78, 192, 206, 73, 158, 8, 137, 190, 83] }
--- reference wallet
+-- wallet 3
 multiPkh3 :: PlutusV2.PubKeyHash
 multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [67, 158, 82, 1, 141, 168, 20, 19, 240, 146, 132, 217, 97, 51, 160, 89, 193, 4, 222, 70, 42, 11, 29, 37, 211, 114, 106, 151] }
-
--- all possible signers
+-------------------------------------------------------------------------------
+-- | All possible signers inside the multisig
+-------------------------------------------------------------------------------
 listOfPkh :: [PlutusV2.PubKeyHash]
 listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
 -------------------------------------------------------------------------------
@@ -100,7 +108,7 @@ data CustomDatumType = CustomDatumType
   }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 
--- old == new | minting
+-- a is the old datum and b is the new datum
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtNewmPid a == cdtNewmPid b ) &&
@@ -109,10 +117,10 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer && checkOutputDatum redeemer 1) || (checkTokenBurn && checkOutputDatum redeemer 0)) -- mint or burn
-                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2)         -- newm or multisig
+mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer && checkOutputDatum redeemer 1) || (checkTokenBurn && checkOutputDatum redeemer 0))  -- mint or burn
+                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2)                         -- newm or multisig
                            && (traceIfFalse "Invalid Datum Error"   $ checkInputDatum redeemer getValidatorHash)                                                                    -- input datum equals redeemer
-                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator tokenValue)                                            -- must contain the starter token
+                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator lockValue)                                                                        -- must contain the starter token
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -120,32 +128,31 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = ContextsV2.txInfoInputs info
 
-    -- the redeemer is the datum of the locking script
+    -- | Convert the BuiltinData redeemer' into the CustomDatumType redeemer from the LockStarterNFTContract.
     redeemer :: CustomDatumType
     redeemer = PlutusTx.unsafeFromBuiltinData @CustomDatumType redeemer'
     
-    -- check if the incoming datum is the correct form.
+    -- |Return the inline datum from a tx out.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomDatumType
     getDatumFromTxOut x = 
       case PlutusV2.txOutDatum x of
-        PlutusV2.NoOutputDatum       -> Nothing -- datumless
-        (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+        PlutusV2.NoOutputDatum       -> Nothing       -- datumless
+        (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
           case PlutusTx.fromBuiltinData d of
-            Nothing     -> Nothing
+            Nothing     -> Nothing                    -- Bad Data
             Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
         
 
-    -- return the first datum hash from a txout going to the locking script
+    -- | Return the first inline datum from the LockStarterNFTContract from the list of inputs.
     checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomDatumType
     checkInputs []     _     = Nothing
     checkInputs (x:xs) vHash =
       if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress vHash
-      then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
-      else checkInputs xs vHash
+        then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
+        else checkInputs xs vHash
 
-    -- check that the locking script has the correct datum hash
+    -- | Check that the datum on the input from the LockStarterNFTContract is equal to the datum passed into the redeemer.
     checkInputDatum :: CustomDatumType -> PlutusV2.ValidatorHash -> Bool
     checkInputDatum customRedeemer vHash =
       case checkInputs txInputs vHash of
@@ -159,29 +166,29 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
               , cdtPrefix  = cdtPrefix  customRedeemer
               }
     
-    -- find the value at the validator hash
+    -- | Get the value on the output going back to the LockStarterNFTContract.
     valueAtValidator :: PlutusV2.Value
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
 
+    -- | Get the datum on the output going back to the LockStarterNFTContract.
     datumAtValidator :: Maybe CustomDatumType
     datumAtValidator =
-      if length scriptOutputs == 0 
+      if length scriptOutputs == 0 -- Prevent head of empty list error
         then Nothing
         else 
           let datumAtValidator' = fst $ head scriptOutputs
           in case datumAtValidator' of
-            PlutusV2.NoOutputDatum       -> Nothing -- datumless
-            (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
-            -- inline datum
-            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+            PlutusV2.NoOutputDatum       -> Nothing       -- datumless
+            (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> Nothing
+                Nothing     -> Nothing                    -- Bad Data
                 Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
       where 
         scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
         scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
         
-    -- the output datum for minting increases the number by one
+    -- | Check if the output datum has the correct form on the spending validation.
     checkOutputDatum :: CustomDatumType -> Integer -> Bool
     checkOutputDatum customRedeemer increment = 
       case datumAtValidator of
@@ -195,19 +202,22 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
               , cdtPrefix  = cdtPrefix  customRedeemer
               }
 
-    -- check the minting stuff here
+    -- | Check if exactly 1 token is being minted with a specific token name from the datum passed as the redeemer.
     checkTokenMint :: CustomDatumType -> Bool
     checkTokenMint customRedeemer =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName customRedeemer tkn && checkMintAmount amt
-        _                -> traceIfFalse "Mint/Burn Error" False
+        [(cs, tkn, amt)] -> checkPolicyId cs                  -- Must be this currency symbol
+                         && checkTokenName customRedeemer tkn -- Must be the correct token name
+                         && checkMintAmount amt               -- Must be a single token
+        _                -> traceError "Mint/Burn Error"
     
-    -- check the burning stuff here
+    -- | Check if exactly 1 token is being burned. Token name here is irrelevant. 
     checkTokenBurn :: Bool
     checkTokenBurn =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, _, amt)] -> checkPolicyId cs && amt == (-1 :: Integer)
-        _                -> traceIfFalse "Mint/Burn Error" False
+        [(cs, _, amt)] -> checkPolicyId cs               -- Must be this currency symbol
+                       && amt == (-1 :: Integer)         -- Must be a single token
+        _                -> traceError "Mint/Burn Error"
     
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
@@ -215,18 +225,20 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     checkTokenName :: CustomDatumType -> PlutusV2.TokenName -> Bool
     checkTokenName customRedeemer tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
       where
-        -- it debugs the required NFT name
+        -- This debugs the required token name.
         debug :: BuiltinString
         debug = decodeUtf8 $ "Required Token Name: " <>  nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
 
     checkMintAmount :: Integer -> Bool
     checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
-
 -------------------------------------------------------------------------------
+-- | Now we need to compile the Validator.
+-------------------------------------------------------------------------------
+wrappedPolicy :: BuiltinData -> BuiltinData -> ()
+wrappedPolicy x y = check (mkPolicy (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y))
+
 policy :: PlutusV2.MintingPolicy
-policy = PlutusV2.mkMintingPolicyScript $$(PlutusTx.compile [|| wrap ||])
-  where
-    wrap = Utils.mkUntypedMintingPolicy mkPolicy
+policy = PlutusV2.mkMintingPolicyScript $ $$(PlutusTx.compile [|| wrappedPolicy ||])
 
 plutusScript :: Scripts.Script
 plutusScript = PlutusV2.unMintingPolicyScript policy
@@ -235,10 +247,8 @@ validator :: PlutusV2.Validator
 validator = PlutusV2.Validator plutusScript
 
 scriptAsCbor :: LBS.ByteString
-scriptAsCbor = serialise validator
+scriptAsCbor = serialise $ Plutonomy.optimizeUPLC $ validator
+-- scriptAsCbor = serialise $ Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ validator
 
 mintingPlutusScript :: PlutusScript PlutusScriptV2
 mintingPlutusScript = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict scriptAsCbor
-
-mintingScriptShortBs :: SBS.ShortByteString
-mintingScriptShortBs = SBS.toShort . LBS.toStrict $ scriptAsCbor
