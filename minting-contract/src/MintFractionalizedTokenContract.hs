@@ -57,7 +57,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilti
 -- | The validator hash of the LockTokenizedNFTContract.
 -------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [12, 186, 156, 77, 128, 133, 161, 168, 187, 17, 245, 50, 47, 91, 218, 76, 124, 164, 183, 60, 132, 254, 241, 106, 164, 15, 106, 215]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [2, 228, 171, 65, 223, 15, 102, 250, 145, 62, 209, 97, 55, 233, 211, 134, 185, 182, 44, 251, 250, 33, 134, 94, 60, 63, 68, 124]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -68,10 +68,6 @@ data CustomDatumType = CustomDatumType
     -- ^ The Newm tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the tokenized token name.
-    , cdtArtistPKH     :: PlutusV2.PubKeyHash
-    -- ^ The artist's public key hash.
-    , cdtArtistSC      :: PlutusV2.PubKeyHash
-    -- ^ The artist's staking key hash.
     }
 PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
@@ -79,9 +75,7 @@ instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
            ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
-           ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
-           ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
-           ( cdtArtistSC      a == cdtArtistSC      b )
+           ( cdtTokenizedTn   a == cdtTokenizedTn   b )
 -------------------------------------------------------------------------------
 -- | mkPolicy :: Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------

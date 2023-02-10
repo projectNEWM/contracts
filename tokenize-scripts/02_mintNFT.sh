@@ -42,12 +42,13 @@ name_ascii=$(echo -n "$name" | xxd -p -r)
 variable=${name}; jq --arg variable "$variable" '.fields[2].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
 mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
 
-variable=${buyer_pkh}; jq --arg variable "$variable" '.fields[3].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
-mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
+# variable=${buyer_pkh}; jq --arg variable "$variable" '.fields[3].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json
+# mv ../fractionalize-scripts/data/datum-new.json ../fractionalize-scripts/data/datum.json
 
 sed -e "s/<policy_id_hex>/${policy_id}/g" -e "s/<asset_name_ascii>/${name_ascii}/g" ${metadata_json_source} | jq . > /tmp/metadata.json
 
 # echo $name
+# echo $name_ascii
 # exit
 
 MINT_ASSET="1 ${policy_id}.${name}"

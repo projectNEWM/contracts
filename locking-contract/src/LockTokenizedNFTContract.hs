@@ -42,8 +42,6 @@ import qualified Plutonomy
 import qualified UsefulFuncs ( createBuiltinByteString
                              , isNInputs
                              , isNOutputs
-                             , isAddrGettingPaidExactly
-                             , createAddress
                              )
 {- |
   Author   : The Ancient Kraken
@@ -70,10 +68,6 @@ data CustomDatumType = CustomDatumType
     -- ^ The artist's tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the artist's tokenized token name.
-    , cdtArtistPKH     :: PlutusV2.PubKeyHash
-    -- ^ The artist's public key hash.
-    , cdtArtistSC      :: PlutusV2.PubKeyHash
-    -- ^ The artist's staking key hash.
     }
 PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
@@ -82,9 +76,7 @@ instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
            ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
-           ( cdtTokenizedTn   a == cdtTokenizedTn   b ) &&
-           ( cdtArtistPKH     a == cdtArtistPKH     b ) &&
-           ( cdtArtistSC      a == cdtArtistSC      b )
+           ( cdtTokenizedTn   a == cdtTokenizedTn   b )
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
@@ -104,15 +96,14 @@ mkValidator datum redeemer context =
     Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                        -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- single script output
-         && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                          -- mint an nft only
+         && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                          -- mint the ft only
          && (traceIfFalse "Invalid Datum Error" $ isDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
 
-    -- | Unlock Tokenized Token from contract and solidify.
+    -- | Unlock Tokenized Token from contract by solidifying the fractional tokens.
     Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                      -- newm signs it
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)                   -- single script output
-           && (traceIfFalse "NFT Payout Error"    $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue) -- artist get everything back
-           && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
+           && (traceIfFalse "NFT Burning Error"   checkMintedAmount)                                        -- burn the ft only
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -122,19 +113,6 @@ mkValidator datum redeemer context =
 
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = PlutusV2.txInfoInputs  info
-
-    txOutputs :: [PlutusV2.TxOut]
-    txOutputs = PlutusV2.txInfoOutputs info
-
-    -- artist info
-    artistPKH :: PlutusV2.PubKeyHash
-    artistPKH = cdtArtistPKH datum
-
-    artistSC :: PlutusV2.PubKeyHash
-    artistSC = cdtArtistSC datum
-
-    artistAddr :: PlutusV2.Address
-    artistAddr =  UsefulFuncs.createAddress artistPKH artistSC
 
     -- | This is the currently validating value from the UTxO being spent in this tx.
     validatingValue :: PlutusV2.Value

@@ -38,7 +38,7 @@ unstableMakeIsData :: TH.Name -> TH.Q [TH.Dec]
 unstableMakeIsData name = makeIsDataIndexed name =<< defaultIndex name
 ```
 
-All occurances of 
+All occurences of 
 
 ```hs
 PlutusTx.unstableMakeIsData ''CustomDatumType
@@ -59,6 +59,10 @@ PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 - Write a response to this.
 
 # QSP-6 Only the Artist Can Receive Solidified NFT Even Though All the Fractions Might Be Owned by Someone Else
+
+The limitation that only the artist inside the datum may receive the tokenized NFT after solidifying the fractional tokens is incorrect. The validation logic should mirror the other endpoints by permitting NEWM to decide the destination address. The validation logic now allows the tokenized NFT to be sent to the wallet that held the fractional tokens. Now all the endpoints should have the same destination validation.
+
+This changed the datum and the validation logic of unlocking a tokenized NFT.
 
 # QSP-7 Malicious Users Could Sabotage Solidification of Fractionalized Nfts by Holding Off Fractionalized Tokens
 
