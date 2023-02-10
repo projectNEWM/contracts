@@ -45,7 +45,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      MintingContract
+  exposed-modules:      MintFractionalizedTokenContract
 
   build-depends:        bytestring
                       , cardano-api

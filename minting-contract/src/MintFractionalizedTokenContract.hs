@@ -26,7 +26,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module MintingContract
+module MintFractionalizedTokenContract
   ( mintingPlutusScript
   , mintingScriptShortBs
   , getValidatorHash

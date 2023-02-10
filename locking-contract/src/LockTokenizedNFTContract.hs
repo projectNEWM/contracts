@@ -25,7 +25,7 @@
 {-# OPTIONS_GHC -fobject-code                 #-}
 {-# OPTIONS_GHC -fno-specialise               #-}
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
-module LockingContract
+module LockTokenizedNFTContract
   ( lockingContractScript
   , lockingContractScriptShortBs
   ) where
@@ -100,32 +100,19 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
 mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
 mkValidator datum redeemer context =
   case redeemer of
+    -- | Lock Tokenized Token into contract and fractionalized
     Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
          && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
          && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
-    -- Lock -> do 
-    --   { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh                -- newm master key
-    --   ; let b = traceIfFalse "Single In/Out Error" $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 1 -- 1 script input 1 script output
-    --   ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
-    --   ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs              -- value with correct datum
-    --   ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
-    --   }
 
+    -- | Unlock Tokenized Token from contract and solidify.
     Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
            && (traceIfFalse "NFT Payout Error"    $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue) -- artist get everything back
            && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
-
-    -- Unlock -> do 
-    --   { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info mainPkh                             -- newm master key
-    --   ; let b = traceIfFalse "Single Script Error"   $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 0              -- 1 script input 0 script output
-    --   ; let c = traceIfFalse "NFT Payout Error"      $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
-    --   ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                               -- burnfrac pid with tkn name
-    --   ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
-    --   }
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context

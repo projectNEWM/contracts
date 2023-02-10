@@ -1,6 +1,6 @@
 import Prelude
 import Cardano.Api
-import LockingContract ( lockingContractScript )
+import LockTokenizedNFTContract ( lockingContractScript )
 
 main :: IO ()
 main = do

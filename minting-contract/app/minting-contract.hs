@@ -1,6 +1,6 @@
 import Prelude
 import Cardano.Api
-import MintingContract (mintingPlutusScript)
+import MintFractionalizedTokenContract (mintingPlutusScript)
 
 main :: IO ()
 main = do

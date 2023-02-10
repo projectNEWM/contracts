@@ -45,7 +45,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      NFTLockingContract
+  exposed-modules:      LockStarterNFTContract
 
   build-depends:        bytestring
                       , cardano-api

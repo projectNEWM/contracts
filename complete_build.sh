@@ -69,29 +69,29 @@ python3 -c "import binascii;a=$(cat start_info.json | jq .multisig1);s=binascii.
 python3 -c "import binascii;a=$(cat start_info.json | jq .multisig2);s=binascii.unhexlify(a);print([x for x in s])" > multisig2.pkh
 python3 -c "import binascii;a=$(cat start_info.json | jq .multisig3);s=binascii.unhexlify(a);print([x for x in s])" > multisig3.pkh
 
-python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
-mv ./nft-locking-contract/src/NFTLockingContract.hs-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
+python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
+mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
 # Adds the delegator to the nft locking and minting contracts
-python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract.hs-new.hs', $(cat deleg.pkh))"
-mv ./nft-locking-contract/src/NFTLockingContract.hs-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
+python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat deleg.pkh))"
+mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat deleg.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
 # Adds the delegator to the ft locking and minting contracts
-python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./locking-contract/src/LockingContract.hs', './locking-contract/src/LockingContract.hs-new.hs', $(cat deleg.pkh))"
-mv ./locking-contract/src/LockingContract.hs-new.hs ./locking-contract/src/LockingContract.hs
-python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./minting-contract/src/MintingContract.hs', './minting-contract/src/MintingContract.hs-new.hs', $(cat deleg.pkh))"
-mv ./minting-contract/src/MintingContract.hs-new.hs ./minting-contract/src/MintingContract.hs
+python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract.hs-new.hs', $(cat deleg.pkh))"
+mv ./locking-contract/src/LockTokenizedNFTContract.hs-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
+python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./minting-contract/src/MintFractionalizedTokenContract.hs', './minting-contract/src/MintFractionalizedTokenContract.hs-new.hs', $(cat deleg.pkh))"
+mv ./minting-contract/src/MintFractionalizedTokenContract.hs-new.hs ./minting-contract/src/MintFractionalizedTokenContract.hs
 
 
 # Adds in the locking token into the contract.
-python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract-new.hs', $(cat start.pid))"
-mv ./nft-locking-contract/src/NFTLockingContract-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
-python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('./nft-locking-contract/src/NFTLockingContract.hs', './nft-locking-contract/src/NFTLockingContract-new.hs', $(cat start.tkn))"
-mv ./nft-locking-contract/src/NFTLockingContract-new.hs ./nft-locking-contract/src/NFTLockingContract.hs
+python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.pid))"
+mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
+python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.tkn))"
+mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 
 python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract-new.hs', $(cat start.pid))"
 mv ./nft-minting-contract/src/NFTMintingContract-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
@@ -142,8 +142,8 @@ mv next_datum-new.json next_datum.json
 
 # update fractionalize contracts
 cd ../..
-python3 -c "from update_contracts import changeTokenizedPid;changeTokenizedPid('./locking-contract/src/LockingContract.hs', './locking-contract/src/LockingContract-new.hs', $(cat ./nft-minting-contract/policy.bytes) )"
-mv ./locking-contract/src/LockingContract-new.hs ./locking-contract/src/LockingContract.hs
+python3 -c "from update_contracts import changeTokenizedPid;changeTokenizedPid('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract-new.hs', $(cat ./nft-minting-contract/policy.bytes) )"
+mv ./locking-contract/src/LockTokenizedNFTContract-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
 
 cd locking-contract
 rm validator.bytes
@@ -157,8 +157,8 @@ echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
 
 # adds in the locking hash into the script
 cd ..
-python3 -c "from update_contracts import changeLockHash;changeLockHash('./minting-contract/src/MintingContract.hs', './minting-contract/src/MintingContract-new.hs', $(cat ./locking-contract/validator.bytes))"
-mv ./minting-contract/src/MintingContract-new.hs ./minting-contract/src/MintingContract.hs
+python3 -c "from update_contracts import changeLockHash;changeLockHash('./minting-contract/src/MintFractionalizedTokenContract.hs', './minting-contract/src/MintFractionalizedTokenContract-new.hs', $(cat ./locking-contract/validator.bytes))"
+mv ./minting-contract/src/MintFractionalizedTokenContract-new.hs ./minting-contract/src/MintFractionalizedTokenContract.hs
 
 cd minting-contract
 rm policy.id
