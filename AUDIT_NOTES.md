@@ -66,13 +66,21 @@ This changed the datum and the validation logic of unlocking a tokenized NFT.
 
 # QSP-7 Malicious Users Could Sabotage Solidification of Fractionalized Nfts by Holding Off Fractionalized Tokens
 
+- This was intentional with fractionalization. Write a response to this.
+
 # QSP-8 Dangling UTXO at Locking Contract Validation Script
 
+- The off chain needs to account for this potential edge case. Work around is minting fractions then burning the fractions to remove dangling UTxO.
+
 # QSP-9 Artist Receives Min-UTXO-Deposit in Addition to NFT when Solidifying NFT
+
+- This has been removed and should not be an issue due to the qsp-6 fix. The receiver of the Tokenized NFT after solidifying the fractions will get the minimum required ADA for that UTxO and not the validating value.
 
 # QSP-10 Redundant Check of Validator’s Output-Datum in NFTMintingContract and MintingContract
 
 # QSP-11 Lack of Documentation
+
+- Improved documentation will be written.
 
 # QSP-12 Importance of Secure Key Management in the Project
 
