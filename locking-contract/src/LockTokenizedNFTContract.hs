@@ -75,7 +75,7 @@ data CustomDatumType = CustomDatumType
     , cdtArtistSC      :: PlutusV2.PubKeyHash
     -- ^ The artist's staking key hash.
     }
-PlutusTx.unstableMakeIsData ''CustomDatumType
+PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
 -- a is old datum and b is the new datum
 instance Eq CustomDatumType where

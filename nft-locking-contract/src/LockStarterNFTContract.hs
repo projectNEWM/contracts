@@ -100,7 +100,7 @@ data CustomDatumType = CustomDatumType
   , cdtPrefix  :: PlutusV2.BuiltinByteString
   -- ^ The prefix for a catalog.
   }
-PlutusTx.unstableMakeIsData ''CustomDatumType
+PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
 -- | Short circuit the data comparision with if-then-else statments.
 checkDatumIncrease :: CustomDatumType -> CustomDatumType -> Bool

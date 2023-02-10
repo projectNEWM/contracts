@@ -1,7 +1,5 @@
 # Best Practices Notes
 
-4. I can not find any examples of value lifting for PlutusV2 at the time of audit. If an example is found then hardcoded values will be replaced with lifted values.
-
 6. A) isNInputs will stay the same for now.
 
 7. Code Refactor will occur after best practice 8.
@@ -14,16 +12,64 @@
 
 ### Reasoning
 
-A lot of the best practices suggested will not change validation logic nor add additional code to the contracts. Many of them are already best practices in many of my other contracts and I been waiting for the audit to make these changes. The audit fixes will start with the implementation of best practices.
+A lot of the best practices suggested will not change validation logic nor add additional code to the contracts. Many of the best practices are already things I do in many of my other contracts and I been waiting for the audit to make these changes anyway. The audit fixes will start with the implementation of best practices. The end goal after the audit is a nice code refactoring and use of every plutonomy suggestion to min/max the contract.
 
-# QSP-1
+# QSP-1 Lack of Comprehensive Test Suite
 
-Will Parameterize the contract and write tests
+- Will Parameterize the contract and write tests
 
-# QSP-2
+# QSP-2 Risk of Starter Token Duplicates and Tokenized Token Name Clashing
 
-Will write up response to this
+- Write a response to this.
 
-# QSP-3
+# QSP-3 Dangerous Use of PlutusTx.unstableMakeIsData
 
-Will use production ready code
+If Plutus were to change the ```defaultIndex``` then the indices of a data constructor may not be stable but by using ```makeIsDataIndexed``` it will force the data constructor to a specific index.
+
+```hs
+defaultIndex :: TH.Name -> TH.Q [(TH.Name, Int)]
+defaultIndex name = do
+    info <- TH.reifyDatatype name
+    pure $ zip (TH.constructorName <$> TH.datatypeCons info) [0..]
+
+-- | Generate a 'FromData' and a 'ToData' instance for a type. This may not be stable in the face of constructor additions,
+-- renamings, etc. Use 'makeIsDataIndexed' if you need stability.
+unstableMakeIsData :: TH.Name -> TH.Q [TH.Dec]
+unstableMakeIsData name = makeIsDataIndexed name =<< defaultIndex name
+```
+
+All occurances of 
+
+```hs
+PlutusTx.unstableMakeIsData ''CustomDatumType
+```
+
+are now switched into
+
+```hs
+PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
+```
+
+# QSP-4 Privileged Roles and Owners
+
+- Write a response to this.
+
+# QSP-5 No Update Mechanism in Case of Rogue Multisig Users
+
+- Write a response to this.
+
+# QSP-6 Only the Artist Can Receive Solidified NFT Even Though All the Fractions Might Be Owned by Someone Else
+
+# QSP-7 Malicious Users Could Sabotage Solidification of Fractionalized Nfts by Holding Off Fractionalized Tokens
+
+# QSP-8 Dangling UTXO at Locking Contract Validation Script
+
+# QSP-9 Artist Receives Min-UTXO-Deposit in Addition to NFT when Solidifying NFT
+
+# QSP-10 Redundant Check of Validator’s Output-Datum in NFTMintingContract and MintingContract
+
+# QSP-11 Lack of Documentation
+
+# QSP-12 Importance of Secure Key Management in the Project
+
+- Write a response to this.

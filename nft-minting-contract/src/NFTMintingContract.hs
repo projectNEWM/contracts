@@ -106,7 +106,7 @@ data CustomDatumType = CustomDatumType
   , cdtPrefix  :: PlutusV2.BuiltinByteString
   -- ^ The prefix for a catalog.
   }
-PlutusTx.unstableMakeIsData ''CustomDatumType
+PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
 -- a is the old datum and b is the new datum
 instance Eq CustomDatumType where
