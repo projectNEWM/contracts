@@ -108,13 +108,10 @@ instance Eq CustomRedeemerType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy redeemer' context = do
-      { let a = traceIfFalse "Minting/Burning Error" $ (checkTokenMint && checkOutputDatum 1) || (checkTokenBurn && checkOutputDatum 0) -- mint or burn
-      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2         -- newm or multisig
-      ; let c = traceIfFalse "Invalid Datum Error"   checkInputDatum                                                                    -- input datum equals redeemer
-      ; let d = traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator tokenValue                                            -- must contain the starter token
-      ;         traceIfFalse "Minting Error"         $ all (==True) [a,b,c,d]
-      }
+mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer && checkOutputDatum redeemer 1) || (checkTokenBurn && checkOutputDatum redeemer 0)) -- mint or burn
+                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2)         -- newm or multisig
+                           && (traceIfFalse "Invalid Datum Error"   $ checkInputDatum redeemer getValidatorHash)                                                                    -- input datum equals redeemer
+                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator tokenValue)                                            -- must contain the starter token
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -140,25 +137,25 @@ mkPolicy redeemer' context = do
         
 
     -- return the first datum hash from a txout going to the locking script
-    checkInputs :: [PlutusV2.TxInInfo] -> Maybe CustomRedeemerType
-    checkInputs [] = Nothing
-    checkInputs (x:xs) =
-      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress getValidatorHash
+    checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomRedeemerType
+    checkInputs []     _     = Nothing
+    checkInputs (x:xs) vHash =
+      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress vHash
       then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
-      else checkInputs xs
+      else checkInputs xs vHash
 
     -- check that the locking script has the correct datum hash
-    checkInputDatum :: Bool
-    checkInputDatum =
-      case checkInputs txInputs of
-        Nothing         -> traceIfFalse "No Input Datum Hash" False
+    checkInputDatum :: CustomRedeemerType -> PlutusV2.ValidatorHash -> Bool
+    checkInputDatum customRedeemer vHash =
+      case checkInputs txInputs vHash of
+        Nothing         -> traceError "No Input Datum Hash"
         Just inputDatum -> inputDatum == d
       where
         d :: CustomRedeemerType
         d = CustomRedeemerType
-              { crtNewmPid = crtNewmPid redeemer
-              , crtNumber  = crtNumber  redeemer
-              , crtPrefix  = crtPrefix  redeemer
+              { crtNewmPid = crtNewmPid customRedeemer
+              , crtNumber  = crtNumber  customRedeemer
+              , crtPrefix  = crtPrefix  customRedeemer
               }
     
     -- find the value at the validator hash
@@ -184,24 +181,24 @@ mkPolicy redeemer' context = do
         scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
         
     -- the output datum for minting increases the number by one
-    checkOutputDatum :: Integer -> Bool
-    checkOutputDatum increment = 
+    checkOutputDatum :: CustomRedeemerType -> Integer -> Bool
+    checkOutputDatum customRedeemer increment = 
       case datumAtValidator of
-        Nothing      -> traceIfFalse "No Datum At Validator" False
+        Nothing      -> traceError "No Datum At Validator"
         Just datum'' -> datum'' == d
       where
         d :: CustomRedeemerType
         d = CustomRedeemerType
-              { crtNewmPid = crtNewmPid redeemer
-              , crtNumber  = crtNumber  redeemer + increment
-              , crtPrefix  = crtPrefix  redeemer
+              { crtNewmPid = crtNewmPid customRedeemer
+              , crtNumber  = crtNumber  customRedeemer + increment
+              , crtPrefix  = crtPrefix  customRedeemer
               }
 
     -- check the minting stuff here
-    checkTokenMint :: Bool
-    checkTokenMint =
+    checkTokenMint :: CustomRedeemerType -> Bool
+    checkTokenMint customRedeemer =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName tkn && checkMintAmount amt
+        [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName customRedeemer tkn && checkMintAmount amt
         _                -> traceIfFalse "Mint/Burn Error" False
     
     -- check the burning stuff here
@@ -214,12 +211,12 @@ mkPolicy redeemer' context = do
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
 
-    checkTokenName :: PlutusV2.TokenName -> Bool
-    checkTokenName tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix redeemer) (crtNumber redeemer)
+    checkTokenName :: CustomRedeemerType -> PlutusV2.TokenName -> Bool
+    checkTokenName customRedeemer tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix customRedeemer) (crtNumber customRedeemer)
       where
         -- it debugs the required NFT name
         debug :: BuiltinString
-        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (crtPrefix redeemer) (crtNumber redeemer)
+        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (crtPrefix customRedeemer) (crtNumber customRedeemer)
 
     checkMintAmount :: Integer -> Bool
     checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)

@@ -53,9 +53,8 @@ import qualified UsefulFuncs ( createBuiltinByteString
   Version  : Rev 2
 -}
 
-{-# INLINABLE getPkh #-}
-getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+mainPkh :: PlutusV2.PubKeyHash
+mainPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
@@ -101,20 +100,32 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
 mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
 mkValidator datum redeemer context =
   case redeemer of
-    Lock -> do 
-      { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh                -- newm master key
-      ; let b = traceIfFalse "Single In/Out Error" $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 1 -- 1 script input 1 script output
-      ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
-      ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs              -- value with correct datum
-      ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
-      }
-    Unlock -> do 
-      { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh                             -- newm master key
-      ; let b = traceIfFalse "Single Script Error"   $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 0              -- 1 script input 0 script output
-      ; let c = traceIfFalse "NFT Payout Error"      $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
-      ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                               -- burnfrac pid with tkn name
-      ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
-      }
+    Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
+         && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
+         && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
+         && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
+         && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
+    -- Lock -> do 
+    --   { let a = traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh                -- newm master key
+    --   ; let b = traceIfFalse "Single In/Out Error" $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 1 -- 1 script input 1 script output
+    --   ; let c = traceIfFalse "FT Mint Error"       checkMintedAmount                                  -- mint frac pid with tkn name
+    --   ; let d = traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs              -- value with correct datum
+    --   ;         traceIfFalse "Locking:Mint Error"  $ all (==True) [a,b,c,d]
+    --   }
+
+    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
+           && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
+           && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
+           && (traceIfFalse "NFT Payout Error"    $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue) -- artist get everything back
+           && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
+
+    -- Unlock -> do 
+    --   { let a = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info mainPkh                             -- newm master key
+    --   ; let b = traceIfFalse "Single Script Error"   $ UsefulFuncs.isNInputs txInputs 1 && UsefulFuncs.isNOutputs contOutputs 0              -- 1 script input 0 script output
+    --   ; let c = traceIfFalse "NFT Payout Error"      $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue -- artist get everything back
+    --   ; let d = traceIfFalse "FT Burn Error"         checkMintedAmount                                               -- burnfrac pid with tkn name
+    --   ;         traceIfFalse "Unlock Endpoint Error" $ all (==True) [a,b,c,d]
+    --   }
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -154,24 +165,25 @@ mkValidator datum redeemer context =
     checkMintedAmount :: Bool
     checkMintedAmount = 
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, tn, _)] -> cs == cdtFractionalPid datum && tn == cdtTokenizedTn datum
+        [(cs, tn, _)] -> cs == cdtFractionalPid datum
+                      && tn == cdtTokenizedTn datum
         _             -> traceIfFalse "Wrong pid and tkn name" False
     
     -- datum stuff
-    isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> Bool
-    isEmbeddedDatumConstant []     = False
-    isEmbeddedDatumConstant (x:xs) =
-      if PlutusV2.txOutValue x == (validatingValue + singularNFT) -- strict value continue
+    isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> PlutusV2.Value -> PlutusV2.Value -> Bool
+    isEmbeddedDatumConstant []     _   _   = traceError "No Constant Datum Found"
+    isEmbeddedDatumConstant (x:xs) val nft =
+      if PlutusV2.txOutValue x == (val + nft) -- strict value continue
         then
           case PlutusV2.txOutDatum x of
-            PlutusV2.NoOutputDatum       -> isEmbeddedDatumConstant xs -- datumless
-            (PlutusV2.OutputDatumHash _) -> isEmbeddedDatumConstant xs -- embedded datum
-            -- inline datum
+            PlutusV2.NoOutputDatum       -> traceError "No Datum" -- datumless
+            (PlutusV2.OutputDatumHash _) -> traceError "Embedded" -- embedded datum
+            -- inline datum only
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> isEmbeddedDatumConstant xs
+                Nothing     ->  traceError "Bad Datum"
                 Just inline -> datum == inline
-        else isEmbeddedDatumConstant xs
+        else isEmbeddedDatumConstant xs val nft
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------

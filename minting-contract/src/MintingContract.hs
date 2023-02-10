@@ -84,11 +84,8 @@ instance Eq CustomRedeemerType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy _ context = do
-      { let a = traceIfFalse "Minting/Burning Error" $ (checkMintedAmount && checkInputOutputDatum) || (checkBurnedAmount && checkInputDatum)
-      ; let b = traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh
-      ;         traceIfFalse "Minting Error"         $ all (==True) [a,b]
-      }
+mkPolicy _ context =  (traceIfFalse "Minting/Burning Error" $ (checkMintedAmount && checkInputOutputDatum getValidatorHash) || (checkBurnedAmount && checkInputDatum getValidatorHash))
+                   && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh)
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -132,12 +129,12 @@ mkPolicy _ context = do
         
 
     -- return the first datum hash from a txout going to the locking script
-    checkInputs :: [PlutusV2.TxInInfo] -> Maybe CustomRedeemerType
-    checkInputs [] = Nothing
-    checkInputs (x:xs) =
-      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress getValidatorHash
+    checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomRedeemerType
+    checkInputs []     _     = Nothing
+    checkInputs (x:xs) vHash =
+      if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress vHash
       then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
-      else checkInputs xs
+      else checkInputs xs vHash
     
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 
@@ -158,20 +155,20 @@ mkPolicy _ context = do
         scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
 
     -- check that the locking script has the correct datum hash
-    checkInputDatum :: Bool
-    checkInputDatum =
-      case checkInputs txInputs of
-        Nothing -> traceIfFalse "No Input Datum" False
+    checkInputDatum :: PlutusV2.ValidatorHash -> Bool
+    checkInputDatum vHash =
+      case checkInputs txInputs vHash of
+        Nothing -> traceError "No Input Datum"
         Just _  -> True
     
     -- check that the locking script has the correct datum hash
-    checkInputOutputDatum :: Bool
-    checkInputOutputDatum =
-      case checkInputs txInputs of
-        Nothing         -> traceIfFalse "No Input Datum" False
+    checkInputOutputDatum :: PlutusV2.ValidatorHash -> Bool
+    checkInputOutputDatum vHash =
+      case checkInputs txInputs vHash of
+        Nothing         -> traceError "No Input Datum"
         Just inputDatum ->
           case datumAtValidator of
-            Nothing          -> traceIfFalse "No Output Datum" False
+            Nothing          -> traceError "No Output Datum"
             Just outputDatum -> inputDatum == outputDatum
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
