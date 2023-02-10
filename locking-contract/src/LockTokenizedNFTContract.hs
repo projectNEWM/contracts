@@ -58,7 +58,7 @@ mainPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilt
 
 -- tokenization minting policy
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [193, 248, 13, 144, 80, 184, 99, 46, 243, 114, 221, 102, 180, 194, 131, 15, 156, 123, 195, 249, 176, 248, 20, 166, 84, 150, 64, 39] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [82, 117, 160, 119, 0, 221, 142, 141, 182, 245, 230, 111, 19, 92, 39, 169, 81, 222, 190, 182, 148, 196, 20, 164, 51, 170, 28, 27] }
 
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.

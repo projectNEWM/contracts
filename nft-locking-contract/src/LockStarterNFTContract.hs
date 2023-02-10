@@ -136,20 +136,20 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     -- | Mint a new tokenization NFT
-    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                     -- newm signs it
-         && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
-         && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
-         && (traceIfFalse "NFT Minting Error"   checkMintingData)                                        -- mint an nft only
-         && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs validatingValue)  -- value is cont and the datum is correct.
-         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                    -- must contain the start token
+    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                        -- newm signs it
+         && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- single script input
+         && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- single script output
+         && (traceIfFalse "NFT Minting Error"   checkMintingData)                                           -- mint an nft only
+         && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- value is cont and the datum is correct.
+         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                      -- must contain the start token
     
     -- | Burn a tokenization NFT
-    Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info listOfPkh 2)      -- newm multisig
-         && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                     -- single script input
-         && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                 -- single script output
-         && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                      -- burn an nft only
-         && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs validatingValue)  -- value is cont and the datum is correct.
-         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                  -- must contain the start token
+    Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info listOfPkh 2)          -- newm multisig
+         && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- single script input
+         && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- single script output
+         && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- burn an nft only
+         && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- value is cont and the datum is correct.
+         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                      -- must contain the start token
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo  context
@@ -184,9 +184,9 @@ mkValidator datum redeemer context =
         _              -> traceIfFalse "Bad Burning Info" False
     
     -- datum stuff
-    isEmbeddedDatumIncreasing :: [PlutusV2.TxOut] -> PlutusV2.Value -> Bool
-    isEmbeddedDatumIncreasing []     _   = traceError "No Increasing Datum Found"
-    isEmbeddedDatumIncreasing (x:xs) val =
+    isContDatumCorrect :: [PlutusV2.TxOut] -> PlutusV2.Value -> CustomRedeemerType -> Bool
+    isContDatumCorrect []     _   _    = traceError "No Increasing Datum Found"
+    isContDatumCorrect (x:xs) val redeemer' =
       if PlutusV2.txOutValue x == val -- strict value continue
         then
           case PlutusV2.txOutDatum x of
@@ -196,24 +196,11 @@ mkValidator datum redeemer context =
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
                 Nothing     -> traceError "Bad Datum" -- Wrong Data Structure
-                Just inline -> checkDatumIncrease datum inline
-        else isEmbeddedDatumIncreasing xs val
-
-    -- datum stuff
-    isEmbeddedDatumConstant :: [PlutusV2.TxOut] -> PlutusV2.Value -> Bool
-    isEmbeddedDatumConstant []     _   = traceError "No Constant Datum Found"
-    isEmbeddedDatumConstant (x:xs) val =
-      if PlutusV2.txOutValue x == val -- strict value continue
-        then
-          case PlutusV2.txOutDatum x of
-            PlutusV2.NoOutputDatum       -> traceError "No Datum" -- datumless
-            (PlutusV2.OutputDatumHash _) -> traceError "Embedded" -- embedded datum
-            -- inline datum only
-            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
-              case PlutusTx.fromBuiltinData d of
-                Nothing     ->  traceError "Bad Datum"
-                Just inline -> datum == inline
-        else isEmbeddedDatumConstant xs val
+                Just inline -> 
+                  case redeemer' of
+                    Mint -> checkDatumIncrease datum inline
+                    Burn -> datum == inline
+        else isContDatumCorrect xs val redeemer'
 
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
