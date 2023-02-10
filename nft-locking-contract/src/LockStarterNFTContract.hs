@@ -128,7 +128,7 @@ mkValidator datum redeemer context =
     Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
-         && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
+         && (traceIfFalse "NFT Minting Error"   checkMintingData)                                        -- mint an nft only
          && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs validatingValue)  -- value is cont and the datum is correct.
          && (traceIfFalse "Invalid Start Token" $ Value.geq validatingValue lockValue)                    -- must contain the start token
     
@@ -157,8 +157,8 @@ mkValidator datum redeemer context =
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
 
     -- minting stuff
-    checkMintedAmount :: Bool
-    checkMintedAmount =
+    checkMintingData :: Bool
+    checkMintingData =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum)
                          && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum))
