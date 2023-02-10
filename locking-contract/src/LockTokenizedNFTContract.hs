@@ -110,7 +110,7 @@ mkValidator datum redeemer context =
     -- | Unlock Tokenized Token from contract and solidify.
     Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                      -- newm signs it
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
-           && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
+           && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)                   -- single script output
            && (traceIfFalse "NFT Payout Error"    $ UsefulFuncs.isAddrGettingPaidExactly txOutputs artistAddr validatingValue) -- artist get everything back
            && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                        -- mint an nft only
    where

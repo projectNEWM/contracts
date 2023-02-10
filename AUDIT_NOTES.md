@@ -15,3 +15,15 @@
 ### Reasoning
 
 A lot of the best practices suggested will not change validation logic nor add additional code to the contracts. Many of them are already best practices in many of my other contracts and I been waiting for the audit to make these changes. The audit fixes will start with the implementation of best practices.
+
+# QSP-1
+
+Will Parameterize the contract and write tests
+
+# QSP-2
+
+Will write up response to this
+
+# QSP-3
+
+Will use production ready code

@@ -57,7 +57,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilti
 -- | The validator hash of the LockTokenizedNFTContract.
 -------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [81, 241, 76, 250, 55, 246, 162, 120, 43, 204, 240, 177, 220, 234, 199, 201, 35, 106, 236, 210, 189, 96, 10, 163, 170, 150, 123, 160]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [12, 186, 156, 77, 128, 133, 161, 168, 187, 17, 245, 50, 47, 91, 218, 76, 124, 164, 183, 60, 132, 254, 241, 106, 164, 15, 106, 215]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ mkPolicy _ context =  (traceIfFalse "Minting/Burning Error" $ (checkMintedAmount
     checkInputDatum :: PlutusV2.ValidatorHash -> Bool
     checkInputDatum vHash =
       case checkInputs txInputs vHash of
-        Nothing -> traceError "No Input Datum"
+        Nothing -> traceIfFalse "No Input Datum" False
         Just _  -> True
     
     -- | Check that a datum on the input from the LockTokenizedNFTContract is equal to the datum on the output to the LockTokenizedNFTContract.
@@ -169,7 +169,7 @@ mkPolicy _ context =  (traceIfFalse "Minting/Burning Error" $ (checkMintedAmount
         Nothing         -> traceError "No Input Datum"
         Just inputDatum ->
           case datumAtValidator of
-            Nothing          -> traceError "No Output Datum"
+            Nothing          -> traceIfFalse "No Output Datum" False
             Just outputDatum -> inputDatum == outputDatum
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
