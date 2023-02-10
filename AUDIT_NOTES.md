@@ -4,3 +4,6 @@
 
 6. A) isNInputs will stay the same for now.
 
+7. Code Refactor will occur after best practice 8.
+
+8. Min/Max of script will occur after audit completion.

@@ -74,7 +74,7 @@ FEE=$(${cli} transaction build \
     --cddl-format \
     ${network})
 
-${hwcli} transaction transform --tx-file tmp/tx.draft --out-file tmp/tx.draft
+# ${hwcli} transaction transform --tx-file tmp/tx.draft --out-file tmp/tx.draft
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -83,24 +83,30 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 #exit
 #
+# echo -e "\033[0;36m Signing \033[0m"
+# ${cli} transaction sign \
+#     --signing-key-file wallets/seller-wallet/payment.skey \
+#     --tx-body-file tmp/tx.draft \
+#     --out-file tmp/tx.signed \
+#     ${network}
+
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
+   --signing-key-file wallets/multisig-wallet/multisig1.skey \
+   --signing-key-file wallets/multisig-wallet/multisig2.skey \
+   --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     ${network}
 
-#    --signing-key-file wallets/multisig-wallet/multisig1.skey \
-#    --signing-key-file wallets/multisig-wallet/multisig2.skey \
-#    --signing-key-file wallets/multisig-wallet/multisig3.skey \
-
 # create a witness for seller wallet since we'll re-assemble tx from tx-body with all witnesses
-${cli} transaction witness --tx-body-file tmp/tx.draft --signing-key-file wallets/seller-wallet/payment.skey ${network} --out-file tmp/seller.witness
+# ${cli} transaction witness --tx-body-file tmp/tx.draft --signing-key-file wallets/seller-wallet/payment.skey ${network} --out-file tmp/seller.witness
 
 #    
 # exit
 #
-# echo -e "\033[0;36m Submitting \033[0m"
-# ${cli} transaction submit \
-#     ${network} \
-#     --tx-file tmp/tx.signed
+echo -e "\033[0;36m Submitting \033[0m"
+${cli} transaction submit \
+    ${network} \
+    --tx-file tmp/tx.signed

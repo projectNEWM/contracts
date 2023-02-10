@@ -28,6 +28,7 @@
 module LockStarterNFTContract
   ( lockingContractScript
   , lockingContractScriptShortBs
+  , CustomDatumType (..)
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -64,8 +65,8 @@ lockValue :: PlutusV2.Value
 lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 -- main key for NEWM
-mainPkh :: PlutusV2.PubKeyHash
-mainPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+getPkh :: PlutusV2.PubKeyHash
+getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
 
 -- collat wallet
 multiPkh1 :: PlutusV2.PubKeyHash
@@ -99,9 +100,19 @@ data CustomDatumType = CustomDatumType
 PlutusTx.unstableMakeIsData ''CustomDatumType
 
 checkDatumIncrease :: CustomDatumType -> CustomDatumType -> Bool
-checkDatumIncrease a b =  ( cdtNewmPid    a == cdtNewmPid b ) &&
-                          ( cdtNumber a + 1 == cdtNumber  b ) &&
-                          ( cdtPrefix     a == cdtPrefix  b )
+-- checkDatumIncrease a b =  ( cdtNewmPid    a == cdtNewmPid b ) &&
+--                           ( cdtNumber a + 1 == cdtNumber  b ) &&
+--                           ( cdtPrefix     a == cdtPrefix  b )
+checkDatumIncrease a b =
+  if cdtNewmPid a == cdtNewmPid b
+    then
+      if cdtNumber a + 1 == cdtNumber  b
+        then
+          if cdtPrefix a == cdtPrefix  b
+            then True
+            else False
+        else False
+    else False
 
 -- old === new | burning
 instance Eq CustomDatumType where
@@ -125,12 +136,12 @@ mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -
 mkValidator datum redeemer context =
   case redeemer of
     -- | Mint a new tokenization NFT
-    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                     -- newm signs it
+    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                     -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                   -- single script output
          && (traceIfFalse "NFT Minting Error"   checkMintingData)                                        -- mint an nft only
          && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumIncreasing contOutputs validatingValue)  -- value is cont and the datum is correct.
-         && (traceIfFalse "Invalid Start Token" $ Value.geq validatingValue lockValue)                    -- must contain the start token
+         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                    -- must contain the start token
     
     -- | Burn a tokenization NFT
     Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info listOfPkh 2)      -- newm multisig
@@ -138,7 +149,7 @@ mkValidator datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                 -- single script output
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                      -- burn an nft only
          && (traceIfFalse "Invalid Datum Error" $ isEmbeddedDatumConstant contOutputs validatingValue)  -- value is cont and the datum is correct.
-         && (traceIfFalse "Invalid Start Token" $ Value.geq validatingValue lockValue)                  -- must contain the start token
+         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                  -- must contain the start token
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo  context

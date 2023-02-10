@@ -47,6 +47,7 @@ import qualified UsefulFuncs ( createBuiltinByteString
                              , integerAsByteString
                              , checkValidMultisig
                              )
+-- import LockStarterNFTContract (CustomDatumType (..))
 {-
   Author   : The Ancient Kraken
   Copyright: 2023
@@ -63,7 +64,7 @@ tokenValue :: PlutusV2.Value
 tokenValue = Value.singleton lockPid lockTkn (1 :: Integer)
 
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [103, 232, 225, 18, 171, 5, 18, 201, 201, 115, 124, 209, 55, 70, 38, 122, 160, 53, 253, 115, 216, 169, 99, 20, 3, 144, 8, 6]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [105, 112, 91, 98, 149, 147, 245, 132, 156, 161, 50, 175, 41, 211, 252, 75, 86, 35, 163, 25, 32, 121, 94, 115, 88, 184, 121, 62]
 
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
@@ -89,22 +90,22 @@ nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the redeemer data object.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = CustomRedeemerType
-  { crtNewmPid :: PlutusV2.CurrencySymbol
+data CustomDatumType = CustomDatumType
+  { cdtNewmPid :: PlutusV2.CurrencySymbol
   -- ^ The policy id from the minting script.
-  , crtNumber  :: Integer
+  , cdtNumber  :: Integer
   -- ^ The starting number for the catalog.
-  , crtPrefix  :: PlutusV2.BuiltinByteString
+  , cdtPrefix  :: PlutusV2.BuiltinByteString
   -- ^ The prefix for a catalog.
   }
-PlutusTx.unstableMakeIsData ''CustomRedeemerType
+PlutusTx.unstableMakeIsData ''CustomDatumType
 
 -- old == new | minting
-instance Eq CustomRedeemerType where
+instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
-  a == b = ( crtNewmPid a == crtNewmPid b ) &&
-           ( crtNumber  a == crtNumber  b ) &&
-           ( crtPrefix  a == crtPrefix  b )
+  a == b = ( cdtNewmPid a == cdtNewmPid b ) &&
+           ( cdtNumber  a == cdtNumber  b ) &&
+           ( cdtPrefix  a == cdtPrefix  b )
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
@@ -120,11 +121,11 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     txInputs = ContextsV2.txInfoInputs info
 
     -- the redeemer is the datum of the locking script
-    redeemer :: CustomRedeemerType
-    redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
+    redeemer :: CustomDatumType
+    redeemer = PlutusTx.unsafeFromBuiltinData @CustomDatumType redeemer'
     
     -- check if the incoming datum is the correct form.
-    getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
+    getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomDatumType
     getDatumFromTxOut x = 
       case PlutusV2.txOutDatum x of
         PlutusV2.NoOutputDatum       -> Nothing -- datumless
@@ -133,11 +134,11 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
         (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
           case PlutusTx.fromBuiltinData d of
             Nothing     -> Nothing
-            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
+            Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
         
 
     -- return the first datum hash from a txout going to the locking script
-    checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomRedeemerType
+    checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomDatumType
     checkInputs []     _     = Nothing
     checkInputs (x:xs) vHash =
       if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress vHash
@@ -145,24 +146,24 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
       else checkInputs xs vHash
 
     -- check that the locking script has the correct datum hash
-    checkInputDatum :: CustomRedeemerType -> PlutusV2.ValidatorHash -> Bool
+    checkInputDatum :: CustomDatumType -> PlutusV2.ValidatorHash -> Bool
     checkInputDatum customRedeemer vHash =
       case checkInputs txInputs vHash of
         Nothing         -> traceError "No Input Datum Hash"
         Just inputDatum -> inputDatum == d
       where
-        d :: CustomRedeemerType
-        d = CustomRedeemerType
-              { crtNewmPid = crtNewmPid customRedeemer
-              , crtNumber  = crtNumber  customRedeemer
-              , crtPrefix  = crtPrefix  customRedeemer
+        d :: CustomDatumType
+        d = CustomDatumType
+              { cdtNewmPid = cdtNewmPid customRedeemer
+              , cdtNumber  = cdtNumber  customRedeemer
+              , cdtPrefix  = cdtPrefix  customRedeemer
               }
     
     -- find the value at the validator hash
     valueAtValidator :: PlutusV2.Value
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
 
-    datumAtValidator :: Maybe CustomRedeemerType
+    datumAtValidator :: Maybe CustomDatumType
     datumAtValidator =
       if length scriptOutputs == 0 
         then Nothing
@@ -175,27 +176,27 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
             (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
               case PlutusTx.fromBuiltinData d of
                 Nothing     -> Nothing
-                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
+                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
       where 
         scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
         scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
         
     -- the output datum for minting increases the number by one
-    checkOutputDatum :: CustomRedeemerType -> Integer -> Bool
+    checkOutputDatum :: CustomDatumType -> Integer -> Bool
     checkOutputDatum customRedeemer increment = 
       case datumAtValidator of
         Nothing      -> traceError "No Datum At Validator"
         Just datum'' -> datum'' == d
       where
-        d :: CustomRedeemerType
-        d = CustomRedeemerType
-              { crtNewmPid = crtNewmPid customRedeemer
-              , crtNumber  = crtNumber  customRedeemer + increment
-              , crtPrefix  = crtPrefix  customRedeemer
+        d :: CustomDatumType
+        d = CustomDatumType
+              { cdtNewmPid = cdtNewmPid customRedeemer
+              , cdtNumber  = cdtNumber  customRedeemer + increment
+              , cdtPrefix  = cdtPrefix  customRedeemer
               }
 
     -- check the minting stuff here
-    checkTokenMint :: CustomRedeemerType -> Bool
+    checkTokenMint :: CustomDatumType -> Bool
     checkTokenMint customRedeemer =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, tkn, amt)] -> checkPolicyId cs && checkTokenName customRedeemer tkn && checkMintAmount amt
@@ -211,12 +212,12 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
 
-    checkTokenName :: CustomRedeemerType -> PlutusV2.TokenName -> Bool
-    checkTokenName customRedeemer tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (crtPrefix customRedeemer) (crtNumber customRedeemer)
+    checkTokenName :: CustomDatumType -> PlutusV2.TokenName -> Bool
+    checkTokenName customRedeemer tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
       where
         -- it debugs the required NFT name
         debug :: BuiltinString
-        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (crtPrefix customRedeemer) (crtNumber customRedeemer)
+        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
 
     checkMintAmount :: Integer -> Bool
     checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
