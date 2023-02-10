@@ -132,7 +132,7 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     redeemer :: CustomDatumType
     redeemer = PlutusTx.unsafeFromBuiltinData @CustomDatumType redeemer'
     
-    -- |Return the inline datum from a tx out.
+    -- | Return the inline datum from a tx out.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomDatumType
     getDatumFromTxOut x = 
       case PlutusV2.txOutDatum x of
@@ -173,7 +173,7 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     -- | Get the datum on the output going back to the LockStarterNFTContract.
     datumAtValidator :: Maybe CustomDatumType
     datumAtValidator =
-      if length scriptOutputs == 0 -- Prevent head of empty list error
+      if length scriptOutputs == 0                        -- Prevent head of empty list error
         then Nothing
         else 
           let datumAtValidator' = fst $ head scriptOutputs

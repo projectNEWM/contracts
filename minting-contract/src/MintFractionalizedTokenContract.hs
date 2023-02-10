@@ -28,21 +28,19 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module MintFractionalizedTokenContract
   ( mintingPlutusScript
-  , mintingScriptShortBs
-  , getValidatorHash
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
-import           Cardano.Api.Shelley                                   ( PlutusScript (..), PlutusScriptV2 )
-import           Codec.Serialise                                       ( serialise )
-import qualified Data.ByteString.Lazy                                  as LBS
-import qualified Data.ByteString.Short                                 as SBS
-import qualified Plutus.V1.Ledger.Scripts                              as Scripts
-import qualified Plutus.V1.Ledger.Value                                as Value
-import qualified Plutus.V1.Ledger.Address                              as Addr
-import qualified Plutus.V2.Ledger.Contexts                             as ContextsV2
-import qualified Plutus.V2.Ledger.Api                                  as PlutusV2
-import           Plutus.Script.Utils.V2.Typed.Scripts.MonetaryPolicies as Utils
+import           Cardano.Api.Shelley       ( PlutusScript (..), PlutusScriptV2 )
+import           Codec.Serialise           ( serialise )
+import qualified Data.ByteString.Lazy      as LBS
+import qualified Data.ByteString.Short     as SBS
+import qualified Plutus.V1.Ledger.Scripts  as Scripts
+import qualified Plutus.V1.Ledger.Value    as Value
+import qualified Plutus.V1.Ledger.Address  as Addr
+import qualified Plutus.V2.Ledger.Contexts as ContextsV2
+import qualified Plutus.V2.Ledger.Api      as PlutusV2
+import qualified Plutonomy
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( createBuiltinByteString ) 
 {-
@@ -50,11 +48,16 @@ import qualified UsefulFuncs ( createBuiltinByteString )
   Copyright: 2023
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------------
+-- | The main public key hash for NEWM.
+-------------------------------------------------------------------------------
 getPkh :: PlutusV2.PubKeyHash
 getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
-
+-------------------------------------------------------------------------------
+-- | The validator hash of the LockTokenizedNFTContract.
+-------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [180, 140, 11, 48, 154, 57, 104, 133, 254, 62, 195, 198, 35, 60, 165, 7, 202, 63, 176, 181, 45, 173, 97, 251, 37, 96, 165, 123]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [81, 241, 76, 250, 55, 246, 162, 120, 43, 204, 240, 177, 220, 234, 199, 201, 35, 106, 236, 210, 189, 96, 10, 163, 170, 150, 123, 160]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
@@ -113,55 +116,53 @@ mkPolicy _ context =  (traceIfFalse "Minting/Burning Error" $ (checkMintedAmount
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> checkPolicyId cs && burnAmount amt
         _              -> traceIfFalse "Burning Error" False
-    
 
-    -- check if the incoming datum is the correct form.
+    -- | Return the inline datum from a tx out.
     getDatumFromTxOut :: PlutusV2.TxOut -> Maybe CustomRedeemerType
     getDatumFromTxOut x = 
       case PlutusV2.txOutDatum x of
-        PlutusV2.NoOutputDatum       -> Nothing -- datumless
-        (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
-        -- inline datum
-        (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+        PlutusV2.NoOutputDatum       -> Nothing       -- datumless
+        (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
+        (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
           case PlutusTx.fromBuiltinData d of
-            Nothing     -> Nothing
+            Nothing     -> Nothing                    -- Bad Data
             Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
         
 
-    -- return the first datum hash from a txout going to the locking script
+    -- | Return the first inline datum from the LockStarterNFTContract from the list of inputs.
     checkInputs :: [PlutusV2.TxInInfo] -> PlutusV2.ValidatorHash -> Maybe CustomRedeemerType
     checkInputs []     _     = Nothing
     checkInputs (x:xs) vHash =
       if PlutusV2.txOutAddress (PlutusV2.txInInfoResolved x) == Addr.scriptHashAddress vHash
-      then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
-      else checkInputs xs vHash
+        then getDatumFromTxOut $ PlutusV2.txInInfoResolved x
+        else checkInputs xs vHash
     
+    -- | Get the datum on the output going back to the LockTokenizedNFTContract.
     datumAtValidator :: Maybe CustomRedeemerType
     datumAtValidator = 
-      if length scriptOutputs == 0 
+      if length scriptOutputs == 0                        -- Prevent head of empty list error
         then Nothing
         else 
           let datumAtValidator' = fst $ head scriptOutputs
           in case datumAtValidator' of
-            PlutusV2.NoOutputDatum       -> Nothing -- datumless
-            (PlutusV2.OutputDatumHash _) -> Nothing -- embedded datum
-            -- inline datum
-            (PlutusV2.OutputDatum (PlutusV2.Datum d)) -> 
+            PlutusV2.NoOutputDatum       -> Nothing       -- datumless
+            (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
+            (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
               case PlutusTx.fromBuiltinData d of
-                Nothing     -> Nothing
+                Nothing     -> Nothing                    -- Bad Data
                 Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomRedeemerType inline
       where
         scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
         scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
 
-    -- check that the locking script has the correct datum hash
+    -- | Check that a datum on the input from the LockTokenizedNFTContract is being spent.
     checkInputDatum :: PlutusV2.ValidatorHash -> Bool
     checkInputDatum vHash =
       case checkInputs txInputs vHash of
         Nothing -> traceError "No Input Datum"
         Just _  -> True
     
-    -- check that the locking script has the correct datum hash
+    -- | Check that a datum on the input from the LockTokenizedNFTContract is equal to the datum on the output to the LockTokenizedNFTContract.
     checkInputOutputDatum :: PlutusV2.ValidatorHash -> Bool
     checkInputOutputDatum vHash =
       case checkInputs txInputs vHash of
@@ -173,10 +174,11 @@ mkPolicy _ context =  (traceIfFalse "Minting/Burning Error" $ (checkMintedAmount
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
+wrappedPolicy :: BuiltinData -> BuiltinData -> ()
+wrappedPolicy x y = check (mkPolicy (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y))
+
 policy :: PlutusV2.MintingPolicy
-policy = PlutusV2.mkMintingPolicyScript $$(PlutusTx.compile [|| wrap ||])
-  where
-    wrap = Utils.mkUntypedMintingPolicy mkPolicy
+policy = PlutusV2.mkMintingPolicyScript $ $$(PlutusTx.compile [|| wrappedPolicy ||])
 
 plutusScript :: Scripts.Script
 plutusScript = PlutusV2.unMintingPolicyScript policy
@@ -185,10 +187,8 @@ validator :: PlutusV2.Validator
 validator = PlutusV2.Validator plutusScript
 
 scriptAsCbor :: LBS.ByteString
-scriptAsCbor = serialise validator
+scriptAsCbor = serialise $ Plutonomy.optimizeUPLC $ validator
+-- scriptAsCbor = serialise $ Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ validator
 
 mintingPlutusScript :: PlutusScript PlutusScriptV2
 mintingPlutusScript = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict scriptAsCbor
-
-mintingScriptShortBs :: SBS.ShortByteString
-mintingScriptShortBs = SBS.toShort . LBS.toStrict $ scriptAsCbor
