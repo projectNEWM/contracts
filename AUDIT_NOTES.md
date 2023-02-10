@@ -12,3 +12,6 @@
 
 12. All cabal files are the newest I can get since IOG is not putting in effort to maintain the plutus starter repo. This is the most up-to-date cabal project file I can find that actually compiles Plutus V2 smart contracts.
 
+### Reasoning
+
+A lot of the best practices suggested will not change validation logic nor add additional code to the contracts. Many of them are already best practices in many of my other contracts and I been waiting for the audit to make these changes. The audit fixes will start with the implementation of best practices.
