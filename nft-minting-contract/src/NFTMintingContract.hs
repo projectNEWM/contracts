@@ -67,7 +67,7 @@ lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 -- | The validator hash of the LockStarterNFTContract.
 -------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [116, 118, 165, 83, 102, 173, 50, 232, 176, 130, 180, 162, 150, 159, 148, 248, 21, 37, 210, 114, 163, 85, 207, 143, 101, 239, 168, 26]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [215, 231, 249, 237, 173, 192, 136, 181, 212, 151, 105, 87, 10, 18, 108, 160, 186, 150, 111, 250, 211, 245, 12, 15, 61, 218, 214, 139]
 -------------------------------------------------------------------------------
 -- | The main public key hash for NEWM.
 -------------------------------------------------------------------------------
@@ -117,10 +117,11 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer && checkOutputDatum redeemer 1) || (checkTokenBurn && checkOutputDatum redeemer 0))  -- mint or burn
-                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2)                         -- newm or multisig
-                           && (traceIfFalse "Invalid Datum Error"   $ checkInputDatum redeemer getValidatorHash)                                                                    -- input datum equals redeemer
-                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator lockValue)                                                                        -- must contain the starter token
+-- mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer && checkOutputDatum redeemer 1) || (checkTokenBurn && checkOutputDatum redeemer 0))  -- mint or burn
+mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer) || (checkTokenBurn))                                         -- mint or burn
+                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info getPkh || UsefulFuncs.checkValidMultisig info listOfPkh 2)  -- newm or multisig
+                           && (traceIfFalse "Invalid Datum Error"   $ checkInputDatum redeemer getValidatorHash)                                             -- input datum equals redeemer
+                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator lockValue)                                                  -- must contain the starter token
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -157,50 +158,50 @@ mkPolicy redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkToke
     checkInputDatum customRedeemer vHash =
       case checkInputs txInputs vHash of
         Nothing         -> traceError "No Input Datum Hash"
-        Just inputDatum -> inputDatum == d
-      where
-        d :: CustomDatumType
-        d = CustomDatumType
-              { cdtNewmPid = cdtNewmPid customRedeemer
-              , cdtNumber  = cdtNumber  customRedeemer
-              , cdtPrefix  = cdtPrefix  customRedeemer
-              }
+        Just inputDatum -> inputDatum == customRedeemer
+      -- where
+      --   d :: CustomDatumType
+      --   d = CustomDatumType
+      --         { cdtNewmPid = cdtNewmPid customRedeemer
+      --         , cdtNumber  = cdtNumber  customRedeemer
+      --         , cdtPrefix  = cdtPrefix  customRedeemer
+      --         }
     
     -- | Get the value on the output going back to the LockStarterNFTContract.
     valueAtValidator :: PlutusV2.Value
     valueAtValidator = snd $ head $ ContextsV2.scriptOutputsAt getValidatorHash info
 
-    -- | Get the datum on the output going back to the LockStarterNFTContract.
-    datumAtValidator :: Maybe CustomDatumType
-    datumAtValidator =
-      if length scriptOutputs == 0                        -- Prevent head of empty list error
-        then Nothing
-        else 
-          let datumAtValidator' = fst $ head scriptOutputs
-          in case datumAtValidator' of
-            PlutusV2.NoOutputDatum       -> Nothing       -- datumless
-            (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
-            (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
-              case PlutusTx.fromBuiltinData d of
-                Nothing     -> Nothing                    -- Bad Data
-                Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
-      where 
-        scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
-        scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
+    -- -- | Get the datum on the output going back to the LockStarterNFTContract.
+    -- datumAtValidator :: Maybe CustomDatumType
+    -- datumAtValidator =
+    --   if length scriptOutputs == 0                        -- Prevent head of empty list error
+    --     then Nothing
+    --     else 
+    --       let datumAtValidator' = fst $ head scriptOutputs
+    --       in case datumAtValidator' of
+    --         PlutusV2.NoOutputDatum       -> Nothing       -- datumless
+    --         (PlutusV2.OutputDatumHash _) -> Nothing       -- embedded datum
+    --         (PlutusV2.OutputDatum (PlutusV2.Datum d)) ->  -- inline datum
+    --           case PlutusTx.fromBuiltinData d of
+    --             Nothing     -> Nothing                    -- Bad Data
+    --             Just inline -> Just $ PlutusTx.unsafeFromBuiltinData @CustomDatumType inline
+    --   where 
+    --     scriptOutputs :: [(PlutusV2.OutputDatum, PlutusV2.Value)]
+    --     scriptOutputs = ContextsV2.scriptOutputsAt getValidatorHash info
         
-    -- | Check if the output datum has the correct form on the spending validation.
-    checkOutputDatum :: CustomDatumType -> Integer -> Bool
-    checkOutputDatum customRedeemer increment = 
-      case datumAtValidator of
-        Nothing      -> traceError "No Datum At Validator"
-        Just datum'' -> datum'' == d
-      where
-        d :: CustomDatumType
-        d = CustomDatumType
-              { cdtNewmPid = cdtNewmPid customRedeemer
-              , cdtNumber  = cdtNumber  customRedeemer + increment
-              , cdtPrefix  = cdtPrefix  customRedeemer
-              }
+    -- -- | Check if the output datum has the correct form on the spending validation.
+    -- checkOutputDatum :: CustomDatumType -> Integer -> Bool
+    -- checkOutputDatum customRedeemer increment = 
+    --   case datumAtValidator of
+    --     Nothing      -> traceError "No Datum At Validator"
+    --     Just datum'' -> datum'' == d
+    --   where
+    --     d :: CustomDatumType
+    --     d = CustomDatumType
+    --           { cdtNewmPid = cdtNewmPid customRedeemer
+    --           , cdtNumber  = cdtNumber  customRedeemer + increment
+    --           , cdtPrefix  = cdtPrefix  customRedeemer
+    --           }
 
     -- | Check if exactly 1 token is being minted with a specific token name from the datum passed as the redeemer.
     checkTokenMint :: CustomDatumType -> Bool
