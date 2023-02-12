@@ -69,14 +69,26 @@ python3 -c "import binascii;a=$(cat start_info.json | jq .multisig1);s=binascii.
 python3 -c "import binascii;a=$(cat start_info.json | jq .multisig2);s=binascii.unhexlify(a);print([x for x in s])" > multisig2.pkh
 python3 -c "import binascii;a=$(cat start_info.json | jq .multisig3);s=binascii.unhexlify(a);print([x for x in s])" > multisig3.pkh
 
-python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
-mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
+# update teh nft locking contract information
+jq \
+--argjson pid "$(cat start.pid)" \
+--argjson tkn "$(cat start.tkn)" \
+--argjson pkh "$(cat deleg.pkh)" \
+--argjson multisig1 "$(cat multisig1.pkh)" \
+--argjson multisig2 "$(cat multisig2.pkh)" \
+--argjson multisig3 "$(cat multisig3.pkh)" \
+'.pid = $pid | .tkn = $tkn | .pkh = $pkh | .multisig1 = $multisig1 | .multisig2 = $multisig2 | .multisig3 = $multisig3' \
+nft-locking-contract/nft_locking_info.json | sponge nft-locking-contract/nft_locking_info.json
+
+
+# python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
+# mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 python3 -c "from update_contracts import changeMultiPkh;changeMultiPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat multisig1.pkh), $(cat multisig2.pkh), $(cat multisig3.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
 # Adds the delegator to the nft locking and minting contracts
-python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat deleg.pkh))"
-mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
+# python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract.hs-new.hs', $(cat deleg.pkh))"
+# mv ./nft-locking-contract/src/LockStarterNFTContract.hs-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract.hs-new.hs', $(cat deleg.pkh))"
 mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
@@ -88,10 +100,10 @@ mv ./minting-contract/src/MintFractionalizedTokenContract.hs-new.hs ./minting-co
 
 
 # Adds in the locking token into the contract.
-python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.pid))"
-mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
-python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.tkn))"
-mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
+# python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.pid))"
+# mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
+# python3 -c "from update_contracts import changeStartLockTkn;changeStartLockTkn('./nft-locking-contract/src/LockStarterNFTContract.hs', './nft-locking-contract/src/LockStarterNFTContract-new.hs', $(cat start.tkn))"
+# mv ./nft-locking-contract/src/LockStarterNFTContract-new.hs ./nft-locking-contract/src/LockStarterNFTContract.hs
 
 python3 -c "from update_contracts import changeStartLockPid;changeStartLockPid('./nft-minting-contract/src/NFTMintingContract.hs', './nft-minting-contract/src/NFTMintingContract-new.hs', $(cat start.pid))"
 mv ./nft-minting-contract/src/NFTMintingContract-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
@@ -105,11 +117,13 @@ rm validator.bytes
 rm validator.hash
 cabal build -w ghc-8.10.7 -O2
 cabal run nft-locking-contract
- ${cli} transaction policyid --script-file nft-locking-contract.plutus > validator.hash
+${cli} transaction policyid --script-file nft-locking-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 # nft locking validator hash
 echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
 echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
+
+# exit
 
 
 cd ..
@@ -126,7 +140,7 @@ rm policy.id
 rm policy.bytes
 cabal build -w ghc-8.10.7 -O2
 cabal run nft-minting-contract
- ${cli} transaction policyid --script-file nft-minting-contract.plutus > policy.id
+${cli} transaction policyid --script-file nft-minting-contract.plutus > policy.id
 python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
 
 # nft minting validator hash
@@ -150,7 +164,7 @@ rm validator.bytes
 rm validator.hash
 cabal build -w ghc-8.10.7 -O2
 cabal run locking-contract
- ${cli} transaction policyid --script-file locking-contract.plutus > validator.hash
+${cli} transaction policyid --script-file locking-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
 echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
@@ -165,7 +179,7 @@ rm policy.id
 rm policy.bytes
 cabal build -w ghc-8.10.7
 cabal run minting-contract
- ${cli} transaction policyid --script-file minting-contract.plutus > policy.id
+${cli} transaction policyid --script-file minting-contract.plutus > policy.id
 python3 -c "import binascii;a='$(cat policy.id)';s=binascii.unhexlify(a);print([x for x in s])" > policy.bytes
 
 echo -e "\033[1;36m Policy Id: $(cat policy.id) \033[0m"

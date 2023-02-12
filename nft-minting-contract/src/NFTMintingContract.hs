@@ -67,7 +67,7 @@ lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
 -- | The validator hash of the LockStarterNFTContract.
 -------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [215, 231, 249, 237, 173, 192, 136, 181, 212, 151, 105, 87, 10, 18, 108, 160, 186, 150, 111, 250, 211, 245, 12, 15, 61, 218, 214, 139]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [29, 255, 27, 198, 146, 28, 252, 179, 246, 35, 187, 132, 173, 113, 140, 119, 233, 221, 170, 84, 213, 249, 5, 57, 12, 243, 217, 231]
 -------------------------------------------------------------------------------
 -- | The main public key hash for NEWM.
 -------------------------------------------------------------------------------

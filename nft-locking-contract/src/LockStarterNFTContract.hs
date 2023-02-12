@@ -66,40 +66,6 @@ data ScriptParameters = ScriptParameters
   }
 PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
--- | The starter token information.
--------------------------------------------------------------------------------
--- -- CurrencySymbol for the starter token.
--- lockPid :: PlutusV2.CurrencySymbol
--- lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
--- -- TokenName for the starter token.
--- lockTkn :: PlutusV2.TokenName
--- lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = UsefulFuncs.createBuiltinByteString [78, 69, 87, 77, 95] }
--- -- Value for the starter token.
--- lockValue :: PlutusV2.Value
--- lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
--- -------------------------------------------------------------------------------
--- -- | The main public key hash for NEWM.
--- -------------------------------------------------------------------------------
--- getPkh :: PlutusV2.PubKeyHash
--- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
--- -------------------------------------------------------------------------------
--- -- | Hardcoded multisig participants.
--- -------------------------------------------------------------------------------
--- -- wallet 1
--- multiPkh1 :: PlutusV2.PubKeyHash
--- multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [150, 147, 223, 102, 202, 166, 174, 17, 93, 95, 24, 126, 236, 103, 146, 36, 158, 100, 86, 102, 7, 76, 76, 77, 115, 247, 147, 132] }
--- -- wallet 2
--- multiPkh2 :: PlutusV2.PubKeyHash
--- multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [213, 247, 65, 6, 15, 203, 170, 116, 238, 77, 158, 69, 116, 252, 176, 72, 211, 197, 56, 78, 192, 206, 73, 158, 8, 137, 190, 83] }
--- -- wallet 3
--- multiPkh3 :: PlutusV2.PubKeyHash
--- multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [67, 158, 82, 1, 141, 168, 20, 19, 240, 146, 132, 217, 97, 51, 160, 89, 193, 4, 222, 70, 42, 11, 29, 37, 211, 114, 106, 151] }
--- -------------------------------------------------------------------------------
--- -- | All possible signers inside the multisig
--- -------------------------------------------------------------------------------
--- listOfPkh :: [PlutusV2.PubKeyHash]
--- listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
--------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
 nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
@@ -157,7 +123,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Minting Error"   checkMintingData)                                           -- Correct token mint
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Mint Error" $ Value.geq validatingValue starterValue)                    -- Must contain the starter token
+         && (traceIfFalse "Invalid Mint Error"  $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
     
     -- | Burn any tokenization NFT with the NEWM multisig.
     Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info multiPkhs 2)          -- NEWM multisig must sign tx
@@ -165,7 +131,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- Correct token burn
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Burn Error" $ Value.geq validatingValue starterValue)                    -- Must contain the starter token
+         && (traceIfFalse "Invalid Burn Error"  $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
    where
     -- Value for the starter token.
     starterValue :: PlutusV2.Value

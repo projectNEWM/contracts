@@ -57,7 +57,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilti
 -- | The validator hash of the LockStarterNFTContract.
 -------------------------------------------------------------------------------
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [76, 24, 188, 139, 213, 115, 254, 236, 96, 232, 219, 198, 128, 235, 200, 212, 202, 233, 148, 250, 88, 210, 213, 34, 38, 193, 142, 132] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [181, 36, 2, 204, 236, 159, 125, 199, 230, 60, 225, 177, 32, 30, 232, 118, 78, 155, 54, 100, 226, 88, 154, 212, 34, 141, 115, 144] }
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
