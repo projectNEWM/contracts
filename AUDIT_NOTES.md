@@ -78,7 +78,7 @@ This changed the datum and the validation logic of unlocking a tokenized NFT.
 
 # QSP-10 Redundant Check of Validator’s Output-Datum in NFTMintingContract and MintingContract
 
-Upon further inspection there are many redudancies between the lock and the mint contracts. Notably, signing and value checking. The datum comparision is the obvious redundancy. I will remove the redundancy from  the tokenization for now but will want to come back to this to see if more can be removed safely.
+Upon further inspection there are many redudancies between the lock and the mint contracts. Notably, signing and value checking. The datum comparision is the obvious redundancy. I will remove the redundancy from the tokenization for now but will want to come back to this to see if more can be removed safely.
 
 # QSP-11 Lack of Documentation
 
