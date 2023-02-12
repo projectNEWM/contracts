@@ -5,16 +5,16 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-import Prelude
-import Cardano.Api
-import Data.Aeson
-import GHC.Generics
-import System.Directory
-import qualified Plutus.V2.Ledger.Api  as PlutusV2
-import qualified Data.ByteString.Lazy  as BS
-import LockStarterNFTContract          ( lockingContractScript, ScriptParameters(..) )
-import Data.ByteString.Lazy            ( ByteString )
-import qualified UsefulFuncs           ( createBuiltinByteString )
+import           Prelude
+import           Cardano.Api
+import           Data.Aeson
+import           GHC.Generics
+import           System.Directory
+import qualified Plutus.V2.Ledger.Api   as PlutusV2
+import qualified Data.ByteString.Lazy   as BS
+import qualified UsefulFuncs            ( createBuiltinByteString )
+import           LockStarterNFTContract ( lockingContractScript, ScriptParameters(..) )
+import           Data.ByteString.Lazy   ( ByteString )
 -- import Data.ByteString.Lazy.Char8      ( unpack )
 
 -- Define a type for the JSON data

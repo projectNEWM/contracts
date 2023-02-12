@@ -71,4 +71,9 @@ executable nft-minting-contract
 
   build-depends:        cardano-api
                       , nft-minting-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
 
