@@ -48,6 +48,13 @@ import qualified UsefulFuncs ( createBuiltinByteString
   Copyright: 2023
   Version  : Rev 2
 -}
+data ScriptParameters = ScriptParameters
+  { validatorHash :: PlutusV2.ValidatorHash
+  -- ^ The LockStarterNFTContract validator hash.
+  , mainPkh    :: PlutusV2.PubKeyHash
+  -- ^ The main public key hash for NEWM.
+  }
+PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 -- | The main public key hash for NEWM.
 -------------------------------------------------------------------------------
