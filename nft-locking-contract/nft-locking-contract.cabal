@@ -71,3 +71,8 @@ executable nft-locking-contract
 
   build-depends:        cardano-api
                       , nft-locking-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
