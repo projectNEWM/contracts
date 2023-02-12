@@ -57,7 +57,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilti
 -- | The validator hash of the LockStarterNFTContract.
 -------------------------------------------------------------------------------
 tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [61, 115, 175, 75, 186, 42, 202, 107, 76, 2, 123, 190, 173, 45, 29, 99, 50, 56, 76, 32, 255, 197, 104, 230, 246, 241, 96, 189] }
+tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [76, 24, 188, 139, 213, 115, 254, 236, 96, 232, 219, 198, 128, 235, 200, 212, 202, 233, 148, 250, 88, 210, 213, 34, 38, 193, 142, 132] }
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -100,10 +100,10 @@ mkValidator datum redeemer context =
          && (traceIfFalse "Invalid Datum Error" $ isDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
 
     -- | Unlock Tokenized Token from contract by solidifying the fractional tokens.
-    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                      -- newm signs it
-           && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                       -- single script input
-           && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)                   -- single script output
-           && (traceIfFalse "NFT Burning Error"   checkMintedAmount)                                        -- burn the ft only
+    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)     -- newm signs it
+           && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)      -- single script input
+           && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)  -- single script output
+           && (traceIfFalse "NFT Burning Error"   checkMintedAmount)                       -- burn the ft only
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context

@@ -142,7 +142,7 @@ mkValidator datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Minting Error"   checkMintingData)                                           -- Correct token mint
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
+         && (traceIfFalse "Invalid Mint Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
     
     -- | Burn any tokenization NFT with the NEWM multisig.
     Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info listOfPkh 2)          -- NEWM multisig must sign tx
@@ -150,7 +150,7 @@ mkValidator datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- Correct token burn
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Token Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
+         && (traceIfFalse "Invalid Burn Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo  context
