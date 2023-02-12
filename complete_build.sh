@@ -166,7 +166,7 @@ mv current_datum-new.json current_datum.json
 variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[0].bytes=$variable' next_datum.json > next_datum-new.json
 mv next_datum-new.json next_datum.json
 
-exit
+# exit
 
 # update fractionalize contracts
 cd ../..

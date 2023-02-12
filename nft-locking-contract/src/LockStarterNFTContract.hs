@@ -160,14 +160,14 @@ mkValidator ScriptParameters {..} datum redeemer context =
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum)
                          && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum))
                          && (amt == (1 :: Integer))
-        _                -> traceError "Bad Minting Data"  -- error on bad mints
+        _                -> traceError "Bad Minting"  -- error on bad mints
     
     -- | Check if exactly 1 token is being burned. Token name here is irrelevant. 
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> traceError "Bad Burning Data"  -- error on bad burns
+        _              -> traceError "Bad Burning"  -- error on bad burns
     
     -- | Check if the continue output datum is of the correct form.
     isContDatumCorrect :: [PlutusV2.TxOut] -> PlutusV2.Value -> CustomRedeemerType -> Bool

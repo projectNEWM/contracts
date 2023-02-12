@@ -57,7 +57,7 @@ getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuilti
 -- | The validator hash of the LockTokenizedNFTContract.
 -------------------------------------------------------------------------------
 getValidatorHash :: PlutusV2.ValidatorHash
-getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [112, 254, 182, 23, 186, 182, 65, 199, 92, 8, 145, 191, 173, 199, 164, 98, 180, 103, 212, 161, 244, 202, 136, 193, 203, 84, 59, 90]
+getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString [107, 128, 38, 116, 244, 109, 192, 106, 94, 98, 253, 30, 92, 85, 15, 125, 206, 85, 156, 45, 192, 15, 50, 114, 13, 60, 14, 139]
 -------------------------------------------------------------------------------
 -- | Create the redeemer parameters data object.
 -------------------------------------------------------------------------------
