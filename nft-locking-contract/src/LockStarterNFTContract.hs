@@ -123,7 +123,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Minting Error"   checkMintingData)                                           -- Correct token mint
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Mint Error"  $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
+         && (traceIfFalse "Invalid Starter Tkn" $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
     
     -- | Burn any tokenization NFT with the NEWM multisig.
     Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info multiPkhs 2)          -- NEWM multisig must sign tx
@@ -131,7 +131,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- Correct token burn
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Burn Error"  $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
+         && (traceIfFalse "Invalid Starter Tkn" $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
    where
     -- Value for the starter token.
     starterValue :: PlutusV2.Value

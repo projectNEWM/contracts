@@ -94,17 +94,17 @@ mkValidator :: ScriptParameters -> CustomDatumType -> CustomRedeemerType -> Plut
 mkValidator ScriptParameters {..} datum redeemer context =
   case redeemer of
     -- | Lock Tokenized Token into contract and fractionalized
-    Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                        -- newm signs it
+    Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                       -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- single script output
-         && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                          -- mint the ft only
+         && (traceIfFalse "Minting Error"       checkMintedAmount)                                          -- mint the ft only
          && (traceIfFalse "Invalid Datum Error" $ isDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
 
     -- | Unlock Tokenized Token from contract by solidifying the fractional tokens.
-    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)     -- newm signs it
+    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)    -- newm signs it
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)      -- single script input
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)  -- single script output
-           && (traceIfFalse "NFT Burning Error"   checkMintedAmount)                       -- burn the ft only
+           && (traceIfFalse "Burning Error"        checkMintedAmount)                      -- burn the ft only
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context

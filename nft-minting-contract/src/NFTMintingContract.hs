@@ -95,10 +95,10 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Minting/Burning Error" $ (checkTokenMint redeemer) || (checkTokenBurn))                                         -- mint or burn
-                           && (traceIfFalse "Signing Tx Error"      $ ContextsV2.txSignedBy info mainPkh || UsefulFuncs.checkValidMultisig info multiPkhs 2)  -- newm or multisig
-                           && (traceIfFalse "Invalid Datum Error"   $ checkInputDatum redeemer validatorHash)                                             -- input datum equals redeemer
-                           && (traceIfFalse "Invalid Starter Token" $ Value.geq valueAtValidator starterValue)                                                  -- must contain the starter token
+mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Error"     $ (checkTokenMint redeemer) || (checkTokenBurn))                                          -- mint or burn
+                                                 && (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh || UsefulFuncs.checkValidMultisig info multiPkhs 2)  -- newm or multisig
+                                                 && (traceIfFalse "Invalid Datum Error" $ checkInputDatum redeemer validatorHash)                                                 -- input datum equals redeemer
+                                                 && (traceIfFalse "Invalid Starter Tkn" $ Value.geq valueAtValidator starterValue)                                                -- must contain the starter token
   where
     -- Value for the starter token.
     starterValue :: PlutusV2.Value
