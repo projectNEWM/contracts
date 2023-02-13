@@ -93,8 +93,8 @@ nft-locking-contract/nft_locking_info.json | sponge nft-locking-contract/nft_loc
 # mv ./nft-minting-contract/src/NFTMintingContract.hs-new.hs ./nft-minting-contract/src/NFTMintingContract.hs
 
 # Adds the delegator to the ft locking and minting contracts
-python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract.hs-new.hs', $(cat deleg.pkh))"
-mv ./locking-contract/src/LockTokenizedNFTContract.hs-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
+# python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract.hs-new.hs', $(cat deleg.pkh))"
+# mv ./locking-contract/src/LockTokenizedNFTContract.hs-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
 python3 -c "from update_contracts import changeDelegPkh;changeDelegPkh('./minting-contract/src/MintFractionalizedTokenContract.hs', './minting-contract/src/MintFractionalizedTokenContract.hs-new.hs', $(cat deleg.pkh))"
 mv ./minting-contract/src/MintFractionalizedTokenContract.hs-new.hs ./minting-contract/src/MintFractionalizedTokenContract.hs
 
@@ -170,8 +170,17 @@ mv next_datum-new.json next_datum.json
 
 # update fractionalize contracts
 cd ../..
-python3 -c "from update_contracts import changeTokenizedPid;changeTokenizedPid('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract-new.hs', $(cat ./nft-minting-contract/policy.bytes) )"
-mv ./locking-contract/src/LockTokenizedNFTContract-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
+# python3 -c "from update_contracts import changeTokenizedPid;changeTokenizedPid('./locking-contract/src/LockTokenizedNFTContract.hs', './locking-contract/src/LockTokenizedNFTContract-new.hs', $(cat ./nft-minting-contract/policy.bytes) )"
+# mv ./locking-contract/src/LockTokenizedNFTContract-new.hs ./locking-contract/src/LockTokenizedNFTContract.hs
+
+# update the nft minting contract information
+jq \
+--argjson pid "$(cat ./nft-minting-contract/policy.bytes)" \
+--argjson pkh "$(cat deleg.pkh)" \
+'.pid = $pid | .pkh = $pkh' \
+locking-contract/locking_info.json | sponge locking-contract/locking_info.json
+
+# exit
 
 cd locking-contract
 rm validator.bytes

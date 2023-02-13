@@ -13,6 +13,7 @@
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
@@ -27,6 +28,7 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module LockTokenizedNFTContract
   ( lockingContractScript
+  , ScriptParameters(..)
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -39,8 +41,7 @@ import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
 import qualified Plutonomy
 -- importing only required functions for better readability
-import qualified UsefulFuncs ( createBuiltinByteString
-                             , isNInputs
+import qualified UsefulFuncs ( isNInputs
                              , isNOutputs
                              )
 {- |
@@ -49,22 +50,22 @@ import qualified UsefulFuncs ( createBuiltinByteString
   Version  : Rev 2
 -}
 data ScriptParameters = ScriptParameters
-  { validatorHash :: PlutusV2.ValidatorHash
+  { tPid     :: PlutusV2.CurrencySymbol
   -- ^ The LockStarterNFTContract validator hash.
-  , mainPkh    :: PlutusV2.PubKeyHash
+  , mainPkh :: PlutusV2.PubKeyHash
   -- ^ The main public key hash for NEWM.
   }
 PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 -- | The main public key hash for NEWM.
 -------------------------------------------------------------------------------
-getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
--------------------------------------------------------------------------------
--- | The validator hash of the LockStarterNFTContract.
--------------------------------------------------------------------------------
-tokenizedPid :: PlutusV2.CurrencySymbol
-tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [14, 194, 89, 84, 253, 89, 214, 110, 228, 191, 126, 184, 19, 217, 171, 129, 50, 56, 150, 64, 57, 130, 31, 179, 168, 25, 192, 88] }
+-- getPkh :: PlutusV2.PubKeyHash
+-- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
+-- -------------------------------------------------------------------------------
+-- -- | The Currency symbol of the NFTMintingContract.
+-- -------------------------------------------------------------------------------
+-- tokenizedPid :: PlutusV2.CurrencySymbol
+-- tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [14, 194, 89, 84, 253, 89, 214, 110, 228, 191, 126, 184, 19, 217, 171, 129, 50, 56, 150, 64, 57, 130, 31, 179, 168, 25, 192, 88] }
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -96,18 +97,18 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
-mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
-mkValidator datum redeemer context =
+mkValidator :: ScriptParameters -> CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
+mkValidator ScriptParameters {..} datum redeemer context =
   case redeemer of
     -- | Lock Tokenized Token into contract and fractionalized
-    Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                        -- newm signs it
+    Lock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                        -- newm signs it
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- single script output
          && (traceIfFalse "NFT Minting Error"   checkMintedAmount)                                          -- mint the ft only
          && (traceIfFalse "Invalid Datum Error" $ isDatumConstant contOutputs validatingValue singularNFT)  -- value is cont and the datum is correct.
 
     -- | Unlock Tokenized Token from contract by solidifying the fractional tokens.
-    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)     -- newm signs it
+    Unlock -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)     -- newm signs it
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)      -- single script input
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)  -- single script output
            && (traceIfFalse "NFT Burning Error"   checkMintedAmount)                       -- burn the ft only
@@ -130,7 +131,7 @@ mkValidator datum redeemer context =
     
     -- | This is the NFT coming into the contract to be fractionalized.
     singularNFT :: PlutusV2.Value
-    singularNFT = Value.singleton tokenizedPid (cdtTokenizedTn datum) (1 :: Integer)
+    singularNFT = Value.singleton tPid (cdtTokenizedTn datum) (1 :: Integer)
 
     -- | Check if the currency symbol and token name are correct for fractionalize. Amount is handled in MintFractionalizedTokenContract.
     checkMintedAmount :: Bool
@@ -157,15 +158,17 @@ mkValidator datum redeemer context =
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
-wrappedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrappedValidator x y z = check (mkValidator (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
 
-validator :: PlutusV2.Validator
-validator = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
+wrappedValidator :: ScriptParameters -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrappedValidator s x y z = check (mkValidator s (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
+
+validator :: ScriptParameters -> PlutusV2.Validator
+validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
+  $$(PlutusTx.compile [|| wrappedValidator ||])
+  `PlutusTx.applyCode`
+  PlutusTx.liftCode sp
 -- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
 
-lockingContractScriptShortBs :: SBS.ShortByteString
-lockingContractScriptShortBs = SBS.toShort . LBS.toStrict $ serialise validator
 
-lockingContractScript :: PlutusScript PlutusScriptV2
-lockingContractScript = PlutusScriptSerialised lockingContractScriptShortBs
+lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
+lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
