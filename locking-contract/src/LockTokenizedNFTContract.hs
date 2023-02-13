@@ -49,6 +49,9 @@ import qualified UsefulFuncs ( isNInputs
   Copyright: 2023
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------------
+-- | Starter NFT Contract Parameterization
+-------------------------------------------------------------------------------
 data ScriptParameters = ScriptParameters
   { tPid     :: PlutusV2.CurrencySymbol
   -- ^ The LockStarterNFTContract validator hash.
@@ -56,16 +59,6 @@ data ScriptParameters = ScriptParameters
   -- ^ The main public key hash for NEWM.
   }
 PlutusTx.makeLift ''ScriptParameters
--------------------------------------------------------------------------------
--- | The main public key hash for NEWM.
--------------------------------------------------------------------------------
--- getPkh :: PlutusV2.PubKeyHash
--- getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
--- -------------------------------------------------------------------------------
--- -- | The Currency symbol of the NFTMintingContract.
--- -------------------------------------------------------------------------------
--- tokenizedPid :: PlutusV2.CurrencySymbol
--- tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [14, 194, 89, 84, 253, 89, 214, 110, 228, 191, 126, 184, 19, 217, 171, 129, 50, 56, 150, 64, 57, 130, 31, 179, 168, 25, 192, 88] }
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------

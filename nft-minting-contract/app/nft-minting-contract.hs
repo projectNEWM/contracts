@@ -66,11 +66,3 @@ main = do
           Left err -> print $ displayError err
           Right () -> return ()
     Nothing -> putStrLn "Failed to parse JSON data"
-
-
--- main :: IO ()
--- main = do
---   result <- writeFileTextEnvelope "nft-minting-contract.plutus" Nothing mintingPlutusScript
---   case result of
---     Left err -> print $ displayError err
---     Right () -> return ()

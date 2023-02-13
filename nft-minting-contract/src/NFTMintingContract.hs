@@ -52,6 +52,9 @@ import qualified UsefulFuncs ( integerAsByteString
   Copyright: 2023
   Version  : Rev 2
 -}
+-------------------------------------------------------------------------------
+-- | Starter NFT Contract Parameterization
+-------------------------------------------------------------------------------
 data ScriptParameters = ScriptParameters
   { starterPid :: PlutusV2.CurrencySymbol
   -- ^ Policy ID of the starter token
@@ -182,16 +185,6 @@ policy sp = PlutusV2.mkMintingPolicyScript $
   $$(PlutusTx.compile [|| wrappedPolicy ||])
   `PlutusTx.applyCode`
   PlutusTx.liftCode sp
-
--- plutusScript :: ScriptParameters -> Scripts.Script
--- plutusScript = PlutusV2.unMintingPolicyScript policy
-
--- validator :: ScriptParameters -> PlutusV2.Validator
--- validator = PlutusV2.Validator plutusScript
-
--- scriptAsCbor :: ScriptParameters -> LBS.ByteString
--- scriptAsCbor = serialise $ Plutonomy.optimizeUPLC $ validator
--- scriptAsCbor = serialise $ Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ validator
 
 mintingPlutusScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)
