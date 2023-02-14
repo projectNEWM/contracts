@@ -29,6 +29,9 @@
 module LockStarterNFTContract
   ( lockingContractScript
   , ScriptParameters (..)
+  , NFTLockSchema
+  , gameInstance
+  , contract
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -40,6 +43,16 @@ import qualified Plutus.V1.Ledger.Value    as Value
 import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
 import qualified Plutonomy
+-- testing stuff
+import Ledger.Typed.Scripts qualified as Scripts
+import Plutus.Contract
+import Ledger.Tx.Constraints qualified as Constraints
+import Control.Monad (void)
+import Plutus.Script.Utils.V2.Typed.Scripts qualified as V2
+import Plutus.V2.Ledger.Contexts qualified as V2
+import Prelude qualified as Haskell
+import Data.Aeson (FromJSON, ToJSON)
+import GHC.Generics (Generic)
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( integerAsByteString
                              , isNInputs
@@ -63,7 +76,8 @@ data ScriptParameters = ScriptParameters
   -- ^ The main public key hash for NEWM.
   , multiPkhs  :: [PlutusV2.PubKeyHash]
   -- ^ The multsig public key hashes for NEWM.
-  }
+  } deriving (Haskell.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
 PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
@@ -80,7 +94,8 @@ data CustomDatumType = CustomDatumType
   -- ^ The starting number for the catalog.
   , cdtPrefix  :: PlutusV2.BuiltinByteString
   -- ^ The prefix for a catalog.
-  }
+  } deriving stock (Haskell.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
 PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
 -- | Short circuit the data comparision with if-then-else statments.
@@ -187,9 +202,8 @@ mkValidator ScriptParameters {..} datum redeemer context =
                     Burn -> datum == inline
         else isContDatumCorrect xs val redeemer'
 -------------------------------------------------------------------------------
--- | Now we need to compile the Validator.
+-- | Now we need to compile the validator.
 -------------------------------------------------------------------------------
-
 wrappedValidator :: ScriptParameters -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedValidator s x y z = check (mkValidator s (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
 
@@ -200,6 +214,38 @@ validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.
   PlutusTx.liftCode sp
 -- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
 
-
 lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
+
+
+-------------------------------------------------------------------------------
+-- | Now we can test the validator.
+-------------------------------------------------------------------------------
+data Game
+instance Scripts.ValidatorTypes Game where
+    type instance RedeemerType  Game = CustomRedeemerType
+    type instance DatumType     Game = CustomDatumType
+
+gameInstance :: ScriptParameters -> V2.TypedValidator Game
+gameInstance = V2.mkTypedValidatorParam @Game
+    $$(PlutusTx.compile [|| mkValidator ||])
+    $$(PlutusTx.compile [|| wrap ||]) where
+        wrap = Scripts.mkUntypedValidator @PlutusV2.ScriptContext @CustomDatumType @CustomRedeemerType
+
+type NFTLockSchema =
+  Endpoint "lock" (ScriptParameters, CustomDatumType, PlutusV2.Value)
+  .\/ Endpoint "mint" (ScriptParameters, CustomRedeemerType)
+  .\/ Endpoint "burn" (ScriptParameters, CustomRedeemerType)
+
+contract :: AsContractError e => Contract () NFTLockSchema e ()
+contract = selectList [lock] >> contract
+
+-- | Lock some funds in a nft locking contract.
+lock :: AsContractError e => Promise () NFTLockSchema e ()
+lock = endpoint @"lock" $ \(sp, cdt, vl) -> do
+  logInfo @Haskell.String $ "Pay " <> Haskell.show vl <> " to the script"
+  let lookups = Constraints.typedValidatorLookups (gameInstance sp)
+      tx      = Constraints.mustPayToTheScriptWithInlineDatum cdt vl
+  mkTxConstraints lookups tx >>= adjustUnbalancedTx >>= void . submitUnbalancedTx
+
+-- mint :: AsContractError e => Promise () NFTLockSchema e ()
