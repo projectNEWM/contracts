@@ -61,6 +61,7 @@ library
                       , plutus-tx-constraints
                       , plutus-ledger-constraints
                       , aeson
+                      , cardano-node-emulator
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
@@ -98,6 +99,8 @@ test-suite nft-locking-test
     , plutus-tx
     , plutus-ledger
     , plutus-ledger-api
+    , plutus-contract
+    , plutus-script-utils
     , nft-locking-contract
     , nft-minting-contract
     , tasty             ^>=1.4.1

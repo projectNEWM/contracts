@@ -28,9 +28,11 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module LockStarterNFTContract
   ( lockingContractScript
+  , CustomDatumType(..)
+  , CustomRedeemerType(..)
   , ScriptParameters (..)
   , NFTLockSchema
-  , gameInstance
+  , testInstance
   , contract
   ) where
 import qualified PlutusTx
@@ -53,6 +55,11 @@ import Plutus.V2.Ledger.Contexts qualified as V2
 import Prelude qualified as Haskell
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics (Generic)
+import Ledger.Address
+import Cardano.Node.Emulator.Params (pNetworkId)
+import Ledger.Tx qualified as Tx
+import Ledger.Tx.CardanoAPI qualified as Tx
+
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( integerAsByteString
                              , isNInputs
@@ -122,6 +129,8 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Mint |
                           Burn
+    deriving stock (Haskell.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
                                                 ]
@@ -221,31 +230,45 @@ lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . se
 -------------------------------------------------------------------------------
 -- | Now we can test the validator.
 -------------------------------------------------------------------------------
-data Game
-instance Scripts.ValidatorTypes Game where
-    type instance RedeemerType  Game = CustomRedeemerType
-    type instance DatumType     Game = CustomDatumType
+instance Scripts.ValidatorTypes ScriptParameters where
+    type instance RedeemerType  ScriptParameters = CustomRedeemerType
+    type instance DatumType     ScriptParameters = CustomDatumType
 
-gameInstance :: ScriptParameters -> V2.TypedValidator Game
-gameInstance = V2.mkTypedValidatorParam @Game
+testInstance :: ScriptParameters -> V2.TypedValidator ScriptParameters
+testInstance = V2.mkTypedValidatorParam @ScriptParameters
     $$(PlutusTx.compile [|| mkValidator ||])
     $$(PlutusTx.compile [|| wrap ||]) where
         wrap = Scripts.mkUntypedValidator @PlutusV2.ScriptContext @CustomDatumType @CustomRedeemerType
 
 type NFTLockSchema =
   Endpoint "lock" (ScriptParameters, CustomDatumType, PlutusV2.Value)
-  .\/ Endpoint "mint" (ScriptParameters, CustomRedeemerType)
+  .\/ Endpoint "mint" (ScriptParameters, CustomDatumType, PlutusV2.Value)
   .\/ Endpoint "burn" (ScriptParameters, CustomRedeemerType)
 
 contract :: AsContractError e => Contract () NFTLockSchema e ()
-contract = selectList [lock] >> contract
+contract = selectList [lock, mint] >> contract
 
 -- | Lock some funds in a nft locking contract.
 lock :: AsContractError e => Promise () NFTLockSchema e ()
 lock = endpoint @"lock" $ \(sp, cdt, vl) -> do
-  logInfo @Haskell.String $ "Pay " <> Haskell.show vl <> " to the script"
-  let lookups = Constraints.typedValidatorLookups (gameInstance sp)
-      tx      = Constraints.mustPayToTheScriptWithInlineDatum cdt vl
+  let inst    = testInstance sp
+  let tx      = Constraints.mustPayToTheScriptWithInlineDatum cdt vl
+      lookups = Constraints.typedValidatorLookups inst
   mkTxConstraints lookups tx >>= adjustUnbalancedTx >>= void . submitUnbalancedTx
 
--- mint :: AsContractError e => Promise () NFTLockSchema e ()
+-- Promise w s e a
+mint :: AsContractError e => Promise () NFTLockSchema e ()
+mint = endpoint @"mint" $ \(sp, cdt, vl) -> do
+  networkId <- pNetworkId <$> getParams
+  let inst    = testInstance sp
+      mintTkn = PlutusV2.TokenName { PlutusV2.unTokenName = (nftName (cdtPrefix cdt) (cdtNumber cdt))}
+      signer  = PaymentPubKeyHash { unPaymentPubKeyHash = mainPkh sp }
+  utx <- utxosAt (Scripts.validatorCardanoAddress networkId inst)
+  let tx      =  Constraints.collectFromTheScript utx Mint
+              <> Constraints.mustBeSignedBy signer
+              <> Constraints.mustPayToTheScriptWithInlineDatum cdt vl
+              <> Constraints.mustMintValue (PlutusV2.singleton (cdtNewmPid cdt) mintTkn 1)
+      lookups =  Constraints.typedValidatorLookups inst 
+  mkTxConstraints lookups tx >>= adjustUnbalancedTx >>= void . submitUnbalancedTx
+  
+  

@@ -1,0 +1,5 @@
+# QSP-12 Importance of Secure Key Management in the Project
+
+NEWM is a Real-Fi project. As such, some aspects of the system require trust. One of those is ownership and control of the multisig genesis keys as well as the NEWM master key. The launch of the NEWM protocol was created during a recorded online signing ceremony between Andrew Westberg (NEWM CTO), Michael Fazio (Technical Advisor from Australia), and Pritesh Gosai (Kaizen Crypto). All of the multisig keys are held on Ledger hardware devices. Knowledge about seed phrases and pins for these devices is only known to each individual member of the multisig. The NEWM Master key is held in a secure vault and only available to the minting code running inside a secure environment.
+
+In the unlikely event that any of these keys are compromised, NEWM can stop royalty snapshots and royalty collection on any tokens minted after a compromise event. A new multisig and master key can be generated to resume operation.
