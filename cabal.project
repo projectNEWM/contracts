@@ -248,6 +248,12 @@ source-repository-package
   tag: b86b01fd0baf5e9d79b18272f7236a991991b225
   subdir: useful-funcs
 
+-- library for unit tests of Plutus scripts                                                                                       
+--source-repository-package
+--  type: git                                                                                                                         
+--  location: https://github.com/mlabs-haskell/plutus-simple-model
+--  tag: a390bbf51bd9a0ad8a27517d1e02be5fd6d3394e
+
 source-repository-package
   type: git
   location: https://github.com/well-typed/plutonomy.git
@@ -255,3 +261,5 @@ source-repository-package
 
 package plutonomy
   flags: +plutus-f680ac697
+
+

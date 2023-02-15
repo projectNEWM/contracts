@@ -34,6 +34,7 @@ module LockStarterNFTContract
   , NFTLockSchema
   , testInstance
   , contract
+  , nftName
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -48,8 +49,8 @@ import qualified Plutonomy
 -- testing stuff
 import Ledger.Typed.Scripts qualified as Scripts
 import Plutus.Contract
-import Ledger.Tx.Constraints qualified as Constraints
-import Control.Monad (void)
+import Ledger.Constraints qualified as Constraints
+import Control.Monad (void, forever)
 import Plutus.Script.Utils.V2.Typed.Scripts qualified as V2
 import Plutus.V2.Ledger.Contexts qualified as V2
 import Prelude qualified as Haskell
@@ -243,32 +244,49 @@ testInstance = V2.mkTypedValidatorParam @ScriptParameters
 type NFTLockSchema =
   Endpoint "lock" (ScriptParameters, CustomDatumType, PlutusV2.Value)
   .\/ Endpoint "mint" (ScriptParameters, CustomDatumType, PlutusV2.Value)
-  .\/ Endpoint "burn" (ScriptParameters, CustomRedeemerType)
+  .\/ Endpoint "burn" (ScriptParameters, CustomDatumType, PlutusV2.Value, PlutusV2.Value)
 
 contract :: AsContractError e => Contract () NFTLockSchema e ()
-contract = selectList [lock, mint] >> contract
+contract = forever $
+  selectList 
+    [ endpoint @"lock" $ lock
+    , endpoint @"mint" $ mint
+    , endpoint @"burn" $ burn
+    ]
 
--- | Lock some funds in a nft locking contract.
-lock :: AsContractError e => Promise () NFTLockSchema e ()
-lock = endpoint @"lock" $ \(sp, cdt, vl) -> do
-  let inst    = testInstance sp
+-- | Lock the starter token into the nft locking contract.
+lock :: AsContractError e => ( ScriptParameters, CustomDatumType, PlutusV2.Value )-> Contract w s e ()
+lock (sp, cdt, vl) = do
   let tx      = Constraints.mustPayToTheScriptWithInlineDatum cdt vl
-      lookups = Constraints.typedValidatorLookups inst
-  mkTxConstraints lookups tx >>= adjustUnbalancedTx >>= void . submitUnbalancedTx
+  void (submitTxConstraints (testInstance sp) tx)
 
--- Promise w s e a
-mint :: AsContractError e => Promise () NFTLockSchema e ()
-mint = endpoint @"mint" $ \(sp, cdt, vl) -> do
+-- | Mint a tokenized token using the nft locking contract.
+mint :: forall w s e. AsContractError e => (ScriptParameters, CustomDatumType, PlutusV2.Value) -> Contract w s e ()
+mint (sp, cdt, vl) = do
   networkId <- pNetworkId <$> getParams
   let inst    = testInstance sp
       mintTkn = PlutusV2.TokenName { PlutusV2.unTokenName = (nftName (cdtPrefix cdt) (cdtNumber cdt))}
+      mintVal = PlutusV2.singleton (cdtNewmPid cdt) mintTkn 1
       signer  = PaymentPubKeyHash { unPaymentPubKeyHash = mainPkh sp }
   utx <- utxosAt (Scripts.validatorCardanoAddress networkId inst)
   let tx      =  Constraints.collectFromTheScript utx Mint
               <> Constraints.mustBeSignedBy signer
               <> Constraints.mustPayToTheScriptWithInlineDatum cdt vl
-              <> Constraints.mustMintValue (PlutusV2.singleton (cdtNewmPid cdt) mintTkn 1)
-      lookups =  Constraints.typedValidatorLookups inst 
-  mkTxConstraints lookups tx >>= adjustUnbalancedTx >>= void . submitUnbalancedTx
+              <> Constraints.mustMintValueWithRedeemer (PlutusV2.Redeemer $ PlutusV2.toBuiltinData Mint) mintVal
+              <> Constraints.mustPayToPubKey signer mintVal
+  void (submitTxConstraintsSpending (testInstance sp) utx tx)
+
+-- | Burn a tokenized token using the nft locking contract.
+burn :: forall w s e. AsContractError e => (ScriptParameters, CustomDatumType, PlutusV2.Value, PlutusV2.Value) -> Contract w s e ()
+burn (sp, cdt, bVl, sVl) = do
+  networkId <- pNetworkId <$> getParams
+  let inst    = testInstance sp
+      signers = map  (\x -> PaymentPubKeyHash { unPaymentPubKeyHash = x }) (multiPkhs sp)
+  utx <- utxosAt (Scripts.validatorCardanoAddress networkId inst)
+  let tx      =  Constraints.collectFromTheScript utx Burn
+              <> foldMap Constraints.mustBeSignedBy signers
+              <> Constraints.mustPayToTheScriptWithInlineDatum cdt sVl
+              <> Constraints.mustMintValueWithRedeemer (PlutusV2.Redeemer $ PlutusV2.toBuiltinData Burn) bVl
+  void (submitTxConstraintsSpending (testInstance sp) utx tx)
   
   

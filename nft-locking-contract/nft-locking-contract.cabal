@@ -20,6 +20,7 @@ common project-config
 
   default-extensions:   NoImplicitPrelude
                         OverloadedStrings
+                        ImportQualifiedPost
 
   ghc-options:          -Wall
                         -Wcompat
@@ -82,6 +83,7 @@ executable nft-locking-contract
                       , plutus-ledger-api
                       , useful-funcs
                       , directory
+                      , plutus-ledger
 
 test-suite nft-locking-test
   import:               base, project-config

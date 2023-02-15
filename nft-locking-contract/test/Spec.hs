@@ -7,5 +7,5 @@ main =
   defaultMain $
     testGroup
       "contracts"
-      [ testGroup "NFT Lock"  NFTLocking.tests
+      [ testGroup "NFT Lock" NFTLocking.tests
       ]
