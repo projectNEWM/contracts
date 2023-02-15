@@ -4,11 +4,11 @@ set -e
 source .node.env
 
 #
-# script_path="../nft-locking-contract/nft-locking-contract.plutus"
-# SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${script_path} ${network})
-# #
-# ft_script_path="../locking-contract/locking-contract.plutus"
-# FT_SCRIPT_ADDRESS=$(${cli} address build --payment-script-file ${ft_script_path} ${network})
+script_path="contracts/nft-locking-contract.plutus"
+script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
+#
+ft_script_path="contracts/locking-contract.plutus"
+ft_script_address=$(${cli} address build --payment-script-file ${ft_script_path} ${network})
 
 
 #
@@ -18,19 +18,19 @@ reference_address=$(cat ${ROOT}/addresses/reference.addr)
 collat_address=$(cat ${ROOT}/addresses/collat.addr)
 
 
-#
-# echo
-# echo -e "\033[1;35m NFT Script Address:" 
-# echo -e "\n${SCRIPT_ADDRESS}\n";
-# ${cli} query utxo --address ${SCRIPT_ADDRESS} ${network}
-# echo -e "\033[0m"
 
-# #
-# echo
-# echo -e "\033[1;35m FT Script Address:" 
-# echo -e "\n${FT_SCRIPT_ADDRESS}\n";
-# ${cli} query utxo --address ${FT_SCRIPT_ADDRESS} ${network}
-# echo -e "\033[0m"
+echo
+echo -e "\033[1;35m NFT Script Address:" 
+echo -e "\n${script_address}\n";
+${cli} query utxo --address ${script_address} ${network}
+echo -e "\033[0m"
+
+#
+echo
+echo -e "\033[1;35m FT Script Address:" 
+echo -e "\n${ft_script_address}\n";
+${cli} query utxo --address ${ft_script_address} ${network}
+echo -e "\033[0m"
 
 #
 echo

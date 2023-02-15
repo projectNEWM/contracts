@@ -94,7 +94,8 @@ echo -e "\033[1;36m NFT LOCKING CONTRACT \033[0m"
 echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
 echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
 
-cd ..
+
+cd .. # back into parent folder
 
 # update the nft minting contract information
 jq \
@@ -131,7 +132,7 @@ variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variab
 mv next_datum-new.json next_datum.json
 
 # update fractionalize contracts
-cd ../..
+cd ../.. # back in parent folder
 
 # update the nft minting contract information
 jq \
@@ -152,7 +153,7 @@ echo -e "\033[1;36m Validator Hash: $(cat validator.hash) \033[0m"
 echo -e "\033[1;36m Validator Bytes: $(cat validator.bytes) \033[0m"
 
 # adds in the locking hash into the script
-cd ..
+cd .. # back into parent
 
 # update the nft minting contract information
 jq \
@@ -179,7 +180,17 @@ mv datum-new.json datum.json
 variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[1].bytes=$variable' datum.json > datum-new.json
 mv datum-new.json datum.json
 
-cd ../..
+cd ../.. # back into parent
+
+# Prep the test suite with contracts
+
+# tokenizations
+cp nft-locking-contract/nft-locking-contract.plutus test-suite/contracts
+cp nft-minting-contract/nft-minting-contract.plutus test-suite/contracts
+# fractionalization
+cp locking-contract/locking-contract.plutus test-suite/contracts
+cp minting-contract/minting-contract.plutus test-suite/contracts
+
 
 find . -name '*.hash' -type f -exec sha256sum {} \; > hash.hashes
 echo -e "\033[1;36m \nvalidator sha256sum \033[0m"

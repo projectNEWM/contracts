@@ -85,29 +85,29 @@ executable nft-locking-contract
                       , directory
                       , plutus-ledger
 
-test-suite nft-locking-test
-  import:               base, project-config
-                      , maybe-Win32
+-- test-suite nft-locking-test
+--   import:               base, project-config
+--                       , maybe-Win32
   
-  type:                 exitcode-stdio-1.0
+--   type:                 exitcode-stdio-1.0
   
-  main-is:              Spec.hs
+--   main-is:              Spec.hs
   
-  other-modules:        Spec.LockStarterNFTContract
+--   other-modules:        Spec.LockStarterNFTContract
 
 
-  build-depends:
-    , useful-funcs
-    , plutus-tx
-    , plutus-ledger
-    , plutus-ledger-api
-    , plutus-contract
-    , plutus-script-utils
-    , nft-locking-contract
-    , nft-minting-contract
-    , tasty             ^>=1.4.1
-    , tasty-quickcheck  ^>=0.10.1.2
-    , QuickCheck        ^>=2.14.2
-    , template-haskell  ^>=2.16.0.0
+--   build-depends:
+--     , useful-funcs
+--     , plutus-tx
+--     , plutus-ledger
+--     , plutus-ledger-api
+--     , plutus-contract
+--     , plutus-script-utils
+--     , nft-locking-contract
+--     , nft-minting-contract
+--     , tasty             ^>=1.4.1
+--     , tasty-quickcheck  ^>=0.10.1.2
+--     , QuickCheck        ^>=2.14.2
+--     , template-haskell  ^>=2.16.0.0
 
-  hs-source-dirs: test
+--   hs-source-dirs: test

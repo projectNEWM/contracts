@@ -99,7 +99,7 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ${ROOT}/tmp/spo_utxo.json)
 spo_tx_in=${TXIN::-8}
-echo $spo_tx_in
+echo "SPO TxIn: $spo_tx_in"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -138,11 +138,17 @@ ${cli} transaction submit \
     ${network} \
     --tx-file ${ROOT}/tmp/tx-distribution.signed
 
-cardano-cli query utxo --address ${spo_addr} --testnet-magic 42
-cardano-cli query utxo --address $(cat ${ROOT}/addresses/newm.addr) --testnet-magic 42
-
-
 echo -e "\033[1;35m Prepping Contracts \033[0m" 
 
 spo_addr=$(cat ${ROOT}/addresses/payment2.addr)
-cardano-cli query utxo --address ${spo_addr} --testnet-magic 42
+cardano-cli query utxo --address ${spo_addr} --testnet-magic 42 --out-file ${ROOT}/tmp/spo_utxo.json
+
+TXNS=$(jq length ${ROOT}/tmp/spo_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${spo_addr}! \033[0m \n";
+   exit;
+fi
+alltxin=""
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ${ROOT}/tmp/spo_utxo.json)
+spo_tx_in=${TXIN::-8}
+echo "SPO TxIn: $spo_tx_in"
