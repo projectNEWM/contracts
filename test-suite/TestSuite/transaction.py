@@ -5,6 +5,53 @@ All cardano-cli transaction functions required for testing.
 import subprocess
 import json
 
+def calculate_min_lovelace(cli, tmp, datum, output):
+    """
+    TODO
+    output="${script_address} + 5000000 + ${asset}"
+    """
+
+    func = [
+        cli, 
+        'transaction', 
+        'calculate-min-required-utxo', 
+        '--babbage-era',
+        '--protocol-params-file',
+        tmp+"protocol-parameters.json",
+        '--tx-out="' + output+ '"'
+    ]
+    if datum:
+        func += [
+            '--tx-out-inline-datum-file',
+            datum
+        ]
+
+    calculate_fee = subprocess.Popen(func, stdout=subprocess.PIPE)
+
+    # Set up the second subprocess and connect it to the pipe from the first subprocess
+    tr_cmd = ['tr', '-dc', '0-9']
+    tr_proc = subprocess.Popen(tr_cmd, stdin=calculate_fee.stdout, stdout=subprocess.PIPE)
+
+    # Read the output of the second subprocess
+    output = tr_proc.communicate()[0]
+
+    # Print the output
+    print(output)
+
+    return output
+
+
+def create_tx_outputs(list_of_addrs, list_of_values, list_of_datums):
+    """
+    TODO
+    script_address_out="${script_address} + ${starter_nft_min_utxo} + ${START_ASSET}"
+    ft_script_address_out="${ft_script_address} + ${fractional_nft_min_utxo}"
+    --tx-out="${buyer_address_out}" \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/next_datum.json \
+    """
+    pass
+
 def spending_script(ref_utxo, redeemer):
     """
     Create the Plutus V2 spending reference script with inline datum and a redeemer.
