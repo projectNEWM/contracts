@@ -15,7 +15,7 @@ def protocol_parameters(cli, network, tmp):
         'query',
         'protocol-parameters'
     ]
-    func +=  network.split(" ")
+    func += network.split(" ")
     func += [
         '--out-file',
         tmp+'protocol-parameters.json'
@@ -32,7 +32,7 @@ def utxo(cli, network, address, tmp):
         'query',
         'utxo'
     ]
-    func +=  network.split(" ")
+    func += network.split(" ")
     func += [
         '--address',
         address,
