@@ -40,7 +40,8 @@ cardano-cli address build \
 
 cp test_keys/* ${ROOT}/addresses/
 
-echo -e "\033[1;35m Funding Test Wallets \033[0m" 
+echo -e "\033[1;35m Funding Test Wallets \033[0m"
+echo
 
 cardano-cli query protocol-parameters \
 --testnet-magic 42 \
@@ -96,13 +97,21 @@ ${cli} transaction submit \
     ${network} \
     --tx-file ${ROOT}/tmp/tx-distribution.signed
 
-echo -e "\033[1;35m Prepping Contracts \033[0m" 
+echo
+echo -e "\033[1;35m Prepping Contracts \033[0m"
+echo
 
 nft_lock_script_path="contracts/nft-locking-contract.plutus"
 nft_mint_script_path="contracts/nft-minting-contract.plutus"
 
 lock_script_path="contracts/locking-contract.plutus"
 mint_script_path="contracts/minting-contract.plutus"
+
+# save the script addresses into the address folder
+echo -n $(${cli} address build --payment-script-file ${nft_lock_script_path} ${network}) > ${ROOT}/addresses/nftLock.addr
+echo -n $(${cli} address build --payment-script-file ${nft_mint_script_path} ${network}) > ${ROOT}/addresses/nftMint.addr
+echo -n $(${cli} address build --payment-script-file ${lock_script_path} ${network}) > ${ROOT}/addresses/ftLock.addr
+echo -n $(${cli} address build --payment-script-file ${mint_script_path} ${network}) > ${ROOT}/addresses/ftMint.addr
 
 spo_addr=$(cat ${ROOT}/addresses/payment2.addr)
 reference_address=$(cat ${ROOT}/addresses/reference.addr)
@@ -117,8 +126,6 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ${ROOT}/tmp/spo_utxo.json)
 spo_tx_in=${TXIN::-8}
 echo "SPO TxIn: $spo_tx_in"
-
-echo
 
 echo -e "\033[0;36m Calculating Reference ADA \033[0m"
 lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -264,7 +271,9 @@ ${cli} transaction submit \
 cp ${ROOT}/tmp/tx-1.signed ${ROOT}/tmp/tx-tokenized-utxo.signed
 cp ${ROOT}/tmp/tx-2.signed ${ROOT}/tmp/tx-fractions-utxo.signed
 
+echo
 echo -e "\033[1;35m Creating Catalog Token \033[0m"
+echo
 
 spo_addr=$(cat ${ROOT}/addresses/payment3.addr)
 script_address=$(${cli} address build --payment-script-file ${nft_lock_script_path} ${network})
