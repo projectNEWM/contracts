@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from TestSuite.predicate import check
 from TestSuite.Tests.test_tree import test_tree, example_tree, example_tree_with_failures
 
+from TestSuite.parsing import address_dict
 ###############################################################################
 # This sections needs to be inside a test function file.
 ###############################################################################
@@ -24,22 +25,11 @@ os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
 # tmp dir
 tmp = root+"/tmp/"
+addr = root+"/addresses/"
 
 # might need this later to figure out pathing for stuff
 # relative_path = os.path.relpath(path1, path2)
 
-# Addresses
-newm_addr      = open(root+'/addresses/newm.addr').read()
-artist_addr    = open(root+'/addresses/artist.addr').read()
-collat_addr    = open(root+'/addresses/collat.addr').read()
-reference_addr = open(root+'/addresses/reference.addr').read()
-multisig1_addr = open(root+'/addresses/multisig1.addr').read()
-multisig2_addr = open(root+'/addresses/multisig2.addr').read()
-multisig3_addr = open(root+'/addresses/multisig3.addr').read()
-nftLock_addr   = open(root+'/addresses/nftLock.addr').read()
-nftMint_addr   = open(root+'/addresses/nftMint.addr').read()
-ftLock_addr    = open(root+'/addresses/ftLock.addr').read()
-ftMint_addr    = open(root+'/addresses/ftMint.addr').read()
 ###############################################################################
 
 print("\033[96m\nThe Cardano Python Test Suite For NEWM\n\033[0m")

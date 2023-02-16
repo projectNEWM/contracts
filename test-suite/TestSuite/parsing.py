@@ -4,6 +4,21 @@ All parsing functions required for testing.
 """
 import subprocess
 import json
+import glob
+
+def address_dict(tmp):
+    """
+    Create a dictionary of all the addresses inside the tmp directory.
+    """
+    files = glob.glob(tmp+'*.addr')
+    result = {}
+
+    for addr_file in files:
+        with open(addr_file, 'r') as f:
+            content = f.readline().strip()
+            filename = addr_file.split('/')[-1].split('.')[0]  # extract the filename from the full path
+            result[filename] = content
+    return result
 
 def add_dicts(dict1, dict2):
     """
