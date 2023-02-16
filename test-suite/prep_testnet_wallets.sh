@@ -291,3 +291,56 @@ token_name=$(cat ../start_info.json | jq -r .starterTkn)
 mint_asset="1 ${policy_id}.${token_name}"
 
 echo "Starter Token: ${mint_asset}"
+
+script_address_out="${script_address} + 5000000 + ${mint_asset}"
+
+starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file ${ROOT}/tmp/protocol-parameters.json\
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/worst_case_tokenized_datum.json | tr -dc '0-9')
+    
+echo "Starter NFT Min ADA: "${starter_nft_min_utxo}
+
+script_address_out="${script_address} + $starter_nft_min_utxo + ${mint_asset}"
+
+# exit
+echo -e "\033[0;36m Building Tx \033[0m"
+FEE=$(${cli} transaction build \
+    --babbage-era \
+    --protocol-params-file ${ROOT}/tmp/protocol-parameters.json \
+    --out-file ${ROOT}/tmp/tx.draft \
+    --change-address ${spo_addr} \
+    --tx-in ${spo_tx_in} \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/current_tokenized_datum.json  \
+    --mint-script-file policy/policy.script \
+    --mint="${mint_asset}" \
+    --required-signer-hash ${multisig1_pkh} \
+    --required-signer-hash ${multisig2_pkh} \
+    --required-signer-hash ${multisig3_pkh} \
+    ${network})
+
+IFS=':' read -ra VALUE <<< "${FEE}"
+IFS=' ' read -ra FEE <<< "${VALUE[1]}"
+FEE=${FEE[1]}
+echo -e "\033[1;32m Fee: \033[0m" $FEE
+#
+#exit
+#
+echo -e "\033[0;36m Signing \033[0m"
+${cli} transaction sign \
+    --signing-key-file ${ROOT}/stake-delegator-keys/payment3.skey \
+    --signing-key-file ${ROOT}/addresses/multisig1.skey \
+    --signing-key-file ${ROOT}/addresses/multisig2.skey \
+    --signing-key-file ${ROOT}/addresses/multisig3.skey \
+    --tx-body-file ${ROOT}/tmp/tx.draft \
+    --out-file ${ROOT}/tmp/tx.signed \
+    ${network}
+#    
+# exit
+#
+echo -e "\033[0;36m Submitting \033[0m"
+${cli} transaction submit \
+    ${network} \
+    --tx-file ${ROOT}/tmp/tx.signed
