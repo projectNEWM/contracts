@@ -5,6 +5,22 @@ All cardano-cli query functions required for testing.
 import subprocess
 import json
 
+def tip(cli, tmp, network):
+    """
+    Query the tip of the blockchain then save to a file.
+    """
+    func = [
+        cli,
+        'query',
+        'tip',
+        '--out-file',
+        tmp+'tip.json'
+    ]
+    func += network.split(" ")
+
+    p = subprocess.Popen(func)
+    p.communicate()
+
 def protocol_parameters(cli, network, tmp):
     """
     Query the protocol parameters and save to the tmp folder.

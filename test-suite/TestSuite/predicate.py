@@ -23,4 +23,29 @@ def check(statement, outcome, test_function):
         return True
     else:
         print('\033[94m', statement,'\033[0m', "\033[91mFAIL\033[0m")
+        print(f"\033[93mExpecting: {outcome} Got: {result}\033[0m")
         return False
+
+def run(test_group):
+    """
+    Run all the test trees inside a test group and count how many failures exist. Print out some helpful text.
+    """
+    print("\033[96m\nThe Cardano Python Test Suite For NEWM\n\033[0m")
+
+    # Run all the tests here
+    fails = 0
+    for (statement, test_tree) in test_group:
+        print("\n",statement,"\n")
+        for predicate in test_tree:
+            # check if the predice
+            result = check(*predicate)
+            
+            # count the number of failures
+            if result is False:
+                fails += 1
+
+    # Print out helpful text
+    if fails > 0:
+        print(f"\033[91m\nFailed: {fails} Tests\033[0m")
+    else:
+        print("\033[92m\nAll Tests Are Successful!\033[0m")

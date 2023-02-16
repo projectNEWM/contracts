@@ -4,12 +4,12 @@ The Cardano Python Test Suite
 """
 import os
 from dotenv import load_dotenv
-from TestSuite.predicate import check
-from TestSuite.Tests.test_tree import test_tree, example_tree, example_tree_with_failures
+from TestSuite.predicate import run
+from TestSuite.Tests.test_group import test_group, example_test_group
 
-from TestSuite.parsing import address_dict
+from TestSuite.delay import force_block_change
 ###############################################################################
-# This sections needs to be inside a test function file.
+# This section may need to be inside a test function file.
 ###############################################################################
 # Load environment variables from .node.env file
 load_dotenv('.node.env')
@@ -32,20 +32,8 @@ addr = root+"/addresses/"
 
 ###############################################################################
 
-print("\033[96m\nThe Cardano Python Test Suite For NEWM\n\033[0m")
+# Run the test group
+run(test_group)
 
-# Run all the tests here
-fails = 0
-for predicate in example_tree:
-    # check if the predice
-    result = check(*predicate)
-    
-    # count the number of failures
-    if result is False:
-        fails += 1
-
-# Print out helpful text
-if fails > 0:
-    print(f"\033[91m\nFailed: {fails} Tests\033[0m")
-else:
-    print("\033[92m\nAll Tests Are Successful!\033[0m")
+# example test group
+run(example_test_group)
