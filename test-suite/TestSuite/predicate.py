@@ -23,7 +23,7 @@ def check(statement, outcome, test_function):
         return True
     else:
         print('\033[94m', statement,'\033[0m', "\033[91mFAIL\033[0m")
-        print(f"\033[93mExpecting: {outcome} Got: {result}\033[0m")
+        print(f"\033[93mExpecting: {outcome} Provided: {result}\033[0m")
         return False
 
 def run(test_group):
@@ -32,6 +32,7 @@ def run(test_group):
     """
     print("\033[96m\nThe Cardano Python Test Suite For NEWM\n\033[0m")
 
+    start_time = time.time()
     # Run all the tests here
     fails = 0
     for (statement, test_tree) in test_group:
@@ -43,7 +44,9 @@ def run(test_group):
             # count the number of failures
             if result is False:
                 fails += 1
-
+    end_time = time.time()
+    time_taken = round(end_time - start_time, 2)
+    print(f"\033[95mTotal Test Time: {time_taken} seconds\033[0m")
     # Print out helpful text
     if fails > 0:
         print(f"\033[91m\nFailed: {fails} Tests\033[0m")

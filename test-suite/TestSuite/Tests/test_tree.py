@@ -7,13 +7,9 @@ from TestSuite.delay import force_block_change
 from TestSuite.Tests.Tokenize.wrong_newm_key import wrong_newm_key
 
 # List of all the tests for the tokenization
-tokenized_test_tree = [
+test_tree = [
     ("Forced Block Delay", True, force_block_change),
     ("The NEWM key is wrong on a tokenized transaction", ['Script debugging logs: Signing Tx Error', 'Script debugging logs: Signing Tx Error'], wrong_newm_key),
-]
-
-# List of all the tests for the tokenization
-fractional_test_tree = [
     ("Forced Block Delay", True, force_block_change),
 ]
 

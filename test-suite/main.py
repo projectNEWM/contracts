@@ -14,18 +14,6 @@ load_dotenv('.node.env')
 socket  = os.environ['socket']
 os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-###############################################################################
-# This section may need to be inside a test function file.
-###############################################################################
-
-
-# Access the environment variable defined in .node.env
-root    = os.environ['ROOT']
-cli     = os.environ['cli']
-network = os.environ['network']
-
-###############################################################################
-
 # Run the test group
 run(test_group)
 

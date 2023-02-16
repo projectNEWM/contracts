@@ -12,13 +12,10 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-
 def wrong_newm_key():
     """
     Build a tokenization transaction that has the incorrect NEWM signer key.
     """
-   
-    
     # env info
     root    = os.environ['ROOT']
     cli     = os.environ['cli']
@@ -124,18 +121,9 @@ def wrong_newm_key():
 
     result = t.build(cli, tmp, network, tx_object)
 
-    # print('result', result, type(result))
-
     lines_with_debugging_logs = [line for line in result.splitlines() if "Script debugging logs:" in line]
-    return lines_with_debugging_logs
     # print(lines_with_debugging_logs)
-
-    # for string in lines_with_debugging_logs:
-    #     if "Signing Tx Error" in string:
-    #         print("Substring found in string:", string)
-    #     else:
-    #         print("Substring not found in string:", string)
-
+    return lines_with_debugging_logs
 
 
 if __name__ == "__main__":
@@ -145,7 +133,7 @@ if __name__ == "__main__":
     # Set the CARDANO_NODE_SOCKET_PATH environment variable
     socket  = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
-    
+
     output = wrong_newm_signer()
     print(output)
     
