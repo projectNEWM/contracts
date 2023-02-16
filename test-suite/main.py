@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from TestSuite.query import protocol_parameters, utxo
+from TestSuite.predicate import check
 
 # Load environment variables from .node.env file
 load_dotenv('.node.env')
@@ -35,6 +35,9 @@ nftMint_addr   = open(root+'/addresses/nftMint.addr').read()
 ftLock_addr    = open(root+'/addresses/ftLock.addr').read()
 ftMint_addr    = open(root+'/addresses/ftMint.addr').read()
 
-protocol_parameters(cli, network, tmp)
 
-utxo(cli, network, nftLock_addr, tmp)
+def f(): return True
+
+# Run all the tests here
+check("Testing True predicate function", True, f)
+check("Testing False predicate function", False, f)
