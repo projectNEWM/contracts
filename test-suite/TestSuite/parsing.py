@@ -5,6 +5,58 @@ All parsing functions required for testing.
 import subprocess
 import json
 import glob
+from TestSuite.address import address_key_hash
+import os
+
+def process_output(address, value_dict):
+    # Get the value of the 'lovelace' key in the dictionary
+    lovelace_value = str(value_dict['lovelace'])
+    
+    # Get the values of the nested dictionary and combine them into a string
+    nested_dict_values = []
+    for key, value in value_dict.items():
+        if key != 'lovelace':
+            for sub_key, sub_value in value.items():
+                nested_dict_values.append(f"{sub_value} {key}.{sub_key}")
+    nested_dict_values = " + ".join(nested_dict_values)
+    
+    # Combine the string with the dictionary values
+    output_string = address + " + " + lovelace_value + " + " + nested_dict_values
+    
+    return output_string
+
+
+def worst_case_asset(address):
+    return address + " + 18446744073709551615 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
+
+def read_json_file(fileName):
+    """
+    Take in a file name and load the json from the file.
+    """
+    with open(fileName) as f:
+        d = json.load(f)
+    return d
+
+def write_json_file(data, fileName):
+    """
+    Take in some data and dump it into some json file inside tmp.
+    """
+    with open(fileName, 'w') as outfile:
+        json.dump(data, outfile)
+
+def pkh_dict(cli, tmp):
+    """
+    Creates a dictionary of all the public key hashes inside the tmp directory.
+    """
+    files = glob.glob(tmp+'*.vkey')
+    result = {}
+    
+    for vkey_file in files:
+        content = address_key_hash(cli, vkey_file)
+        filename = vkey_file.split('/')[-1].split('.')[0]  # extract the filename from the full path
+        result[filename] = content
+    return result
+
 
 def address_dict(tmp):
     """
@@ -77,14 +129,12 @@ def subtract_dicts(dict1, dict2):
                 result[key] -= value
     return result
 
-
 def txin(tmp):
     """
     Take in a utxo json file from some wallet and output the tx-in list, the value object, and a datum list.
     """
-    with open(tmp+'utxo.json') as f:
-        d = json.load(f)
-
+    # get utxo data
+    d = read_json_file(tmp+'utxo.json')
     # The list of keys are all the TxId#Index we are spending.
     tx_in_output = []
     for u in list(d.keys()):

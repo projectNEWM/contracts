@@ -4,10 +4,27 @@ All cardano-cli transaction functions required for testing.
 """
 import subprocess
 import json
+import os
+
+def txid(cli, tx_file_path):
+    """
+    Get the tx id of a signed transactions.
+    """
+    func = [
+        cli,
+        'transaction',
+        'txid',
+        '--tx-file',
+        tx_file_path
+    ]
+
+    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
+    return p
+
+
 
 def calculate_min_lovelace(cli, tmp, datum, output):
     """
-    TODO
     output="${script_address} + 5000000 + ${asset}"
     """
 
@@ -18,7 +35,8 @@ def calculate_min_lovelace(cli, tmp, datum, output):
         '--babbage-era',
         '--protocol-params-file',
         tmp+"protocol-parameters.json",
-        '--tx-out="' + output+ '"'
+        '--tx-out',
+        output
     ]
     if datum:
         func += [
@@ -35,10 +53,7 @@ def calculate_min_lovelace(cli, tmp, datum, output):
     # Read the output of the second subprocess
     output = tr_proc.communicate()[0]
 
-    # Print the output
-    print(output)
-
-    return output
+    return int(output)
 
 
 def create_tx_outputs(list_of_addrs, list_of_values, list_of_datums):
@@ -75,7 +90,7 @@ def minting_script(mint_asset, ref_utxo, policy_id, redeemer):
         mint_asset,
         '--mint-tx-in-reference',
         ref_utxo,
-        '--mint-plutus-script-v2' \
+        '--mint-plutus-script-v2',
         '--policy-id',
         policy_id,
         '--mint-reference-tx-in-redeemer-file',
@@ -123,13 +138,13 @@ def build(cli, tmp, network, tx_object):
         tx_object['collat_utxo'],
     ]
     # This needs to end with the script input
-    func += utxo_in
+    func += tx_object['utxo_in']
 
     # spend script stuff
     func += spending_script(tx_object['spend_ref'], tx_object['spend_redeemer'])
 
     # the datum must fllow the correct output
-    func += utxo_out
+    func += tx_object['utxo_out']
 
     # signer sutff
     func += required_signers(tx_object['signers'])
@@ -138,14 +153,14 @@ def build(cli, tmp, network, tx_object):
     func += minting_script(tx_object['mint_asset'], tx_object['mint_ref'], tx_object['policy_id'], tx_object['mint_redeemer'])
     
     # metadata stuff
-    func += ['--metadata-json-file', tmp+ tx_object['metadata.json']]
+    func += ['--metadata-json-file', tx_object['metadata']]
 
     # network
     func += network.split(" ")
 
-    # this should be return the fee that can be printed out
-    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8')
-    print(p)
+    p = subprocess.Popen(func, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.read().decode('utf-8').rstrip()
+    return p
+
 
 
 def sign(cli, network, tmp, signing_key_files):

@@ -4,15 +4,17 @@ Define test trees as list of predicate tuples. A predicate tuple has the form (s
 """
 from TestSuite.predicate import t, f
 from TestSuite.delay import force_block_change
+from TestSuite.Tests.Tokenize.wrong_newm_key import wrong_newm_key
 
 # List of all the tests for the tokenization
 tokenized_test_tree = [
-    ("Tokenized force block delay", True, force_block_change),
+    ("Forced Block Delay", True, force_block_change),
+    ("The NEWM key is wrong on a tokenized transaction", ['Script debugging logs: Signing Tx Error', 'Script debugging logs: Signing Tx Error'], wrong_newm_key),
 ]
 
 # List of all the tests for the tokenization
 fractional_test_tree = [
-    ("Fractionalized force block delay", True, force_block_change),
+    ("Forced Block Delay", True, force_block_change),
 ]
 
 # example test trees with failures
