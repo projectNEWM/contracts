@@ -134,6 +134,10 @@ mv next_datum-new.json next_datum.json
 # update fractionalize contracts
 cd ../.. # back in parent folder
 
+cp tokenize-scripts/data/current_datum.json test-suite/data/start_tokenized_datum.json
+cp tokenize-scripts/data/current_datum.json test-suite/data/current_tokenized_datum.json
+cp tokenize-scripts/data/next_datum.json test-suite/data/next_tokenized_datum.json
+
 # update the nft minting contract information
 jq \
 --argjson pid "$(cat ./nft-minting-contract/policy.bytes)" \
@@ -181,6 +185,8 @@ variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variab
 mv datum-new.json datum.json
 
 cd ../.. # back into parent
+
+cp fractionalize-scripts/data/datum.json test-suite/data/fractional_datum.json
 
 # Prep the test suite with contracts
 

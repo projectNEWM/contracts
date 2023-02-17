@@ -11,7 +11,7 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def wrong_lock_newm_key():
+def wrong_lock_cont_datum():
     """
     Build a fractionalization transaction that fails to provide the correct newm master key.
     """
@@ -63,16 +63,20 @@ def wrong_lock_newm_key():
     mint_value = {mint_pid:{mint_tkn:mint_amt}}
     # print(mint_asset)
 
-    # get the artist addr info
-    artist_addr = addrs['artist']
-    q.utxo(cli, network, artist_addr, tmp)
-    artist_tx_in, artist_inline_datum, artist_value = p.txin(tmp)
+    # get the newm addr info
+    newm_addr = addrs['newm']
+    q.utxo(cli, network, newm_addr, tmp)
+    newm_tx_in, newm_inline_datum, newm_value = p.txin(tmp)
 
-    # get artist min ada
-    artist_output  = artist_addr + " + 5000000 + " + mint_asset
-    mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', artist_output)
-    artist_output  = artist_addr + f" + {mint_min_ada} + " + mint_asset
-    # print("artist output", artist_output)
+    next_script_datum = copy.deepcopy(script_inline_datum[0])
+    next_script_datum['fields'][2]['bytes'] = "acab"
+    p.write_json_file(next_script_datum, 'data/wrong_fractional_datum.json')
+
+    # get newm min ada
+    newm_output  = newm_addr + " + 5000000 + " + mint_asset
+    mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', newm_output)
+    newm_output  = newm_addr + f" + {mint_min_ada} + " + mint_asset
+    # print("newm output", newm_output)
     # quit()
 
     # get the collat addr info
@@ -81,25 +85,25 @@ def wrong_lock_newm_key():
     collat_tx_in, collat_inline_datum, collat_value = p.txin(tmp)
 
     # pkh for signing
-    artist_pkh = pkhs['artist']
+    newm_pkh = pkhs['newm']
     collat_pkh = pkhs['collat']
 
     # build the output list
     utxo_out = [
         '--tx-out', fractional_output,
-        '--tx-out-inline-datum-file', 'data/fractional_datum.json',
-        '--tx-out', artist_output,
+        '--tx-out-inline-datum-file', 'data/wrong_fractional_datum.json',
+        '--tx-out', newm_output,
     ]
 
     # build tx object for tx build function
     tx_object = {
-        "change_addr": artist_addr,
+        "change_addr": newm_addr,
         "collat_utxo": collat_tx_in[1],
-        "utxo_in": artist_tx_in + script_tx_in,
+        "utxo_in": newm_tx_in + script_tx_in,
         "spend_ref": nft_lock_ref,
         "spend_redeemer": "data/fractional_lock_redeemer.json",
         "utxo_out":utxo_out,
-        "signers": [artist_pkh, collat_pkh],
+        "signers": [newm_pkh, collat_pkh],
         "mint_asset": mint_asset,
         "mint_ref": nft_mint_ref,
         "policy_id": mint_pid,
@@ -122,6 +126,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = wrong_lock_newm_key()
+    output = wrong_lock_cont_datum()
     print(output)
     

@@ -34,21 +34,23 @@ def run(test_group):
 
     start_time = time.time()
     # Run all the tests here
-    fails = 0
+    fails   = 0
+    counter = 0
     for (statement, test_tree) in test_group:
         print("\n",statement,"\n")
         for predicate in test_tree:
             # check if the predice
             result = check(*predicate)
+            counter += 1 # count the number of tests
             
             # count the number of failures
             if result is False:
                 fails += 1
     end_time = time.time()
     time_taken = round(end_time - start_time, 2)
-    print(f"\033[95mTotal Test Time: {time_taken} seconds\033[0m")
+    print(f"\033[95m\nTotal Test Time: {time_taken} seconds\033[0m")
     # Print out helpful text
     if fails > 0:
-        print(f"\033[91m\nFailed: {fails} Tests\033[0m")
+        print(f"\033[91m\n{fails} out of {counter} failed\033[0m")
     else:
-        print("\033[92m\nAll Tests Are Successful!\033[0m")
+        print(f"\033[92m\n{counter} Tests Are Successful!\033[0m")
