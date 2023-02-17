@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with the wrong newm master key.
+Test tokenization with the wrong continuing datum.
 """
 import os
 import copy
@@ -11,9 +11,9 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def wrong_newm_key():
+def wrong_cont_datum():
     """
-    Build a tokenization transaction that has the incorrect NEWM signer key.
+    Build a tokenization transaction that has the incorrect continuing datum.
     """
     # env info
     root    = os.environ['ROOT']
@@ -29,6 +29,7 @@ def wrong_newm_key():
     # get all the addrs and pkhs
     addrs = p.address_dict(addr)
     pkhs  = p.pkh_dict(cli, addr)
+    sks   = p.skey_dict(addr)
 
     # ref utxos
     nft_lock_ref = t.txid(cli, tmp+"tx-tokenized-utxo.signed") + "#1"
@@ -47,7 +48,7 @@ def wrong_newm_key():
 
     # build out the next datum
     next_script_datum = copy.deepcopy(script_inline_datum[0])
-    next_script_datum['fields'][1]['int'] += 1
+    next_script_datum['fields'][1]['int'] += 0
     p.write_json_file(next_script_datum, 'data/next_tokenized_datum.json')
 
     # create script output here
@@ -72,16 +73,16 @@ def wrong_newm_key():
     fractional_output  = ft_lock_contract_addr + f" + {fractional_min_ada}"
     # print('fractional output', fractional_output)
     
-    # get the artist addr info
-    artist_addr = addrs['artist']
-    q.utxo(cli, network, artist_addr, tmp)
-    artist_tx_in, artist_inline_datum, artist_value = p.txin(tmp)
+    # get the newm addr info
+    newm_addr = addrs['newm']
+    q.utxo(cli, network, newm_addr, tmp)
+    newm_tx_in, newm_inline_datum, newm_value = p.txin(tmp)
 
-    # get artist min ada
-    artist_output = artist_addr + " + 5000000 + " + mint_asset
-    mint_min_ada  = t.calculate_min_lovelace(cli, tmp, '', artist_output)
-    artist_output = artist_addr + f" + {mint_min_ada} + " + mint_asset
-    # print("artist output", artist_output)
+    # get newm min ada
+    newm_output  = newm_addr + " + 5000000 + " + mint_asset
+    mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', newm_output)
+    newm_output  = newm_addr + f" + {mint_min_ada} + " + mint_asset
+    # print("newm output", newm_output)
 
     # get the collat addr info
     collat_addr = addrs['collat']
@@ -89,7 +90,7 @@ def wrong_newm_key():
     collat_tx_in, collat_inline_datum, collat_value = p.txin(tmp)
 
     # pkh for signing
-    artist_pkh = pkhs['artist']
+    newm_pkh = pkhs['newm']
     collat_pkh = pkhs['collat']
 
     # build the output list
@@ -97,20 +98,20 @@ def wrong_newm_key():
     utxo_out = [
         '--tx-out', fractional_output,
         '--tx-out-inline-datum-file', 'data/fractional_datum.json',
-        '--tx-out', artist_output,
+        '--tx-out', newm_output,
         '--tx-out', tokenized_output,
         '--tx-out-inline-datum-file', 'data/next_tokenized_datum.json',
     ]
 
     # build tx object for tx build function
     tx_object = {
-        "change_addr": artist_addr,
+        "change_addr": newm_addr,
         "collat_utxo": collat_tx_in[1],
-        "utxo_in": artist_tx_in + script_tx_in,
+        "utxo_in": newm_tx_in + script_tx_in,
         "spend_ref": nft_lock_ref,
         "spend_redeemer": "data/mint_tokenized_redeemer.json",
         "utxo_out":utxo_out,
-        "signers": [artist_pkh, collat_pkh],
+        "signers": [newm_pkh, collat_pkh],
         "mint_asset": mint_asset,
         "mint_ref": nft_mint_ref,
         "policy_id": mint_pid,
@@ -133,6 +134,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = wrong_newm_key()
-    print(output)
+    output = wrong_cont_datum()
+    # print(output)
     

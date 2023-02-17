@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with the wrong newm master key.
+Test tokenization with a good transaction.
 """
 import os
 import copy
@@ -13,14 +13,14 @@ import TestSuite.transaction as t
 
 def good_transaction():
     """
-    Build a tokenization transaction that has the incorrect NEWM signer key.
+    Build a tokenization transaction that satisfies the validation logic and submits to the chain.
     """
     # env info
     root    = os.environ['ROOT']
     cli     = os.environ['cli']
     network = os.environ['network']
 
-    tmp = root+"/tmp/"
+    tmp  = root+"/tmp/"
     addr = root+"/addresses/"
     
     # get the params
@@ -28,8 +28,8 @@ def good_transaction():
 
     # get all the addrs and pkhs
     addrs = p.address_dict(addr)
-    pkhs = p.pkh_dict(cli, addr)
-    sks = p.skey_dict(addr)
+    pkhs  = p.pkh_dict(cli, addr)
+    sks   = p.skey_dict(addr)
 
     # ref utxos
     nft_lock_ref = t.txid(cli, tmp+"tx-tokenized-utxo.signed") + "#1"
@@ -57,10 +57,10 @@ def good_transaction():
     # print('script output', tokenized_output)
 
     # minting info
-    mint_pid = script_inline_datum[0]['fields'][0]['bytes']
-    mint_tkn = script_inline_datum[0]['fields'][2]['bytes']
-    mint_num = script_inline_datum[0]['fields'][1]['int']
-    mint_name = mint_tkn + (str(mint_num)).encode('utf-8').hex()
+    mint_pid   = script_inline_datum[0]['fields'][0]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    mint_num   = script_inline_datum[0]['fields'][1]['int']
+    mint_name  = mint_tkn + (str(mint_num)).encode('utf-8').hex()
     mint_asset = "1 " + script_inline_datum[0]['fields'][0]['bytes'] + "." + mint_name
 
     # update fractional data
@@ -79,9 +79,9 @@ def good_transaction():
     newm_tx_in, newm_inline_datum, newm_value = p.txin(tmp)
 
     # get newm min ada
-    newm_output = newm_addr + " + 5000000 + " + mint_asset
+    newm_output  = newm_addr + " + 5000000 + " + mint_asset
     mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', newm_output)
-    newm_output = newm_addr + f" + {mint_min_ada} + " + mint_asset
+    newm_output  = newm_addr + f" + {mint_min_ada} + " + mint_asset
     # print("newm output", newm_output)
 
     # get the collat addr info
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     load_dotenv(find_dotenv('.node.env'), verbose=False)
 
     # Set the CARDANO_NODE_SOCKET_PATH environment variable
-    socket  = os.environ['socket']
+    socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
     output = good_transaction()

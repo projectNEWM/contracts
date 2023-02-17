@@ -18,10 +18,13 @@ def process_output(address, value_dict):
         if key != 'lovelace':
             for sub_key, sub_value in value.items():
                 nested_dict_values.append(f"{sub_value} {key}.{sub_key}")
-    nested_dict_values = " + ".join(nested_dict_values)
-    
-    # Combine the string with the dictionary values
-    output_string = address + " + " + lovelace_value + " + " + nested_dict_values
+    if len(nested_dict_values) == 0:
+        output_string = address + " + " + lovelace_value
+    else:
+        nested_dict_values = " + ".join(nested_dict_values)
+        
+        # Combine the string with the dictionary values
+        output_string = address + " + " + lovelace_value + " + " + nested_dict_values
     
     return output_string
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with the wrong newm master key.
+Test tokenization with the wrong tokenized mint amount.
 """
 import os
 import copy
@@ -13,14 +13,14 @@ import TestSuite.transaction as t
 
 def wrong_mint_amount():
     """
-    Build a tokenization transaction that has the incorrect NEWM signer key.
+    Build a tokenization transaction that attempts to mint two tokens instead of one.
     """
     # env info
     root    = os.environ['ROOT']
     cli     = os.environ['cli']
     network = os.environ['network']
 
-    tmp = root+"/tmp/"
+    tmp  = root+"/tmp/"
     addr = root+"/addresses/"
     
     # get the params
@@ -28,7 +28,7 @@ def wrong_mint_amount():
 
     # get all the addrs and pkhs
     addrs = p.address_dict(addr)
-    pkhs = p.pkh_dict(cli, addr)
+    pkhs  = p.pkh_dict(cli, addr)
 
     # ref utxos
     nft_lock_ref = t.txid(cli, tmp+"tx-tokenized-utxo.signed") + "#1"
@@ -78,9 +78,9 @@ def wrong_mint_amount():
     newm_tx_in, newm_inline_datum, newm_value = p.txin(tmp)
 
     # get newm min ada
-    newm_output = newm_addr + " + 5000000 + " + mint_asset
+    newm_output  = newm_addr + " + 5000000 + " + mint_asset
     mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', newm_output)
-    newm_output = newm_addr + f" + {mint_min_ada} + " + mint_asset
+    newm_output  = newm_addr + f" + {mint_min_ada} + " + mint_asset
     # print("newm output", newm_output)
 
     # get the collat addr info
@@ -89,7 +89,7 @@ def wrong_mint_amount():
     collat_tx_in, collat_inline_datum, collat_value = p.txin(tmp)
 
     # pkh for signing
-    newm_pkh = pkhs['newm']
+    newm_pkh   = pkhs['newm']
     collat_pkh = pkhs['collat']
 
     # build the output list
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     load_dotenv(find_dotenv('.node.env'), verbose=False)
 
     # Set the CARDANO_NODE_SOCKET_PATH environment variable
-    socket  = os.environ['socket']
+    socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
     output = wrong_mint_amount()
