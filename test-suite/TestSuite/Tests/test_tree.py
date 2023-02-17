@@ -12,14 +12,18 @@ from TestSuite.Tests.Tokenize.Mint.wrong_cont_output_amt import wrong_mint_cont_
 from TestSuite.Tests.Tokenize.Mint.wrong_script_input_amt import wrong_mint_script_input_amt
 from TestSuite.Tests.Tokenize.Mint.wrong_starter_token import wrong_mint_starter_token
 from TestSuite.Tests.Tokenize.Mint.good_mint_transaction import good_mint_transaction
-# import fractionalize lock test
+# import fractionalize lock tests
 from TestSuite.Tests.Fractional.Lock.wrong_newm_key import wrong_lock_newm_key
 from TestSuite.Tests.Fractional.Lock.wrong_mint_amt import wrong_lock_mint_amt
 from TestSuite.Tests.Fractional.Lock.wrong_mint_name import wrong_lock_mint_name
 from TestSuite.Tests.Fractional.Lock.wrong_cont_datum import wrong_lock_cont_datum
+from TestSuite.Tests.Fractional.Lock.wrong_cont_output_amt import wrong_lock_cont_output_amt
+from TestSuite.Tests.Fractional.Lock.wrong_input_amt import wrong_lock_input_amt
 from TestSuite.Tests.Fractional.Lock.good_lock_transaction import good_lock_transaction
+# import solidification unlock tests
+# import tokenize burn tests
 
-# List of all the tests for the tokenization
+# List of all the tests for the tokenization and fractionalization
 token_and_fraction_test_tree = [
     ("Forced Block Delay", True, force_block_change),
     ("The NEWM key is wrong on a tokenized transaction", ['Script debugging logs: Signing Tx Error', 'Script debugging logs: Signing Tx Error'], wrong_mint_newm_key),
@@ -34,7 +38,10 @@ token_and_fraction_test_tree = [
     ("The wrong mint amount on a fractionalized transaction", ['Script debugging logs: Mint/Burn/Datum Error'], wrong_lock_mint_amt),
     ("The wrong mint name on a fractionalized transaction", ['Script debugging logs: Minting Error'], wrong_lock_mint_name),
     ("The wrong datum is continuing on a fractionalized transaction", ['Script debugging logs: Invalid Datum Error', 'Script debugging logs: Mint/Burn/Datum Error'], wrong_lock_cont_datum),
-    # ("A correct fractionalized transaction", "Transaction successfully submitted.", good_lock_transaction),
+    ("The wrong number of continuing outputs on a fractionalized transaction", ['Script debugging logs: Single Output Error'], wrong_lock_cont_output_amt),
+    ("The wrong number of datum inputs on a fractionalized transaction", ['Script debugging logs: Single Input Error'], wrong_lock_input_amt),
+    ("A correct fractionalized transaction", "Transaction successfully submitted.", good_lock_transaction),
+    ("Forced Block Delay", True, force_block_change),
 ]
 
 # example test trees with failures

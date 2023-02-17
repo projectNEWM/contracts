@@ -96,6 +96,10 @@ current_era=$( cardano-cli query tip --testnet-magic 42 | jq '.era' )
 protocol_version=$( cardano-cli query protocol-parameters --testnet-magic 42 | jq '.protocolVersion.major' )
 echo "Nodes are running in era: $current_era, major protocol version: $protocol_version"
 echo
-echo "\033[1;35mCongrats! Your network is ready for use! \033[0m" 
+echo "\033[1;35mCongrats! Your network is ready for use! \033[0m"
+
+./prep_testnet_for_testing.sh
+
+echo "\033[1;35m\nTestnet is ready for testing! \033[0m"
 
 wait
