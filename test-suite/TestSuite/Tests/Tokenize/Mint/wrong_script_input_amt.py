@@ -62,7 +62,7 @@ def wrong_script_input_amt():
     mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
     mint_num   = script_inline_datum[0]['fields'][1]['int']
     mint_name  = mint_tkn + (str(mint_num)).encode('utf-8').hex()
-    mint_asset = "1 " + script_inline_datum[0]['fields'][0]['bytes'] + "." + mint_name
+    mint_asset = "1 " + mint_pid + "." + mint_name
 
     # update fractional data
     fractional_datum = p.read_json_file('data/fractional_datum.json')

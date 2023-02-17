@@ -11,7 +11,7 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def good_transaction():
+def good_mint_transaction():
     """
     Build a tokenization transaction that satisfies the validation logic and submits to the chain.
     """
@@ -62,7 +62,7 @@ def good_transaction():
     mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
     mint_num   = script_inline_datum[0]['fields'][1]['int']
     mint_name  = mint_tkn + (str(mint_num)).encode('utf-8').hex()
-    mint_asset = "1 " + script_inline_datum[0]['fields'][0]['bytes'] + "." + mint_name
+    mint_asset = "1 " + mint_pid + "." + mint_name
 
     # update fractional data
     fractional_datum = p.read_json_file('data/fractional_datum.json')
@@ -134,6 +134,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = good_transaction()
+    output = good_mint_transaction()
     print(output)
     
