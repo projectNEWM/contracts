@@ -44,6 +44,19 @@ def write_json_file(data, fileName):
     with open(fileName, 'w') as outfile:
         json.dump(data, outfile)
 
+def skey_dict(tmp):
+    """
+    Creates a dictionary of all the secret keys inside the tmp directory.
+    """
+    files = glob.glob(tmp+'*.skey')
+    result = {}
+
+    for skey_file in files:
+        filename = skey_file.split('/')[-1].split('.')[0]  # extract the filename from the full path
+        result[filename] = skey_file
+    return result
+
+
 def pkh_dict(cli, tmp):
     """
     Creates a dictionary of all the public key hashes inside the tmp directory.

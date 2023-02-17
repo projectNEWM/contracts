@@ -197,5 +197,5 @@ def submit(cli, tmp, network):
     func += network.split(" ")
 
     # this should print a message that I want to catch
-    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8')
-    print(p)
+    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
+    return p

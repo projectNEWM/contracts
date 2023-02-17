@@ -322,7 +322,7 @@ FEE=$(${cli} transaction build \
     --change-address ${spo_addr} \
     --tx-in ${spo_tx_in} \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/current_tokenized_datum.json  \
+    --tx-out-inline-datum-file data/start_tokenized_datum.json  \
     --mint-script-file policy/policy.script \
     --mint="${mint_asset}" \
     --required-signer-hash ${multisig1_pkh} \
