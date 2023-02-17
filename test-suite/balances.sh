@@ -14,6 +14,7 @@ ft_script_address=$(${cli} address build --payment-script-file ${ft_script_path}
 #
 newm_address=$(cat ${ROOT}/addresses/newm.addr)
 artist_address=$(cat ${ROOT}/addresses/artist.addr)
+attacker_address=$(cat ${ROOT}/addresses/attacker.addr)
 reference_address=$(cat ${ROOT}/addresses/reference.addr)
 collat_address=$(cat ${ROOT}/addresses/collat.addr)
 
@@ -44,6 +45,13 @@ echo
 echo -e "\033[1;32m Artist Address:" 
 echo -e "\n${artist_address}\n";
 ${cli} query utxo --address ${artist_address} ${network}
+echo -e "\033[0m"
+
+#
+echo
+echo -e "\033[1;32m Attacker Address:" 
+echo -e "\n${attacker_address}\n";
+${cli} query utxo --address ${attacker_address} ${network}
 echo -e "\033[0m"
 
 #

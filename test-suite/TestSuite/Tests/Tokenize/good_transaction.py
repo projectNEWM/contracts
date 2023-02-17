@@ -42,6 +42,7 @@ def good_transaction():
     nft_lock_contract_addr = addrs['nftLock']
     q.utxo(cli, network, nft_lock_contract_addr, tmp)
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
+    script_tx_in = script_tx_in[:2]
 
     # build out the current datum
     p.write_json_file(script_inline_datum[0], 'data/current_tokenized_datum.json')
@@ -53,7 +54,7 @@ def good_transaction():
 
     # create script output here
 
-    tokenized_output = p.process_output(nft_lock_contract_addr, script_value)
+    tokenized_output = p.process_output(nft_lock_contract_addr, script_value[0])
     # print('script output', tokenized_output)
 
     # minting info

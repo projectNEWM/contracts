@@ -38,6 +38,17 @@ cardano-cli address build \
 --testnet-magic 42 \
 --out-file ${ROOT}/addresses/${ADDR}.addr
 
+ADDR=attacker
+# payment address keys
+cardano-cli address key-gen \
+--verification-key-file ${ROOT}/addresses/${ADDR}.vkey \
+--signing-key-file      ${ROOT}/addresses/${ADDR}.skey
+# wallet address
+cardano-cli address build \
+--payment-verification-key-file ${ROOT}/addresses/${ADDR}.vkey \
+--testnet-magic 42 \
+--out-file ${ROOT}/addresses/${ADDR}.addr
+
 cp test_keys/* ${ROOT}/addresses/
 
 echo -e "\033[1;35m Funding Test Wallets \033[0m"
@@ -69,6 +80,8 @@ FEE=$(${cli} transaction build \
     --tx-in ${spo_tx_in} \
     --tx-out="$(cat ${ROOT}/addresses/newm.addr) + 1000000000" \
     --tx-out="$(cat ${ROOT}/addresses/artist.addr) + 1000000000" \
+    --tx-out="$(cat ${ROOT}/addresses/attacker.addr) + 1000000000" \
+    --tx-out-inline-datum-file data/start_tokenized_datum.json  \
     --tx-out="$(cat ${ROOT}/addresses/collat.addr) + 1000000000" \
     --tx-out="$(cat ${ROOT}/addresses/reference.addr) + 1000000000" \
     --tx-out="$(cat ${ROOT}/addresses/multisig1.addr) + 1000000000" \
@@ -312,6 +325,7 @@ starter_nft_min_utxo=$(${cli} transaction calculate-min-required-utxo \
 echo "Starter NFT Min ADA: "${starter_nft_min_utxo}
 
 script_address_out="${script_address} + $starter_nft_min_utxo + ${mint_asset}"
+bad_script_address_out="${script_address} + $starter_nft_min_utxo"
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -322,6 +336,8 @@ FEE=$(${cli} transaction build \
     --change-address ${spo_addr} \
     --tx-in ${spo_tx_in} \
     --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file data/start_tokenized_datum.json  \
+    --tx-out="${bad_script_address_out}" \
     --tx-out-inline-datum-file data/start_tokenized_datum.json  \
     --mint-script-file policy/policy.script \
     --mint="${mint_asset}" \

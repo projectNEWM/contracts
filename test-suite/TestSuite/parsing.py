@@ -160,10 +160,12 @@ def txin(tmp):
     # The input utxos may have datums attach so we need those too.
     inline_datum_output = []
     # We need the total value so we know what is going where.
-    value_object = {}
+    value_object_list = []
     for v in list(d.values()):
+        value_object = {}
         inline_datum_output.append(v['inlineDatum'])
         value_object = compress_dicts(v['value'], value_object)
+        value_object_list.append(value_object)
     
-    return tx_in_output, inline_datum_output, value_object
+    return tx_in_output, inline_datum_output, value_object_list
 
