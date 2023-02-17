@@ -80,8 +80,8 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Mint/Burn Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
-                                         && (traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info mainPkh)
+mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info mainPkh)
+                                         && (traceIfFalse "Mint/Burn Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context

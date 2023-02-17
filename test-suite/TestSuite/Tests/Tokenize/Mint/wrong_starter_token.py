@@ -11,7 +11,7 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def wrong_starter_token():
+def wrong_mint_starter_token():
     """
     Build a tokenization transaction that uses two script inputs.
     """
@@ -135,6 +135,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = wrong_starter_token()
+    output = wrong_mint_starter_token()
     print(output)
     

@@ -11,7 +11,7 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def wrong_cont_output_amt():
+def wrong_mint_cont_output_amt():
     """
     Build a tokenization transaction that has two continuing outputs to the script.
     """
@@ -139,6 +139,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = wrong_cont_output_amt()
+    output = wrong_mint_cont_output_amt()
     print(output)
     

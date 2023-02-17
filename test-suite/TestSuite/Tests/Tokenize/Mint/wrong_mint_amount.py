@@ -11,7 +11,7 @@ import TestSuite.query as q
 import TestSuite.parsing as p
 import TestSuite.transaction as t
 
-def wrong_mint_amount():
+def wrong_mint_token_amount():
     """
     Build a tokenization transaction that attempts to mint two tokens instead of one.
     """
@@ -133,6 +133,6 @@ if __name__ == "__main__":
     socket = os.environ['socket']
     os.environ["CARDANO_NODE_SOCKET_PATH"] = socket
 
-    output = wrong_mint_amount()
+    output = wrong_mint_token_amount()
     print(output)
     
