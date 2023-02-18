@@ -153,7 +153,8 @@ def build(cli, tmp, network, tx_object):
     func += minting_script(tx_object['mint_asset'], tx_object['mint_ref'], tx_object['policy_id'], tx_object['mint_redeemer'])
     
     # metadata stuff
-    func += ['--metadata-json-file', tx_object['metadata']]
+    if 'metadata' in tx_object.keys():
+        func += ['--metadata-json-file', tx_object['metadata']]
 
     # network
     func += network.split(" ")

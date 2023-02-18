@@ -162,7 +162,7 @@ mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error" $ C
         Nothing         -> traceError "No Input Datum"
         Just inputDatum ->
           case datumAtValidator of
-            Nothing          -> traceIfFalse "No Output Datum" False
+            Nothing          -> False
             Just outputDatum -> inputDatum == outputDatum
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
