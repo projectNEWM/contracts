@@ -42,26 +42,36 @@ def wrong_mint_cont_output_amt():
     nft_lock_contract_addr = addrs['nftLock']
     q.utxo(cli, network, nft_lock_contract_addr, tmp)
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
-    script_tx_in = script_tx_in[:2]
+    
+    # find out which one we are talking about here
+    counter = 0
+    for i in range(len(script_value)):
+        if len(list(script_value[i].keys())) == 2:
+            counter = i
+    start = counter * 2
+    if counter == 0:
+        script_tx_in = script_tx_in[:2]
+    else:
+        script_tx_in = script_tx_in[start:start+2]
 
     # build out the current datum
-    p.write_json_file(script_inline_datum[0], 'data/current_tokenized_datum.json')
+    p.write_json_file(script_inline_datum[counter], 'data/current_tokenized_datum.json')
 
     # build out the next datum
-    next_script_datum = copy.deepcopy(script_inline_datum[0])
+    next_script_datum = copy.deepcopy(script_inline_datum[counter])
     next_script_datum['fields'][1]['int'] += 1
     p.write_json_file(next_script_datum, 'data/next_tokenized_datum.json')
 
     # create script output here
 
-    tokenized_output = p.process_output(nft_lock_contract_addr, script_value[0])
+    tokenized_output = p.process_output(nft_lock_contract_addr, script_value[counter])
     extra_tokenized_output = p.process_output(nft_lock_contract_addr, {"lovelace":123456789})
     # print('script output', tokenized_output)
 
     # minting info
-    mint_pid   = script_inline_datum[0]['fields'][0]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
-    mint_num   = script_inline_datum[0]['fields'][1]['int']
+    mint_pid   = script_inline_datum[counter]['fields'][0]['bytes']
+    mint_tkn   = script_inline_datum[counter]['fields'][2]['bytes']
+    mint_num   = script_inline_datum[counter]['fields'][1]['int']
     mint_name  = mint_tkn + (str(mint_num)).encode('utf-8').hex()
     mint_asset = "1 " + mint_pid + "." + mint_name
 

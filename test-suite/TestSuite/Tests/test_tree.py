@@ -31,6 +31,9 @@ from TestSuite.Tests.Fractional.Unlock.good_unlock_transaction import good_unloc
 from TestSuite.Tests.Tokenize.Burn.wrong_multisig import wrong_burn_multisig
 from TestSuite.Tests.Tokenize.Burn.wrong_cont_datum import wrong_burn_cont_datum
 from TestSuite.Tests.Tokenize.Burn.wrong_starter_token import wrong_burn_starter_token
+from TestSuite.Tests.Tokenize.Burn.wrong_burn_amt import wrong_burn_token_amt
+from TestSuite.Tests.Tokenize.Burn.wrong_cont_output_amt import wrong_burn_cont_output_amt
+from TestSuite.Tests.Tokenize.Burn.wrong_input_amt import wrong_burn_input_amt
 from TestSuite.Tests.Tokenize.Burn.good_burn_transaction import good_burn_transaction
 
 
@@ -63,8 +66,11 @@ token_and_fraction_test_tree = [
     ("A wrong multisig for the burning tokenized token transaction", ['Script debugging logs: Signing Tx Error'], wrong_burn_multisig),
     ("A wrong datum for the burning tokenized token transaction", ['Script debugging logs: Invalid Datum Error'], wrong_burn_cont_datum),
     ("A wrong starter token for the burning tokenized token transaction", ['Script debugging logs: Invalid Starter Tkn', 'Script debugging logs: Invalid Starter Tkn'], wrong_burn_starter_token),
-    # ("A correct burning of a tokenized token transaction", "Transaction successfully submitted.", good_burn_transaction),
-    # ("Forced Block Delay", True, force_block_change),
+    ("A wrong burn amount for the burning tokenized token transaction", ['Script debugging logs: NFT Burning Error', 'Script debugging logs: Mint/Burn Error'], wrong_burn_token_amt),
+    ("A wrong amount of continuing outputs for the burning tokenized token transaction", ['Script debugging logs: Single Output Error'], wrong_burn_cont_output_amt),
+    ("A wrong amount of datum inputs for the burning tokenized token transaction", ['Script debugging logs: Single Input Error'], wrong_burn_input_amt),
+    ("A correct burning of a tokenized token transaction", "Transaction successfully submitted.", good_burn_transaction),
+    ("Forced Block Delay", True, force_block_change),
 ]
 
 # example test trees with failures
