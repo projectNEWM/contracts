@@ -98,7 +98,12 @@ echo "Nodes are running in era: $current_era, major protocol version: $protocol_
 echo
 echo "\033[1;35mCongrats! Your network is ready for use! \033[0m"
 
-./prep_testnet_for_testing.sh
+# ./prep_testnet_for_testing.sh
+
+${SCRIPT_PATH}/create_wallets.sh
+${SCRIPT_PATH}/fund_wallets.sh
+${SCRIPT_PATH}/create_contract_references.sh
+${SCRIPT_PATH}/create_contract_starter_token.sh
 
 echo "\033[1;35m\nTestnet is ready for testing! \033[0m"
 
