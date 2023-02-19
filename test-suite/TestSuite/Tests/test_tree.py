@@ -28,12 +28,17 @@ from TestSuite.Tests.Fractional.Unlock.wrong_input_amt import wrong_unlock_input
 from TestSuite.Tests.Fractional.Unlock.wrong_burn_amt import wrong_unlock_burn_amt
 from TestSuite.Tests.Fractional.Unlock.good_unlock_transaction import good_unlock_transaction
 # import tokenize burn tests
+from TestSuite.Tests.Tokenize.Burn.wrong_multisig import wrong_burn_multisig
+from TestSuite.Tests.Tokenize.Burn.wrong_cont_datum import wrong_burn_cont_datum
+from TestSuite.Tests.Tokenize.Burn.wrong_starter_token import wrong_burn_starter_token
+from TestSuite.Tests.Tokenize.Burn.good_burn_transaction import good_burn_transaction
+
 
 # List of all the tests for the tokenization and fractionalization
 token_and_fraction_test_tree = [
     ("Forced Block Delay", True, force_block_change),
     ("The NEWM key is wrong on a tokenized transaction", ['Script debugging logs: Signing Tx Error', 'Script debugging logs: Signing Tx Error'], wrong_mint_newm_key),
-    ("The wrong mint amount on a tokenized transaction", ['Script debugging logs: NFT Minting Error', 'Script debugging logs: Incorrect Mint Amount'], wrong_mint_token_amt),
+    ("The wrong mint amount on a tokenized transaction", ['Script debugging logs: NFT Minting Error', 'Script debugging logs: Mint/Burn Error'], wrong_mint_token_amt),
     ("The wrong continuing datum on a tokenized transaction", ['Script debugging logs: Invalid Datum Error'], wrong_mint_cont_datum),
     ("The wrong continuing output amount on a tokenized transaction", ['Script debugging logs: Single Output Error'], wrong_mint_cont_output_amt),
     ("The wrong amount of script inputs on a tokenized transaction", ['Script debugging logs: Single Input Error'], wrong_mint_script_input_amt),
@@ -55,6 +60,11 @@ token_and_fraction_test_tree = [
     ("The wrong burn amount on a solidify transaction", ['Script debugging logs: Mint/Burn/Datum Error'], wrong_unlock_burn_amt),
     ("A correct solidify transaction", "Transaction successfully submitted.", good_unlock_transaction),
     ("Forced Block Delay", True, force_block_change),
+    ("A wrong multisig for the burning tokenized token transaction", ['Script debugging logs: Signing Tx Error'], wrong_burn_multisig),
+    ("A wrong datum for the burning tokenized token transaction", ['Script debugging logs: Invalid Datum Error'], wrong_burn_cont_datum),
+    ("A wrong starter token for the burning tokenized token transaction", ['Script debugging logs: Invalid Starter Tkn', 'Script debugging logs: Invalid Starter Tkn'], wrong_burn_starter_token),
+    # ("A correct burning of a tokenized token transaction", "Transaction successfully submitted.", good_burn_transaction),
+    # ("Forced Block Delay", True, force_block_change),
 ]
 
 # example test trees with failures
