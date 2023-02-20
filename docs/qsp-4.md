@@ -1,0 +1,5 @@
+# QSP-4 Privileged Roles and Owners
+
+The NEWM Master key is delegated the power to mint NFTs in the NEWM catalog by the multi-sig. The NEWM Master key is stored in an encrypted vault and only accessible during the Artist Portal minting process for each song. While this master key is allowed the power to mint, it does not have the ability to burn tokens. Burning is an action not taken lightly and should only be done in the event of a legal order or serious issues with the minted data. For example, if some unforseen bug caused a token to be minted with the incorrect legal contract attached or the wrong ISRC number.
+
+The locked NFT that is fractionalized is never intended to be unlocked. Even if an artist maintains 100% ownership rights of their song, it is advisable for them to keep 100m of the fractions in their wallet for royalty purposes instead of the original NFT. The royalty system for NEWM will be based on snapshots of the fractionalized Stream Tokens and not on holding the original NFT. The only intended purpose for solidifying fractionalized tokens into the original NFT is for the purpose of being able to burn it.

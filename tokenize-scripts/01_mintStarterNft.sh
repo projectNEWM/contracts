@@ -93,9 +93,9 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/seller-wallet/payment.skey \
-   --signing-key-file wallets/multisig-wallet/multisig1.skey \
-   --signing-key-file wallets/multisig-wallet/multisig2.skey \
-   --signing-key-file wallets/multisig-wallet/multisig3.skey \
+    --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     ${network}

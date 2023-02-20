@@ -71,4 +71,8 @@ executable minting-contract
 
   build-depends:        cardano-api
                       , minting-contract
-
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory

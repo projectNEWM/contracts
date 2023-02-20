@@ -71,4 +71,9 @@ executable locking-contract
 
   build-depends:        cardano-api
                       , locking-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
 

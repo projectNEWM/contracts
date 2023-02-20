@@ -1,0 +1,3 @@
+# QSP-5 No Update Mechanism in Case of Rogue Multisig Users
+
+The original NFT is never intended to be solidified except for the purpose of being able to burn it. As such, it is ok that a user owning 100% of a Stream Token is unable to solidify without the consent of the NEWM master key.  In the event that multisig users go rogue, it is an acceptable risk that a new multi-sig be issued and a new catalog be created for future NEWM NFTs and Stream Tokens. This risk is minimal given that royalty rewards and snapshots need to be specified manually so there is no issue having some stream tokens be represented by the original policy and new ones with another policy after recovery from a rogue multisig user event.

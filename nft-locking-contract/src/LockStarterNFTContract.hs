@@ -13,6 +13,7 @@
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
@@ -27,6 +28,7 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module LockStarterNFTContract
   ( lockingContractScript
+  , ScriptParameters (..)
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -39,8 +41,7 @@ import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
 import qualified Plutonomy
 -- importing only required functions for better readability
-import qualified UsefulFuncs ( createBuiltinByteString
-                             , integerAsByteString
+import qualified UsefulFuncs ( integerAsByteString
                              , isNInputs
                              , isNOutputs
                              , checkValidMultisig
@@ -51,39 +52,19 @@ import qualified UsefulFuncs ( createBuiltinByteString
   Version  : Rev 2
 -}
 -------------------------------------------------------------------------------
--- | The starter token information.
+-- | Starter NFT Contract Parameterization
 -------------------------------------------------------------------------------
--- CurrencySymbol for the starter token.
-lockPid :: PlutusV2.CurrencySymbol
-lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString [38, 144, 61, 231, 221, 148, 253, 203, 89, 253, 43, 89, 128, 168, 202, 79, 247, 31, 6, 47, 126, 210, 88, 89, 203, 38, 232, 127] }
--- TokenName for the starter token.
-lockTkn :: PlutusV2.TokenName
-lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = UsefulFuncs.createBuiltinByteString [78, 69, 87, 77, 95] }
--- Value for the starter token.
-lockValue :: PlutusV2.Value
-lockValue = Value.singleton lockPid lockTkn (1 :: Integer)
--------------------------------------------------------------------------------
--- | The main public key hash for NEWM.
--------------------------------------------------------------------------------
-getPkh :: PlutusV2.PubKeyHash
-getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [124, 31, 212, 29, 225, 74, 57, 151, 130, 90, 250, 45, 84, 166, 94, 219, 125, 37, 60, 149, 200, 61, 64, 12, 99, 102, 222, 164] }
--------------------------------------------------------------------------------
--- | Hardcoded multisig participants.
--------------------------------------------------------------------------------
--- wallet 1
-multiPkh1 :: PlutusV2.PubKeyHash
-multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [150, 147, 223, 102, 202, 166, 174, 17, 93, 95, 24, 126, 236, 103, 146, 36, 158, 100, 86, 102, 7, 76, 76, 77, 115, 247, 147, 132] }
--- wallet 2
-multiPkh2 :: PlutusV2.PubKeyHash
-multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [213, 247, 65, 6, 15, 203, 170, 116, 238, 77, 158, 69, 116, 252, 176, 72, 211, 197, 56, 78, 192, 206, 73, 158, 8, 137, 190, 83] }
--- wallet 3
-multiPkh3 :: PlutusV2.PubKeyHash
-multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString [67, 158, 82, 1, 141, 168, 20, 19, 240, 146, 132, 217, 97, 51, 160, 89, 193, 4, 222, 70, 42, 11, 29, 37, 211, 114, 106, 151] }
--------------------------------------------------------------------------------
--- | All possible signers inside the multisig
--------------------------------------------------------------------------------
-listOfPkh :: [PlutusV2.PubKeyHash]
-listOfPkh = [multiPkh1, multiPkh2, multiPkh3]
+data ScriptParameters = ScriptParameters 
+  { starterPid :: PlutusV2.CurrencySymbol
+  -- ^ Policy ID of the starter token
+  , starterTkn :: PlutusV2.TokenName
+  -- ^ Token name of the starter token
+  , mainPkh    :: PlutusV2.PubKeyHash
+  -- ^ The main public key hash for NEWM.
+  , multiPkhs  :: [PlutusV2.PubKeyHash]
+  -- ^ The multsig public key hashes for NEWM.
+  }
+PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
@@ -133,25 +114,29 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
-mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
-mkValidator datum redeemer context =
+mkValidator :: ScriptParameters -> CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
+mkValidator ScriptParameters {..} datum redeemer context =
   case redeemer of
     -- | Mint a new tokenization NFT with the NEWM main key.
-    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info getPkh)                        -- NEWM must sign tx
+    Mint -> (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh)                       -- NEWM must sign tx
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- Single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Minting Error"   checkMintingData)                                           -- Correct token mint
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Mint Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
+         && (traceIfFalse "Invalid Starter Tkn" $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
     
     -- | Burn any tokenization NFT with the NEWM multisig.
-    Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info listOfPkh 2)          -- NEWM multisig must sign tx
+    Burn -> (traceIfFalse "Signing Tx Error"    $ UsefulFuncs.checkValidMultisig info multiPkhs 2)          -- NEWM multisig must sign tx
          && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                         -- Single script input
          && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 1)                     -- Single script output
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- Correct token burn
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
-         && (traceIfFalse "Invalid Burn Error" $ Value.geq validatingValue lockValue)                      -- Must contain the starter token
+         && (traceIfFalse "Invalid Starter Tkn" $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
    where
+    -- Value for the starter token.
+    starterValue :: PlutusV2.Value
+    starterValue = Value.singleton starterPid starterTkn (1 :: Integer)
+
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo  context
 
@@ -175,14 +160,14 @@ mkValidator datum redeemer context =
         [(cs, tkn, amt)] -> (cs == cdtNewmPid datum)
                          && (Value.unTokenName tkn == nftName (cdtPrefix datum) (cdtNumber datum))
                          && (amt == (1 :: Integer))
-        _                -> traceError "Bad Minting Data"  -- error on bad mints
+        _                -> traceError "Bad Minting"  -- error on bad mints
     
     -- | Check if exactly 1 token is being burned. Token name here is irrelevant. 
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> traceError "Bad Burning Data"  -- error on bad burns
+        _              -> traceError "Bad Burning"  -- error on bad burns
     
     -- | Check if the continue output datum is of the correct form.
     isContDatumCorrect :: [PlutusV2.TxOut] -> PlutusV2.Value -> CustomRedeemerType -> Bool
@@ -202,17 +187,17 @@ mkValidator datum redeemer context =
                     Burn -> datum == inline
         else isContDatumCorrect xs val redeemer'
 -------------------------------------------------------------------------------
--- | Now we need to compile the Validator.
+-- | Now we need to compile the validator.
 -------------------------------------------------------------------------------
-wrappedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrappedValidator x y z = check (mkValidator (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
+wrappedValidator :: ScriptParameters -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrappedValidator s x y z = check (mkValidator s (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
 
-validator :: PlutusV2.Validator
-validator = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
+validator :: ScriptParameters -> PlutusV2.Validator
+validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
+  $$(PlutusTx.compile [|| wrappedValidator ||])
+  `PlutusTx.applyCode`
+  PlutusTx.liftCode sp
 -- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
 
-lockingContractScriptShortBs :: SBS.ShortByteString
-lockingContractScriptShortBs = SBS.toShort . LBS.toStrict $ serialise validator
-
-lockingContractScript :: PlutusScript PlutusScriptV2
-lockingContractScript = PlutusScriptSerialised lockingContractScriptShortBs
+lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
+lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
