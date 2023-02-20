@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a a transaction with too many script inputs.
+Test tokenization with a a transaction with the wrong starter token.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_mint_starter_token():
     """
-    Build a tokenization transaction that uses two script inputs.
+    Build a tokenization transaction that uses only ada and not the starter token, failing the transaction.
     """
     # env info
     root    = os.environ['ROOT']

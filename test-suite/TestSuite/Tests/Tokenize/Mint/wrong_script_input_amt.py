@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a a transaction with too many script inputs.
+Test tokenization with a a transaction with too many datum inputs.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_mint_script_input_amt():
     """
-    Build a tokenization transaction that uses two script inputs.
+    Build a tokenization transaction that uses two datum inputs.
     """
     # env info
     root    = os.environ['ROOT']
