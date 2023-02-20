@@ -80,8 +80,8 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Mint/Burn Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
-                                         && (traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info mainPkh)
+mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info mainPkh)
+                                         && (traceIfFalse "Mint/Burn/Datum Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -90,13 +90,13 @@ mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Mint/Burn Error"  $ (
     txInputs = ContextsV2.txInfoInputs info
 
     checkPolicyId :: PlutusV2.CurrencySymbol -> Bool
-    checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
+    checkPolicyId cs = cs == ContextsV2.ownCurrencySymbol context
 
     mintAmount :: Integer -> Bool
-    mintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (100_000_000 :: Integer)
+    mintAmount amt = amt == (100_000_000 :: Integer)
     
     burnAmount :: Integer -> Bool
-    burnAmount amt = traceIfFalse "Incorrect Burn Amount" $ amt == (-100_000_000 :: Integer)
+    burnAmount amt = amt == (-100_000_000 :: Integer)
 
     checkMintedAmount :: Bool
     checkMintedAmount =
@@ -162,7 +162,7 @@ mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Mint/Burn Error"  $ (
         Nothing         -> traceError "No Input Datum"
         Just inputDatum ->
           case datumAtValidator of
-            Nothing          -> traceIfFalse "No Output Datum" False
+            Nothing          -> False
             Just outputDatum -> inputDatum == outputDatum
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.

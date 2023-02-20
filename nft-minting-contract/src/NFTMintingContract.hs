@@ -166,14 +166,14 @@ mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Err
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
 
     checkTokenName :: CustomDatumType -> PlutusV2.TokenName -> Bool
-    checkTokenName customRedeemer tkn = traceIfFalse debug $ Value.unTokenName tkn == nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
-      where
-        -- This debugs the required token name.
-        debug :: BuiltinString
-        debug = decodeUtf8 $ "Required Token Name: " <>  nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
+    checkTokenName customRedeemer tkn = Value.unTokenName tkn == nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
+      -- where
+      --   -- This debugs the required token name.
+      --   debug :: BuiltinString
+      --   debug = decodeUtf8 $ "Required Token Name: " <>  nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
 
     checkMintAmount :: Integer -> Bool
-    checkMintAmount amt = traceIfFalse "Incorrect Mint Amount" $ amt == (1 :: Integer)
+    checkMintAmount amt = amt == (1 :: Integer)
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
