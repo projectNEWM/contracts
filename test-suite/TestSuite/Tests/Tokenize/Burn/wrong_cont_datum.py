@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a good transaction.
+Test tokenization with the wrong continue datum.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_burn_cont_datum():
     """
-    Build a tokenization transaction that satisfies the validation logic and submits to the chain.
+    Build a tokenization transaction that changes the continuing datum instead of holding it constant.
     """
     # env info
     root    = os.environ['ROOT']

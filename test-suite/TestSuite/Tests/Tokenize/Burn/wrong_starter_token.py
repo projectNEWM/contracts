@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a good transaction.
+Test tokenization with the wrong starter token.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_burn_starter_token():
     """
-    Build a tokenization transaction that satisfies the validation logic and submits to the chain.
+    Build a tokenization transaction that spends a script UTxO that does not hold the starter token.
     """
     # env info
     root    = os.environ['ROOT']

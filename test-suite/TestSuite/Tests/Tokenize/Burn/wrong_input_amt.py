@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a good transaction.
+Test tokenization with too many datum inputs.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_burn_input_amt():
     """
-    Build a tokenization transaction that satisfies the validation logic and submits to the chain.
+    Build a tokenization transaction that attempts to spend two inputs with inline datums.
     """
     # env info
     root    = os.environ['ROOT']

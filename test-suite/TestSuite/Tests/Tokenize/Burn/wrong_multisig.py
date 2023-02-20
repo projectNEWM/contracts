@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test tokenization with a good transaction.
+Test tokenization with the wrong multisig.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_burn_multisig():
     """
-    Build a tokenization transaction that satisfies the validation logic and submits to the chain.
+    Build a tokenization transaction that does not provide the required multisig.
     """
     # env info
     root    = os.environ['ROOT']
@@ -75,11 +75,6 @@ def wrong_burn_multisig():
     # pkh for signing
     newm_pkh = pkhs['newm']
     collat_pkh = pkhs['collat']
-
-    # multisig signing
-    multisig1 = pkhs['multisig1']
-    multisig2 = pkhs['multisig2']
-    multisig3 = pkhs['multisig3']
 
     # build the output list
     utxo_out = [

@@ -56,7 +56,6 @@ def good_burn_transaction():
     p.write_json_file(script_inline_datum[counter], 'data/current_tokenized_datum.json')
 
     # create script output here
-
     tokenized_output = p.process_output(nft_lock_contract_addr, script_value[counter])
     
     # get the newm addr info
