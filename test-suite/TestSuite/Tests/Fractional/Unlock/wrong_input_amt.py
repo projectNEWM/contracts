@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with a good transaction.
+Test fractionalization with the wrong amount of datum inputs.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_unlock_input_amt():
     """
-    Build a fractionalization transaction that satisfies the validation logic and submits to the chain.
+    Build a fractionalization transaction that attempts to spend two datum inputs.
     """
     # env info
     root    = os.environ['ROOT']

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with a good transaction.
+Test fractionalization with the wrong burn amount.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_unlock_burn_amt():
     """
-    Build a fractionalization transaction that satisfies the validation logic and submits to the chain.
+    Build a fractionalization transaction that attempts to burn 200,000,000 instead of 100,000,000.
     """
     # env info
     root    = os.environ['ROOT']

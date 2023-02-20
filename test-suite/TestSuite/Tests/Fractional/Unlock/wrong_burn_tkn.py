@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with a good transaction.
+Test fractionalization with the wrong token name.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_unlock_burn_tkn():
     """
-    Build a fractionalization transaction that satisfies the validation logic and submits to the chain.
+    Build a fractionalization transaction that burns a token with the wrong token name than what is expected.
     """
     # env info
     root    = os.environ['ROOT']

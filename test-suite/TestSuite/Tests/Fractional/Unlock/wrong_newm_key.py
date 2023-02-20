@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with a good transaction.
+Test fractionalization with the wrong NEWM key.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_unlock_newm_key():
     """
-    Build a fractionalization transaction that satisfies the validation logic and submits to the chain.
+    Build a fractionalization transaction that uses the incorrect signing key for NEWM.
     """
     # env info
     root    = os.environ['ROOT']
