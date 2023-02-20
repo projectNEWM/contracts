@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with the wrong newm master key.
+Test fractionalization with the wrong amount of continuing outputs.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_lock_cont_output_amt():
     """
-    Build a fractionalization transaction that fails to provide the correct newm master key.
+    Build a fractionalization transaction that sends two continue outputs to the script.
     """
     # env info
     root    = os.environ['ROOT']
@@ -41,10 +41,6 @@ def wrong_lock_cont_output_amt():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    # print(script_tx_in)
-    # print(script_inline_datum)
-    # print(script_value)
-    
     mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
     mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}

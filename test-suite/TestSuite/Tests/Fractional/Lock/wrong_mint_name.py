@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Test fractionalization with the wrong newm master key.
+Test fractionalization with the wrong token name on the fractions.
 """
 import os
 import copy
@@ -13,7 +13,7 @@ import TestSuite.transaction as t
 
 def wrong_lock_mint_name():
     """
-    Build a fractionalization transaction that fails to provide the correct newm master key.
+    Build a fractionalization transaction that attempts to mint an incorrectly named fraction.
     """
     # env info
     root    = os.environ['ROOT']
@@ -41,10 +41,6 @@ def wrong_lock_mint_name():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    # print(script_tx_in)
-    # print(script_inline_datum)
-    # print(script_value)
-    
     mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
     mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}
@@ -53,7 +49,6 @@ def wrong_lock_mint_name():
     # create script output here
     fractional_output = p.process_output(ft_lock_contract_addr, new_script_value)
     # print('script output', fractional_output)
-
 
     # minting info
     mint_pid   = script_inline_datum[0]['fields'][0]['bytes']

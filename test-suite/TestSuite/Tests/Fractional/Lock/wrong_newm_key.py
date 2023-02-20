@@ -41,10 +41,6 @@ def wrong_lock_newm_key():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    # print(script_tx_in)
-    # print(script_inline_datum)
-    # print(script_value)
-    
     mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
     mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}
