@@ -28,13 +28,7 @@
 {-# OPTIONS_GHC -fexpose-all-unfoldings       #-}
 module LockStarterNFTContract
   ( lockingContractScript
-  , CustomDatumType(..)
-  , CustomRedeemerType(..)
   , ScriptParameters (..)
-  , NFTLockSchema
-  , testInstance
-  , contract
-  , nftName
   ) where
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -46,21 +40,6 @@ import qualified Plutus.V1.Ledger.Value    as Value
 import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
 import qualified Plutonomy
--- testing stuff
-import Ledger.Typed.Scripts qualified as Scripts
-import Plutus.Contract
-import Ledger.Constraints qualified as Constraints
-import Control.Monad (void, forever)
-import Plutus.Script.Utils.V2.Typed.Scripts qualified as V2
-import Plutus.V2.Ledger.Contexts qualified as V2
-import Prelude qualified as Haskell
-import Data.Aeson (FromJSON, ToJSON)
-import GHC.Generics (Generic)
-import Ledger.Address
-import Cardano.Node.Emulator.Params (pNetworkId)
-import Ledger.Tx qualified as Tx
-import Ledger.Tx.CardanoAPI qualified as Tx
-
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( integerAsByteString
                              , isNInputs
@@ -84,8 +63,7 @@ data ScriptParameters = ScriptParameters
   -- ^ The main public key hash for NEWM.
   , multiPkhs  :: [PlutusV2.PubKeyHash]
   -- ^ The multsig public key hashes for NEWM.
-  } deriving (Haskell.Show, Generic)
-    deriving anyclass (ToJSON, FromJSON)
+  }
 PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
@@ -102,8 +80,7 @@ data CustomDatumType = CustomDatumType
   -- ^ The starting number for the catalog.
   , cdtPrefix  :: PlutusV2.BuiltinByteString
   -- ^ The prefix for a catalog.
-  } deriving stock (Haskell.Show, Generic)
-    deriving anyclass (ToJSON, FromJSON)
+  }
 PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 
 -- | Short circuit the data comparision with if-then-else statments.
@@ -130,8 +107,6 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Mint |
                           Burn
-    deriving stock (Haskell.Show, Generic)
-    deriving anyclass (ToJSON, FromJSON)
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
                                                 ]
@@ -226,67 +201,3 @@ validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.
 
 lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
-
-
--------------------------------------------------------------------------------
--- | Now we can test the validator.
--------------------------------------------------------------------------------
-instance Scripts.ValidatorTypes ScriptParameters where
-    type instance RedeemerType  ScriptParameters = CustomRedeemerType
-    type instance DatumType     ScriptParameters = CustomDatumType
-
-testInstance :: ScriptParameters -> V2.TypedValidator ScriptParameters
-testInstance = V2.mkTypedValidatorParam @ScriptParameters
-    $$(PlutusTx.compile [|| mkValidator ||])
-    $$(PlutusTx.compile [|| wrap ||]) where
-        wrap = Scripts.mkUntypedValidator @PlutusV2.ScriptContext @CustomDatumType @CustomRedeemerType
-
-type NFTLockSchema =
-  Endpoint "lock" (ScriptParameters, CustomDatumType, PlutusV2.Value)
-  .\/ Endpoint "mint" (ScriptParameters, CustomDatumType, PlutusV2.Value)
-  .\/ Endpoint "burn" (ScriptParameters, CustomDatumType, PlutusV2.Value, PlutusV2.Value)
-
-contract :: AsContractError e => Contract () NFTLockSchema e ()
-contract = forever $
-  selectList 
-    [ endpoint @"lock" $ lock
-    , endpoint @"mint" $ mint
-    , endpoint @"burn" $ burn
-    ]
-
--- | Lock the starter token into the nft locking contract.
-lock :: AsContractError e => ( ScriptParameters, CustomDatumType, PlutusV2.Value )-> Contract w s e ()
-lock (sp, cdt, vl) = do
-  let tx      = Constraints.mustPayToTheScriptWithInlineDatum cdt vl
-  void (submitTxConstraints (testInstance sp) tx)
-
--- | Mint a tokenized token using the nft locking contract.
-mint :: forall w s e. AsContractError e => (ScriptParameters, CustomDatumType, PlutusV2.Value) -> Contract w s e ()
-mint (sp, cdt, vl) = do
-  networkId <- pNetworkId <$> getParams
-  let inst    = testInstance sp
-      mintTkn = PlutusV2.TokenName { PlutusV2.unTokenName = (nftName (cdtPrefix cdt) (cdtNumber cdt))}
-      mintVal = PlutusV2.singleton (cdtNewmPid cdt) mintTkn 1
-      signer  = PaymentPubKeyHash { unPaymentPubKeyHash = mainPkh sp }
-  utx <- utxosAt (Scripts.validatorCardanoAddress networkId inst)
-  let tx      =  Constraints.collectFromTheScript utx Mint
-              <> Constraints.mustBeSignedBy signer
-              <> Constraints.mustPayToTheScriptWithInlineDatum cdt vl
-              <> Constraints.mustMintValueWithRedeemer (PlutusV2.Redeemer $ PlutusV2.toBuiltinData Mint) mintVal
-              <> Constraints.mustPayToPubKey signer mintVal
-  void (submitTxConstraintsSpending (testInstance sp) utx tx)
-
--- | Burn a tokenized token using the nft locking contract.
-burn :: forall w s e. AsContractError e => (ScriptParameters, CustomDatumType, PlutusV2.Value, PlutusV2.Value) -> Contract w s e ()
-burn (sp, cdt, bVl, sVl) = do
-  networkId <- pNetworkId <$> getParams
-  let inst    = testInstance sp
-      signers = map  (\x -> PaymentPubKeyHash { unPaymentPubKeyHash = x }) (multiPkhs sp)
-  utx <- utxosAt (Scripts.validatorCardanoAddress networkId inst)
-  let tx      =  Constraints.collectFromTheScript utx Burn
-              <> foldMap Constraints.mustBeSignedBy signers
-              <> Constraints.mustPayToTheScriptWithInlineDatum cdt sVl
-              <> Constraints.mustMintValueWithRedeemer (PlutusV2.Redeemer $ PlutusV2.toBuiltinData Burn) bVl
-  void (submitTxConstraintsSpending (testInstance sp) utx tx)
-  
-  
