@@ -6,6 +6,10 @@ The test suite is designed to run in two terminals, one for the private Cardano 
 
 The test suite runs a test group, a list of test trees. A test tree is a list of tests. A test is a statement, an assertion, and a function to validate the assertion against. Each function is a transaction built for the Cardano blockchain use the `cardano-cli`. Many transactions can be made to verify the contract, stress test endpoints, and find vulnerabilities to the validation logic.
 
+### TestSuite Goals
+
+The goal of this TestSuite is to build a comprehensive testing framework for all NEWM smart contracts. The tests are designed to hit every trace inside the validation logic of a contract endpoint.
+
 ## Steps
 
 First open two terminals. Inside the first terminal run the `start_testnet_node.sh` file. This will turn that terminal into the testnet being used in this testing process. Wait for the node to start, sync, and prep before moving on. The message `Testnet is ready for testing!` will display when the private testnet is ready.
