@@ -181,8 +181,8 @@ echo -e "\033[1;36m Policy Bytes: $(cat policy.bytes) \033[0m"
 cd ../fractionalize-scripts/data
 variable=$(cat ../../minting-contract/policy.id); jq --arg variable "$variable" '.fields[0].bytes=$variable' datum.json > datum-new.json
 mv datum-new.json datum.json
-variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[1].bytes=$variable' datum.json > datum-new.json
-mv datum-new.json datum.json
+# variable=$(cat ../../nft-minting-contract/policy.id); jq --arg variable "$variable" '.fields[1].bytes=$variable' datum.json > datum-new.json
+# mv datum-new.json datum.json
 
 cd ../.. # back into parent
 

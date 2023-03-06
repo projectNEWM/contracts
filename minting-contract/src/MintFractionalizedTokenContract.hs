@@ -63,8 +63,6 @@ PlutusTx.makeLift ''ScriptParameters
 data CustomDatumType = CustomDatumType
     { cdtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
-    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol
-    -- ^ The Newm tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the tokenized token name.
     }
@@ -73,7 +71,6 @@ PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
-           ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
            ( cdtTokenizedTn   a == cdtTokenizedTn   b )
 -------------------------------------------------------------------------------
 -- | mkPolicy :: Redeemer -> ScriptContext -> Bool

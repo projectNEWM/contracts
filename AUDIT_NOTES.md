@@ -110,3 +110,6 @@ The new method:
 ```
 
 The new validation logic will insure that one catalog should only have one starter token.
+
+# QSP-14 Datum Property cdtTokenizedPid May Cause Confusion
+

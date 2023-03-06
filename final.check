@@ -1,4 +1,2 @@
-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./fractionalize-scripts/data/hash.hashes
-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./fractionalize-scripts/data/policy.hashes
-a18cacf11371080eb12d86a0b60e447f14fe34705cceddb4e019bde752a8b040  ./hash.hashes
-7761cbb2116de58c336d218835e204cad18fe8fa6c9c33374ce9edf5cf25f061  ./policy.hashes
+b1fbeae04e6256636a0b672493f787216507f882a4ddde58dc2b41d2dbd6ca61  ./hash.hashes
+3fd0ebcde6f133f32053edf32a011b0192b1c48f402dd988b135b900cb8a26d3  ./policy.hashes

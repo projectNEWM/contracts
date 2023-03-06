@@ -77,7 +77,7 @@ def wrong_mint_cont_output_amt():
 
     # update fractional data
     fractional_datum = p.read_json_file('data/fractional_datum.json')
-    fractional_datum['fields'][2]['bytes'] = mint_name
+    fractional_datum['fields'][1]['bytes'] = mint_name
     p.write_json_file(fractional_datum, 'data/fractional_datum.json')
 
     # calculate the min ada for the fractional prep utxo

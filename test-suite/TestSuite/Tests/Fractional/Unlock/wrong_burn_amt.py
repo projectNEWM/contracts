@@ -43,7 +43,7 @@ def wrong_unlock_burn_amt():
 
     # minting info
     mint_pid   = script_inline_datum[0]['fields'][0]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     mint_amt   = -200000000
     mint_asset = f"{mint_amt} " + mint_pid + "." + mint_tkn
     mint_value = {mint_pid:{mint_tkn:mint_amt}}
