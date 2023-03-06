@@ -98,12 +98,8 @@ mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Error"     $ (checkTokenMint redeemer) || (checkTokenBurn))                                          -- mint or burn
                                                  && (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh || UsefulFuncs.checkValidMultisig info multiPkhs 2)  -- newm or multisig
                                                  && (traceIfFalse "Invalid Datum Error" $ checkInputDatum redeemer validatorHash)                                                 -- input datum equals redeemer
-                                                 && (traceIfFalse "Invalid Starter Tkn" $ Value.geq valueAtValidator starterValue)                                                -- must contain the starter token
+                                                 && (traceIfFalse "Invalid Starter Tkn" $ Value.valueOf valueAtValidator starterPid starterTkn == 1) -- Must contain the starter token
   where
-    -- Value for the starter token.
-    starterValue :: PlutusV2.Value
-    starterValue = Value.singleton starterPid starterTkn (1 :: Integer)
-
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
 

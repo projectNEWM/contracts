@@ -94,3 +94,19 @@ I have been attempting to add as much documentation to the code as possible. Thi
 # QSP-12 Importance of Secure Key Management in the Project
 
 A response is written to this inside the docs folder.
+
+# QSP-13 Validation Allows Multiple Starter Tokens on UTXO
+
+The validation logic now checks if the value of the validating value of the starter token is exactly 1 instead of checking if the validating value is greater than the singleton value of starter token.
+
+The old method:
+```hs
+(traceIfFalse "Invalid Starter Tkn" $ Value.geq validatingValue starterValue)                   -- Must contain the starter token
+```
+
+The new method:
+```hs
+(traceIfFalse "Invalid Starter Tkn" $ Value.valueOf validatingValue starterPid starterTkn == 1) -- Must contain the starter token
+```
+
+The new validation logic will insure that one catalog should only have one starter token.
