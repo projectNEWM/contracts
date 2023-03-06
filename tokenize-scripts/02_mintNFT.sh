@@ -36,7 +36,7 @@ policy_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat data/current_datum.json | jq -r .fields[1].int)
 
-name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name=${token_name}$(echo -n "_${token_number}" | xxd -ps)
 name_ascii=$(echo -n "$name" | xxd -p -r)
 
 variable=${name}; jq --arg variable "$variable" '.fields[1].bytes=$variable' ../fractionalize-scripts/data/datum.json > ../fractionalize-scripts/data/datum-new.json

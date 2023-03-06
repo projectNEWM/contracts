@@ -72,7 +72,8 @@ PlutusTx.makeLift ''ScriptParameters
 -- | Create a token name using a prefix and an integer counter, i.e. token1, token2, etc.
 -------------------------------------------------------------------------------
 nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
-nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
+nftName prefix num = prefix <> "_" <> UsefulFuncs.integerAsByteString num
+-- nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the redeemer data object.
 -------------------------------------------------------------------------------

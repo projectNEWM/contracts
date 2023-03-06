@@ -27,7 +27,7 @@ policy_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 
 #pass in the token number to this script
-name=${token_name}$(echo -n "${1}" | xxd -ps)
+name=${token_name}$(echo -n "_${1}" | xxd -ps)
 
 MINT_ASSET="-1 ${policy_id}.${name}"
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \

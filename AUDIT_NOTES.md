@@ -114,3 +114,29 @@ The new validation logic will insure that one catalog should only have one start
 # QSP-14 Datum Property cdtTokenizedPid May Cause Confusion
 
 The introduction of script parameterization has made the `cdtTokenizedPid` datum value in the fractionalization redundant. The datum value has been removed and the scripts have been updated.
+
+# QSP-15 Token Name Collision Even with Unique Prefixes
+
+To prevent potential token name collisions, an additional "_" is now added into the nftName.
+
+The old method:
+
+```hs
+nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
+```
+
+This allowed this potential naming collision:
+```hs
+nftName "TOKEN" 13 == nftName "TOKEN1" 3
+```
+
+The new method:
+```hs
+nftName prefix num = prefix <> "_" <> UsefulFuncs.integerAsByteString num
+```
+
+This prevents the naming collision:
+```hs
+nftName "TOKEN" 13 /= nftName "TOKEN1" 3
+-- TOKEN_13 /= TOKEN1_3
+```
