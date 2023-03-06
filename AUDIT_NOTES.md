@@ -140,3 +140,13 @@ This prevents the naming collision:
 nftName "TOKEN" 13 /= nftName "TOKEN1" 3
 -- TOKEN_13 /= TOKEN1_3
 ```
+
+# QSP-16 Unlock Operation Does Not Validate NFT Transfer
+
+A new line of logic has been added to the unlock validation inside LockTokenizedNFTContract.
+
+```hs
+(traceIfFalse "Invalid Tkn Error" $ Value.valueOf validatingValue tPid (cdtTokenizedTn datum) == 1)
+```
+
+Now the validating value inside the unlock function must have the value of the tokenized NFT.
