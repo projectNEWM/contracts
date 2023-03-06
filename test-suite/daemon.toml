@@ -1,0 +1,47 @@
+# SOURCE
+
+[source]
+type = "N2C"
+address = ["Unix", "/home/logic/Documents/Work/LogicalMechanism/full-node-wallet/node/db-testnet/node.socket"]
+magic = "preprod"
+
+[source.mapper]
+include_transaction_details = true
+
+[source.intersect]
+type = "Tip"
+
+
+# FILTER
+
+[[filters]]
+type = "Selection"
+
+[filters.check]
+predicate = "any_of"
+
+[[filters.check.argument]]
+predicate = "plutus_scripts_includes"
+argument = "82a756a42ee985f2749f6d530864859a293173ce19c3a6f5069dfca8"
+
+#[[filters.check.argument]]
+#predicate = "address_equals"
+#argument = "addr_test1wzp2w44y9m5ctun5nak4xzryskdzjvtnecvu8fh4q6wle2qsvrcr7"
+
+# SINK
+
+[sink]
+type = "Webhook"
+url = "https://webhook.site/35669e38-fb4c-43b4-aa2e-1963c89a2a80"
+timeout = 30000
+error_policy = "Exit"
+
+[sink.retry_policy]
+max_retries = 30
+backoff_unit =  5000
+backoff_factor = 2
+max_backoff = 100000
+
+[cursor]
+type = "File"
+path = "./oura.cursor"
