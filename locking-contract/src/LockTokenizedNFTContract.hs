@@ -54,7 +54,7 @@ import qualified UsefulFuncs ( isNInputs
 -------------------------------------------------------------------------------
 data ScriptParameters = ScriptParameters
   { tPid     :: PlutusV2.CurrencySymbol
-  -- ^ The LockStarterNFTContract validator hash.
+  -- ^ Newm's tokenization policy id
   , mainPkh :: PlutusV2.PubKeyHash
   -- ^ The main public key hash for NEWM.
   }
@@ -65,8 +65,6 @@ PlutusTx.makeLift ''ScriptParameters
 data CustomDatumType = CustomDatumType
     { cdtFractionalPid :: PlutusV2.CurrencySymbol
     -- ^ The Newm fractionalization minting policy
-    , cdtTokenizedPid  :: PlutusV2.CurrencySymbol
-    -- ^ The artist's tokenized policy id
     , cdtTokenizedTn   :: PlutusV2.TokenName
     -- ^ the artist's tokenized token name.
     }
@@ -76,7 +74,6 @@ PlutusTx.makeIsDataIndexed ''CustomDatumType [('CustomDatumType, 0)]
 instance Eq CustomDatumType where
   {-# INLINABLE (==) #-}
   a == b = ( cdtFractionalPid a == cdtFractionalPid b ) &&
-           ( cdtTokenizedPid  a == cdtTokenizedPid  b ) &&
            ( cdtTokenizedTn   a == cdtTokenizedTn   b )
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.

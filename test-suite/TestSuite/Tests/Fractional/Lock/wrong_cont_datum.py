@@ -41,8 +41,9 @@ def wrong_lock_cont_datum():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    datum_data = p.read_json_file('data/current_tokenized_datum.json')
+    mint_pid = datum_data['fields'][0]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}
     new_script_value = p.add_dicts(script_value[0], tokenized_value)
 
@@ -53,7 +54,7 @@ def wrong_lock_cont_datum():
 
     # minting info
     mint_pid   = script_inline_datum[0]['fields'][0]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     mint_amt   = 100000000
     mint_asset = f"{mint_amt} " + mint_pid + "." + mint_tkn
     mint_value = {mint_pid:{mint_tkn:mint_amt}}
@@ -65,7 +66,7 @@ def wrong_lock_cont_datum():
     newm_tx_in, newm_inline_datum, newm_value = p.txin(tmp)
 
     next_script_datum = copy.deepcopy(script_inline_datum[0])
-    next_script_datum['fields'][2]['bytes'] = "acab"
+    next_script_datum['fields'][1]['bytes'] = "acab"
     p.write_json_file(next_script_datum, 'data/wrong_fractional_datum.json')
 
     # get newm min ada

@@ -9,7 +9,7 @@ sender_address=$(cat wallets/buyer-wallet/payment.addr)
 receiver_address="addr_test1qrupt9d9ug2ufnrrajp2q7gwvmrtzzgr80p5ug7q8nt4d66hu0s5mnhxh2853wtsgn9gdz6wuqtaqnkv0yk78p474d6qudapqh"
 
 # Define Asset to be printed here
-asset="100000000 6d8eb5a6d7005d3d35f5805fc8fd96357b0f53ab59b91508c76cdbb5.4e45574d5f30"
+asset="123456789 c34332d539bb554707a2d8826f2057bc628ac433a779c2f43d4a5b5c.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6731"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \

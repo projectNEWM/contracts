@@ -41,8 +41,12 @@ def wrong_lock_newm_key():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    # print(script_inline_datum[0])
+    
+    datum_data = p.read_json_file('data/current_tokenized_datum.json')
+    mint_pid = datum_data['fields'][0]['bytes']
+    
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}
     new_script_value = p.add_dicts(script_value[0], tokenized_value)
 
@@ -53,7 +57,7 @@ def wrong_lock_newm_key():
 
     # minting info
     mint_pid   = script_inline_datum[0]['fields'][0]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     mint_amt   = 100000000
     mint_asset = f"{mint_amt} " + mint_pid + "." + mint_tkn
     mint_value = {mint_pid:{mint_tkn:mint_amt}}
@@ -63,7 +67,7 @@ def wrong_lock_newm_key():
     artist_addr = addrs['artist']
     q.utxo(cli, network, artist_addr, tmp)
     artist_tx_in, artist_inline_datum, artist_value = p.txin(tmp)
-
+    
     # get artist min ada
     artist_output  = artist_addr + " + 5000000 + " + mint_asset
     mint_min_ada = t.calculate_min_lovelace(cli, tmp, '', artist_output)
@@ -104,6 +108,7 @@ def wrong_lock_newm_key():
     }
 
     result = t.build(cli, tmp, network, tx_object)
+    # print(result)
     # return result
     lines_with_debugging_logs = [line for line in result.splitlines() if "Script debugging logs:" in line]
     # print(lines_with_debugging_logs)

@@ -41,8 +41,9 @@ def wrong_lock_mint_name():
     script_tx_in, script_inline_datum, script_value = p.txin(tmp)
     script_tx_in = script_tx_in[:2]
 
-    mint_pid   = script_inline_datum[0]['fields'][1]['bytes']
-    mint_tkn   = script_inline_datum[0]['fields'][2]['bytes']
+    datum_data = p.read_json_file('data/current_tokenized_datum.json')
+    mint_pid = datum_data['fields'][0]['bytes']
+    mint_tkn   = script_inline_datum[0]['fields'][1]['bytes']
     tokenized_value = {mint_pid:{mint_tkn:1}}
     new_script_value = p.add_dicts(script_value[0], tokenized_value)
 
