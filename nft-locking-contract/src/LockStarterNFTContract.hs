@@ -148,7 +148,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
     validatingValue :: PlutusV2.Value
     validatingValue =
       case ContextsV2.findOwnInput context of
-        Nothing    -> traceError "No Input to Validate"
+        Nothing    -> traceError "No Validating Value"
         Just input -> PlutusV2.txOutValue $ PlutusV2.txInInfoResolved input
 
     -- | Check if exactly 1 token is being minted with a specific token name from the datum.

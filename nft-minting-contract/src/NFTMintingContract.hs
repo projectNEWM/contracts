@@ -135,7 +135,7 @@ mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Err
     checkInputDatum :: CustomDatumType -> PlutusV2.ValidatorHash -> Bool
     checkInputDatum customRedeemer vHash =
       case checkInputs txInputs vHash of
-        Nothing         -> traceError "No Input Datum Hash"
+        Nothing         -> traceError "No Input Datum"
         Just inputDatum -> inputDatum == customRedeemer
     
     -- | Get the value on the output going back to the LockStarterNFTContract.
@@ -164,10 +164,6 @@ mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Err
 
     checkTokenName :: CustomDatumType -> PlutusV2.TokenName -> Bool
     checkTokenName customRedeemer tkn = Value.unTokenName tkn == nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
-      -- where
-      --   -- This debugs the required token name.
-      --   debug :: BuiltinString
-      --   debug = decodeUtf8 $ "Required Token Name: " <>  nftName (cdtPrefix customRedeemer) (cdtNumber customRedeemer)
 
     checkMintAmount :: Integer -> Bool
     checkMintAmount amt = amt == (1 :: Integer)

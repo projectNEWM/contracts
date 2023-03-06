@@ -22,7 +22,7 @@ This entire process is reversible. At any point, an artist may obtain the origin
 
 ## Tokenization
 
-Each UTxO inside the tokenization contract is a unique NEWM catalog, holding a unique datum with a token prefix like "NEWM_", "paintings_", or "songs_" and the current NFT counter. The contract behaves as a sequential NFT generator, minting tokens using the concatenation of the prefix with the current token counter. The sequence of NFTs will continue forever or at least until the size of the token name exceeds 32 characters. The resulting NFTs will have a token name like "NEWM_0" or "NEWM_414".
+Each UTxO inside the tokenization contract holding the starter token and has a datum with correct information is a NEWM catalog. The datum has a token prefix like "NEWM_", "paintings_", or "songs_" and the current NFT counter. The contract behaves as a sequential NFT generator, minting tokens using the concatenation of the prefix with the current token counter. The sequence of NFTs will continue forever or at least until the size of the token name exceeds 32 characters. The resulting NFTs will have a token name like "NEWM_0" or "NEWM_414".
 
 ## Fractionalization
 

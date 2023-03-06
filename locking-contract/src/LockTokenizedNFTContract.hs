@@ -102,7 +102,7 @@ mkValidator ScriptParameters {..} datum redeemer context =
            && (traceIfFalse "Single Input Error"  $ UsefulFuncs.isNInputs txInputs 1)                               -- single script input
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)                           -- single script output
            && (traceIfFalse "Burning Error"        checkMintedAmount)                                               -- burn the ft only
-           && (traceIfFalse "Invalid Tkn Error"   $ Value.valueOf validatingValue tPid (cdtTokenizedTn datum) == 1) -- Must contain the starter token
+           && (traceIfFalse "Invalid Token Error" $ Value.valueOf validatingValue tPid (cdtTokenizedTn datum) == 1) -- Must contain the starter token
 
    where
     info :: PlutusV2.TxInfo

@@ -77,7 +77,7 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error" $ ContextsV2.txSignedBy info mainPkh)
+mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error"       $ ContextsV2.txSignedBy info mainPkh)
                                          && (traceIfFalse "Mint/Burn/Datum Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
   where
     info :: PlutusV2.TxInfo
@@ -156,7 +156,7 @@ mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error" $ C
     checkInputOutputDatum :: PlutusV2.ValidatorHash -> Bool
     checkInputOutputDatum vHash =
       case checkInputs txInputs vHash of
-        Nothing         -> traceError "No Input Datum"
+        Nothing         -> traceError "No Input Datum Found"
         Just inputDatum ->
           case datumAtValidator of
             Nothing          -> False
