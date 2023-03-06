@@ -71,7 +71,7 @@ def wrong_mint_starter_token():
     mint_pid   = script_inline_datum[counter]['fields'][0]['bytes']
     mint_tkn   = script_inline_datum[counter]['fields'][2]['bytes']
     mint_num   = script_inline_datum[counter]['fields'][1]['int']
-    mint_name  = mint_tkn + (str(mint_num)).encode('utf-8').hex()
+    mint_name  = mint_tkn + ("_" +str(mint_num)).encode('utf-8').hex()
     mint_asset = "1 " + mint_pid + "." + mint_name
 
     # update fractional data

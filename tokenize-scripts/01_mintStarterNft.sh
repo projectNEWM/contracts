@@ -16,7 +16,6 @@ multisig2_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/
 multisig3_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/multisig-wallet/multisig3.vkey)
 
 policy_id=$(cat policy/starter.id)
-# It'sTheStarterToken4ProjectNewM
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 MINT_ASSET="1 ${policy_id}.${token_name}"
 #

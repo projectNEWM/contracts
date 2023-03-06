@@ -2,13 +2,13 @@
   "constructor": 0,
   "fields": [
     {
-      "bytes": "0e51495c3ce8e1e7f75c55af7cac6eac210093ac50a441b92a2ec96a"
+      "bytes": "d58e7e99ae0a7a2ca3229938009577375f0e7e92b5776507c6cff709"
     },
     {
       "int": 1
     },
     {
-      "bytes": "4e45574d5f"
+      "bytes": "4e45574d"
     }
   ]
 }

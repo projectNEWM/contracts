@@ -31,7 +31,7 @@ nft_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
 
-name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name=${token_name}$(echo -n "_${token_number}" | xxd -ps)
 name_ascii=$(echo -n "$name" | xxd -p -r)
 
 sed -e "s/<policy_id_hex>/${policy_id}/g" -e "s/<asset_name_ascii>/${name_ascii}/g" ${metadata_json_source} | jq . > /tmp/metadata.json

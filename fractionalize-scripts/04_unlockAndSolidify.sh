@@ -24,7 +24,7 @@ nft_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
 
-name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name=${token_name}$(echo -n "_${token_number}" | xxd -ps)
 
 SC_ASSET="1 ${nft_id}.${name}"
 #
