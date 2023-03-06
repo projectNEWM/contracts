@@ -113,3 +113,4 @@ The new validation logic will insure that one catalog should only have one start
 
 # QSP-14 Datum Property cdtTokenizedPid May Cause Confusion
 
+The introduction of script parameterization has made the `cdtTokenizedPid` datum value in the fractionalization redundant. The datum value has been removed and the scripts have been updated.

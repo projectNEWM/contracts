@@ -1,1 +1,14 @@
-{"constructor": 0, "fields": [{"bytes": "0e51495c3ce8e1e7f75c55af7cac6eac210093ac50a441b92a2ec96a"}, {"int": 1}, {"bytes": "4e45574d5f"}]}
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "bytes": "0e51495c3ce8e1e7f75c55af7cac6eac210093ac50a441b92a2ec96a"
+    },
+    {
+      "int": 0
+    },
+    {
+      "bytes": "4e45574d5f"
+    }
+  ]
+}
