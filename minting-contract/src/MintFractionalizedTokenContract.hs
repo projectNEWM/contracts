@@ -41,6 +41,7 @@ import qualified Plutus.V1.Ledger.Value    as Value
 import qualified Plutus.V1.Ledger.Address  as Addr
 import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
+import           Plutonomy.Raw.Transform   as Options
 import qualified Plutonomy
 {-
   Author   : The Ancient Kraken
@@ -173,5 +174,31 @@ policy sp = PlutusV2.mkMintingPolicyScript $
   `PlutusTx.applyCode`
   PlutusTx.liftCode sp
 
+-- | custom optimizer options; change as needed
+theOptimizerOptions :: Plutonomy.OptimizerOptions
+theOptimizerOptions = Plutonomy.OptimizerOptions
+  { ooOptimizerRounds = 2
+  , ooPreInlineConsts = True
+  , ooInlineUsedOnce  = True
+  , ooInlineSaturated = True
+  , ooSplitDelay      = True
+  , ooEtaForce        = True
+  , ooEtaFun          = True
+  , ooFloatOutLambda  = True
+  , ooFloatOutDelay   = True
+  , ooFloatOutAppArg  = Just Options.FloatOutAppArgValue
+  , ooIfLambda        = True
+  , ooCombineBindings = True
+  , ooKnownRewrites   = True
+  , ooTraceRewrite    = Just TraceRewrite -- Just TraceRemove
+  , ooIfeRewrite      = Just IfeRewriteMore
+  , ooAppError        = Just Options.AppErrorAll
+  , ooCommuteEquals   = True
+  , ooLetZero         = True
+  , ooCSE             = True
+  , ooFloatIn         = True
+  }
+
 mintingPlutusScript :: ScriptParameters -> PlutusScript PlutusScriptV2
-mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)
+mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ 
+  Plutonomy.optimizeUPLCWith theOptimizerOptions $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)

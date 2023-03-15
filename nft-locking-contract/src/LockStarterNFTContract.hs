@@ -39,6 +39,7 @@ import qualified Data.ByteString.Short     as SBS
 import qualified Plutus.V1.Ledger.Value    as Value
 import qualified Plutus.V2.Ledger.Contexts as ContextsV2
 import qualified Plutus.V2.Ledger.Api      as PlutusV2
+import           Plutonomy.Raw.Transform   as Options
 import qualified Plutonomy
 -- importing only required functions for better readability
 import qualified UsefulFuncs ( integerAsByteString
@@ -190,12 +191,37 @@ mkValidator ScriptParameters {..} datum redeemer context =
 wrappedValidator :: ScriptParameters -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedValidator s x y z = check (mkValidator s (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
 
+-- | custom optimizer options; change as needed
+theOptimizerOptions :: Plutonomy.OptimizerOptions
+theOptimizerOptions = Plutonomy.OptimizerOptions
+  { ooOptimizerRounds = 2
+  , ooPreInlineConsts = True
+  , ooInlineUsedOnce  = True
+  , ooInlineSaturated = True
+  , ooSplitDelay      = True
+  , ooEtaForce        = True
+  , ooEtaFun          = True
+  , ooFloatOutLambda  = True
+  , ooFloatOutDelay   = True
+  , ooFloatOutAppArg  = Just Options.FloatOutAppArgValue
+  , ooIfLambda        = True
+  , ooCombineBindings = True
+  , ooKnownRewrites   = True
+  , ooTraceRewrite    = Just TraceRewrite -- Just TraceRemove
+  , ooIfeRewrite      = Just IfeRewriteMore
+  , ooAppError        = Just Options.AppErrorAll
+  , ooCommuteEquals   = True
+  , ooLetZero         = True
+  , ooCSE             = True
+  , ooFloatIn         = True
+  }
+
 validator :: ScriptParameters -> PlutusV2.Validator
-validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
+validator sp = Plutonomy.optimizeUPLCWith theOptimizerOptions $ 
+  Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
   $$(PlutusTx.compile [|| wrappedValidator ||])
   `PlutusTx.applyCode`
   PlutusTx.liftCode sp
--- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
 
 lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
