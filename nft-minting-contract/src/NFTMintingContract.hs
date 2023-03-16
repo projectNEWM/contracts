@@ -37,7 +37,6 @@ import           Cardano.Api.Shelley       ( PlutusScript (..), PlutusScriptV2 )
 import           Codec.Serialise           ( serialise )
 import qualified Data.ByteString.Lazy      as LBS
 import qualified Data.ByteString.Short     as SBS
--- import qualified Plutus.V1.Ledger.Scripts  as Scripts
 import qualified Plutus.V1.Ledger.Value    as Value
 import qualified Plutus.V1.Ledger.Address  as Addr
 import qualified Plutus.V2.Ledger.Contexts as ContextsV2
@@ -73,7 +72,6 @@ PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
 nftName prefix num = prefix <> "_" <> UsefulFuncs.integerAsByteString num
--- nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the redeemer data object.
 -------------------------------------------------------------------------------
@@ -96,10 +94,11 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Error"     $ (checkTokenMint redeemer) || (checkTokenBurn))                                          -- mint or burn
-                                                 && (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh || UsefulFuncs.checkValidMultisig info multiPkhs 2)  -- newm or multisig
-                                                 && (traceIfFalse "Invalid Datum Error" $ checkInputDatum redeemer validatorHash)                                                 -- input datum equals redeemer
-                                                 && (traceIfFalse "Invalid Starter Tkn" $ Value.valueOf valueAtValidator starterPid starterTkn == 1) -- Must contain the starter token
+mkPolicy ScriptParameters {..} redeemer' context 
+  =  (traceIfFalse "Mint/Burn Error"     $ (checkTokenMint redeemer) || (checkTokenBurn))                                          -- mint or burn
+  && (traceIfFalse "Signing Tx Error"    $ ContextsV2.txSignedBy info mainPkh || UsefulFuncs.checkValidMultisig info multiPkhs 2)  -- newm or multisig
+  && (traceIfFalse "Invalid Datum Error" $ checkInputDatum redeemer validatorHash)                                                 -- input datum equals redeemer
+  && (traceIfFalse "Invalid Starter Tkn" $ Value.valueOf valueAtValidator starterPid starterTkn == 1)                              -- Must contain the starter token
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -157,7 +156,7 @@ mkPolicy ScriptParameters {..} redeemer' context =  (traceIfFalse "Mint/Burn Err
       case Value.flattenValue (PlutusV2.txInfoMint info) of
         [(cs, _, amt)] -> checkPolicyId cs               -- Must be this currency symbol
                        && amt == (-1 :: Integer)         -- Must be a single token
-        _                -> traceError "Mint/Burn Error"
+        _              -> traceError "Mint/Burn Error"
     
     checkPolicyId :: PlutusV2.CurrencySymbol ->  Bool
     checkPolicyId cs = traceIfFalse "Incorrect Policy Id" $ cs == ContextsV2.ownCurrencySymbol context
@@ -180,4 +179,5 @@ policy sp = PlutusV2.mkMintingPolicyScript $
   PlutusTx.liftCode sp
 
 mintingPlutusScript :: ScriptParameters -> PlutusScript PlutusScriptV2
-mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)
+mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ 
+  Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)
