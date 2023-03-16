@@ -30,8 +30,14 @@ Within the fractionalization contract, each UTxO represents a distinct fractiona
 
 ## Building
 
-- TODO
+Compiling the smart contracts is a simple as running the script `complete_build.sh` with a specific prefix.
+
+```bash
+./complete_build.sh NEWM
+```
+
+This script will populate the testing folder with the update-to-date contracts.
 
 ## Testing
 
-- TODO
+The testing of the smart contracts are split into two steps. The first step is starting the private testnet with `start_testnet_node.sh` script. The testnet is ready when the terminal displays `Testnet is ready for testing!`. The second step is running the python script `run_tests.py`. This will automatically run the test cases against the private testnet.
