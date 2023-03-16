@@ -70,7 +70,6 @@ PlutusTx.makeLift ''ScriptParameters
 -------------------------------------------------------------------------------
 nftName :: PlutusV2.BuiltinByteString -> Integer -> PlutusV2.BuiltinByteString
 nftName prefix num = prefix <> "_" <> UsefulFuncs.integerAsByteString num
--- nftName prefix num = prefix <> UsefulFuncs.integerAsByteString num
 -------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
@@ -106,8 +105,9 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 -- | Create the redeemer types.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = Mint |
-                          Burn
+data CustomRedeemerType 
+  = Mint -- Mint the next sequential tokenization NFT
+  | Burn -- Burn a tokenization NFT
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Mint, 0 )
                                                 , ( 'Burn, 1 )
                                                 ]
@@ -144,7 +144,6 @@ mkValidator ScriptParameters {..} datum redeemer context =
     txInputs :: [PlutusV2.TxInInfo]
     txInputs = PlutusV2.txInfoInputs  info
 
-    -- | This is the currently validating value from the UTxO being spent in this tx.
     validatingValue :: PlutusV2.Value
     validatingValue =
       case ContextsV2.findOwnInput context of
@@ -164,8 +163,8 @@ mkValidator ScriptParameters {..} datum redeemer context =
     checkBurnedAmount :: Bool
     checkBurnedAmount =
       case Value.flattenValue (PlutusV2.txInfoMint info) of
-        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer))
-        _              -> traceError "Bad Burning"  -- error on bad burns
+        [(cs, _, amt)] -> (cs == cdtNewmPid datum) && (amt == (-1 :: Integer)) -- burn conditions
+        _              -> traceError "Bad Burning"                             -- error on bad burns
     
     -- | Check if the continue output datum is of the correct form.
     isContDatumCorrect :: [PlutusV2.TxOut] -> PlutusV2.Value -> CustomRedeemerType -> Bool
@@ -195,7 +194,6 @@ validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.
   $$(PlutusTx.compile [|| wrappedValidator ||])
   `PlutusTx.applyCode`
   PlutusTx.liftCode sp
--- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
 
 lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator
