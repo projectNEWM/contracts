@@ -78,8 +78,9 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = Lock   |
-                          Unlock
+data CustomRedeemerType 
+  = Lock   -- Lock and fractionalize the NFT
+  | Unlock -- Unlock and solidify the fractions, releasing the nft
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Lock,   0 )
                                                 , ( 'Unlock, 1 )
                                                 ]
@@ -103,7 +104,6 @@ mkValidator ScriptParameters {..} datum redeemer context =
            && (traceIfFalse "Single Output Error" $ UsefulFuncs.isNOutputs contOutputs 0)                           -- single script output
            && (traceIfFalse "Burning Error"        checkMintedAmount)                                               -- burn the ft only
            && (traceIfFalse "Invalid Token Error" $ Value.valueOf validatingValue tPid (cdtTokenizedTn datum) == 1) -- Must contain the starter token
-
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -150,7 +150,6 @@ mkValidator ScriptParameters {..} datum redeemer context =
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
-
 wrappedValidator :: ScriptParameters -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedValidator s x y z = check (mkValidator s (PlutusV2.unsafeFromBuiltinData x) (PlutusV2.unsafeFromBuiltinData y) (PlutusV2.unsafeFromBuiltinData z))
 
@@ -159,8 +158,6 @@ validator sp = Plutonomy.optimizeUPLC $ Plutonomy.validatorToPlutus $ Plutonomy.
   $$(PlutusTx.compile [|| wrappedValidator ||])
   `PlutusTx.applyCode`
   PlutusTx.liftCode sp
--- validator = Plutonomy.optimizeUPLCWith Plutonomy.aggressiveOptimizerOptions $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $$(PlutusTx.compile [|| wrappedValidator ||])
-
 
 lockingContractScript :: ScriptParameters -> PlutusScript PlutusScriptV2
 lockingContractScript = PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . validator

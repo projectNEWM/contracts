@@ -133,7 +133,6 @@ mkValidator ScriptParameters {..} datum redeemer context =
          && (traceIfFalse "NFT Burning Error"   checkBurnedAmount)                                          -- Correct token burn
          && (traceIfFalse "Invalid Datum Error" $ isContDatumCorrect contOutputs validatingValue redeemer)  -- Value is continuing and the datum is correct
          && (traceIfFalse "Invalid Starter Tkn" $ Value.valueOf validatingValue starterPid starterTkn == 1) -- Must contain the starter token
-
    where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo  context
