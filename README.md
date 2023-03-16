@@ -40,4 +40,4 @@ This script will populate the testing folder with the update-to-date contracts.
 
 ## Testing
 
-The testing of the smart contracts are split into two steps. The first step is starting the private testnet with `start_testnet_node.sh` script. The testnet is ready when the terminal displays `Testnet is ready for testing!`. The second step is running the python script `run_tests.py`. This will automatically run the test cases against the private testnet.
+The testing of the smart contracts are split into two steps located in the `test-suite` folder. The first step is starting the private testnet with `start_testnet_node.sh` script. The testnet is ready when the terminal displays `Testnet is ready for testing!`. The second step is running the python script `run_tests.py`. This will automatically run the test cases against the private testnet.
