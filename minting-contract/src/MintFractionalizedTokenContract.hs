@@ -77,8 +77,9 @@ instance Eq CustomDatumType where
 -------------------------------------------------------------------------------
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: ScriptParameters -> BuiltinData -> PlutusV2.ScriptContext -> Bool
-mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error"       $ ContextsV2.txSignedBy info mainPkh)
-                                         && (traceIfFalse "Mint/Burn/Datum Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
+mkPolicy ScriptParameters {..} _ context
+  =  (traceIfFalse "Signing Tx Error"       $ ContextsV2.txSignedBy info mainPkh)
+  && (traceIfFalse "Mint/Burn/Datum Error"  $ (checkMintedAmount && checkInputOutputDatum validatorHash) || (checkBurnedAmount && checkInputDatum validatorHash))
   where
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -89,9 +90,11 @@ mkPolicy ScriptParameters {..} _ context =  (traceIfFalse "Signing Tx Error"    
     checkPolicyId :: PlutusV2.CurrencySymbol -> Bool
     checkPolicyId cs = cs == ContextsV2.ownCurrencySymbol context
 
+    -- must mint 100 million fractions
     mintAmount :: Integer -> Bool
     mintAmount amt = amt == (100_000_000 :: Integer)
     
+    -- must burn 100 million fractions
     burnAmount :: Integer -> Bool
     burnAmount amt = amt == (-100_000_000 :: Integer)
 
@@ -174,4 +177,5 @@ policy sp = PlutusV2.mkMintingPolicyScript $
   PlutusTx.liftCode sp
 
 mintingPlutusScript :: ScriptParameters -> PlutusScript PlutusScriptV2
-mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)
+mintingPlutusScript sp = PlutusScriptSerialised . SBS.toShort $ LBS.toStrict $ serialise $ 
+  Plutonomy.optimizeUPLC $ PlutusV2.Validator $ PlutusV2.unMintingPolicyScript (policy sp)

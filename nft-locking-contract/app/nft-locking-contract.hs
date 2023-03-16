@@ -15,7 +15,6 @@ import qualified Data.ByteString.Lazy   as BS
 import qualified UsefulFuncs            ( createBuiltinByteString )
 import           LockStarterNFTContract ( lockingContractScript, ScriptParameters(..) )
 import           Data.ByteString.Lazy   ( ByteString )
--- import Data.ByteString.Lazy.Char8      ( unpack )
 
 -- Define a type for the JSON data
 data MyData = MyData
@@ -37,7 +36,6 @@ readJsonFile filePath = BS.readFile filePath
 parseJson :: ByteString -> Maybe MyData
 parseJson = decode
 
-  -- putStrLn $ "JSON Data: " ++ (unpack jsonData)
 main :: IO ()
 main = do
   let filePath = "nft_locking_info.json"

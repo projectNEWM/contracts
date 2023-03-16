@@ -37,7 +37,6 @@ readJsonFile filePath = BS.readFile filePath
 parseJson :: ByteString -> Maybe MyData
 parseJson = decode
 
-  -- putStrLn $ "JSON Data: " ++ (unpack jsonData)
 main :: IO ()
 main = do
   let filePath = "nft_minting_info.json"

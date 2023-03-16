@@ -16,7 +16,6 @@ import qualified UsefulFuncs          ( createBuiltinByteString )
 import           Data.ByteString.Lazy ( ByteString )
 import           MintFractionalizedTokenContract ( mintingPlutusScript, ScriptParameters(..) )
 
-
 -- Define a type for the JSON data
 data MyData = MyData
   { pkh       :: [Integer]
@@ -33,7 +32,6 @@ readJsonFile filePath = BS.readFile filePath
 parseJson :: ByteString -> Maybe MyData
 parseJson = decode
 
-  -- putStrLn $ "JSON Data: " ++ (unpack jsonData)
 main :: IO ()
 main = do
   let filePath = "minting_info.json"
@@ -54,20 +52,3 @@ main = do
           Left err -> print $ displayError err
           Right () -> return ()
     Nothing -> putStrLn "Failed to parse JSON data"
-
-
-
-
-
-
-
--- import Prelude
--- import Cardano.Api
--- import MintFractionalizedTokenContract (mintingPlutusScript)
-
--- main :: IO ()
--- main = do
---   result <- writeFileTextEnvelope "minting-contract.plutus" Nothing mintingPlutusScript
---   case result of
---     Left err -> print $ displayError err
---     Right () -> return ()

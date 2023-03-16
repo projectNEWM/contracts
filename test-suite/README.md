@@ -1,6 +1,6 @@
 # Test Suite Instructions
 
-The test suite is designed to run in two terminals, one for the private Cardano testnet and the other for running the tests. Inside the test-suite folder is the `node.env` file, the `start_testnet_node` file,  the TestSuite folder, and the Testnet folder. The env file is used to set the network, cli, and socket path. The start testnet file is an autmated script that will build a private testnet and prep the blockchain with the testing environment. The TestSuite folder holds all the testing logic and the Testnet folder holds all the testnet scripts. Inside the Testnet folder is a `balance.sh` and `tip.sh` file. These are helper scripts to check of the current status of the testnet environment.
+The test suite is designed to run in two terminals, one for the private Cardano testnet and the other for running the tests. Inside the test-suite folder is the `node.env` file, the `start_testnet_node` file,  the TestSuite folder, and the Testnet folder. The env file is used to set the network, cli, and socket path. The start testnet file is an automated script that will build a private testnet and prep the blockchain with the testing environment. The TestSuite folder holds all the testing logic and the Testnet folder holds all the testnet scripts. Inside the Testnet folder is a `balance.sh` and `tip.sh` file. These are helper scripts to check of the current status of the testnet environment.
 
 ### TestSuite Structure
 

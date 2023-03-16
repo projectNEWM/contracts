@@ -15,7 +15,6 @@ import qualified Data.ByteString.Lazy   as BS
 import qualified UsefulFuncs            ( createBuiltinByteString )
 import           LockTokenizedNFTContract ( lockingContractScript, ScriptParameters(..) )
 import           Data.ByteString.Lazy   ( ByteString )
--- import Data.ByteString.Lazy.Char8      ( unpack )
 
 -- Define a type for the JSON data
 data MyData = MyData
@@ -33,7 +32,6 @@ readJsonFile filePath = BS.readFile filePath
 parseJson :: ByteString -> Maybe MyData
 parseJson = decode
 
-  -- putStrLn $ "JSON Data: " ++ (unpack jsonData)
 main :: IO ()
 main = do
   let filePath = "locking_info.json"
@@ -54,17 +52,3 @@ main = do
           Left err -> print $ displayError err
           Right () -> return ()
     Nothing -> putStrLn "Failed to parse JSON data"
-
-
-
-
--- import Prelude
--- import Cardano.Api
--- import LockTokenizedNFTContract ( lockingContractScript )
-
--- main :: IO ()
--- main = do
---   result <- writeFileTextEnvelope "locking-contract.plutus" Nothing lockingContractScript 
---   case result of
---     Left err -> print $ displayError err
---     Right () -> return ()
