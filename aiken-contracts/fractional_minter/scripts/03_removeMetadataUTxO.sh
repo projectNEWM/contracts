@@ -21,13 +21,14 @@ newm_pkh=$(${cli} address key-hash --payment-verification-key-file ./wallets/new
 artist_address=$(cat ./wallets/artist-wallet/payment.addr)
 
 pid=$(cat ../policy.id)
+tkn="283130302902382d3a2b36bfe8b795c74779b4d1cb6e1a879b31c76143093abf"
 # asset to trade
-asset="1 ${pid}.5468697349734f6e6553746172746572546f6b656e466f7254657374696e6730"
+asset="1 ${pid}.${tkn}"
 
 current_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ./tmp/protocol.json \
-    --tx-out-inline-datum-file ./data/cip68/metadata-datum.json \
+    --tx-out-inline-datum-file ./data/metadata-datum.json \
     --tx-out="${script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
 artist_address_out="${artist_address} + ${current_min_utxo} + ${asset}"
@@ -63,7 +64,8 @@ if [ "${TXNS}" -eq "0" ]; then
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ./tmp/script_utxo.json)
+# TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ./tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg policy_id "$pid" --arg name "$tkn" 'to_entries[] | select(.value.value[$policy_id][$name] == 1) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
 # collat info
@@ -81,9 +83,7 @@ fi
 collat_tx_in=$(jq -r 'keys[0]' ./tmp/collat_utxo.json)
 
 # script reference utxo
-script_ref_utxo=$(${cli} transaction txid --tx-file ./tmp/cip68-reference-utxo.signed )
-data_ref_utxo=$(${cli} transaction txid --tx-file ./tmp/referenceable-tx.signed )
-
+script_ref_utxo=$(${cli} transaction txid --tx-file ./tmp/mint-reference-utxo.signed )
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -91,17 +91,15 @@ FEE=$(${cli} transaction build \
     --protocol-params-file ./tmp/protocol.json \
     --out-file ./tmp/tx.draft \
     --change-address ${newm_address} \
-    --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral ${collat_tx_in} \
     --tx-in ${newm_tx_in} \
     --tx-in ${script_tx_in} \
-    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-tx-in-reference="${script_ref_utxo}#2" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file ./data/cip68/remove-redeemer.json \
+    --spending-reference-tx-in-redeemer-file ./data/remove-redeemer.json \
     --tx-out="${artist_address_out}" \
     --required-signer-hash ${newm_pkh} \
-    --required-signer-hash ${hot_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
 
@@ -115,7 +113,6 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file ./wallets/newm-wallet/payment.skey \
-    --signing-key-file ./wallets/hot-wallet/payment.skey \
     --signing-key-file ./wallets/collat-wallet/payment.skey \
     --tx-body-file ./tmp/tx.draft \
     --out-file ./tmp/tx.signed \

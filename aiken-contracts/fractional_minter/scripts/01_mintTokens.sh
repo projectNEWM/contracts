@@ -28,7 +28,6 @@ receiver_address=$(cat wallets/artist-wallet/payment.addr)
 #
 policy_id=$(cat ../policy.id)
 
-
 echo -e "\033[0;36m Gathering NEWM UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
@@ -54,7 +53,6 @@ prefix_333="2833333329"
 
 # for testing
 prefix_bad="283329"
-
 
 ref_name=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_100}')")
 frac_name=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_333}')")
@@ -106,6 +104,7 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${newm_tx_in} \
     --tx-out="${reference_address_out}" \
+    --tx-out-inline-datum-file ./data/metadata-datum.json \
     --tx-out="${fraction_address_out}" \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${newm_pkh} \
@@ -121,7 +120,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
