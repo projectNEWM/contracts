@@ -11,6 +11,7 @@ ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ./t
 
 # contract path
 mint_script_path="../fraction_minter.plutus"
+cip68_script_path="../cip68.plutus"
 
 # Addresses
 reference_address=$(cat ./wallets/reference-wallet/payment.addr)
@@ -25,7 +26,17 @@ mint_min_utxo=$(${cli} transaction calculate-min-required-utxo \
 mint_value=$((${mint_min_utxo}))
 mint_script_reference_utxo="${script_reference_address} + ${mint_value}"
 
-echo -e "Creating Bank Script:\n" ${mint_script_reference_utxo}
+cip68_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file ./tmp/protocol.json \
+    --tx-out-reference-script-file ${cip68_script_path} \
+    --tx-out="${script_reference_address} + 1000000" | tr -dc '0-9')
+
+cip68_value=$((${cip68_min_utxo}))
+cip68_script_reference_utxo="${script_reference_address} + ${cip68_value}"
+
+echo -e "Creating Mint Script:\n" ${mint_script_reference_utxo}
+echo -e "Creating CIP68 Script:\n" ${cip68_script_reference_utxo}
 
 #
 # exit
@@ -60,6 +71,8 @@ ${cli} transaction build-raw \
     --tx-out="${reference_address} + ${starting_reference_lovelace}" \
     --tx-out="${mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${mint_script_path} \
+    --tx-out="${cip68_script_reference_utxo}" \
+    --tx-out-reference-script-file ${cip68_script_path} \
     --fee 900000
 
 FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
@@ -67,7 +80,7 @@ FEE=$(cardano-cli transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
 #
-firstReturn=$((${starting_reference_lovelace} - ${mint_value} - ${fee}))
+firstReturn=$((${starting_reference_lovelace} - ${mint_value} -${cip68_value} - ${fee}))
 
 ${cli} transaction build-raw \
     --babbage-era \
@@ -77,6 +90,8 @@ ${cli} transaction build-raw \
     --tx-out="${reference_address} + ${firstReturn}" \
     --tx-out="${mint_script_reference_utxo}" \
     --tx-out-reference-script-file ${mint_script_path} \
+    --tx-out="${cip68_script_reference_utxo}" \
+    --tx-out-reference-script-file ${cip68_script_path} \
     --fee ${fee}
 
 echo -e "\033[0;36m Signing \033[0m"
@@ -96,6 +111,5 @@ ${cli} transaction submit \
     --tx-file ./tmp/tx-1.signed
 
 #
-
 cp ./tmp/tx-1.signed ./tmp/mint-reference-utxo.signed
 

@@ -1,25 +1,16 @@
 use aiken/bytearray
-use aiken/hash.{Blake2b_224, Hash}
+use aiken/hash
 use aiken/list
-use aiken/transaction.{Input, Mint, ScriptContext, Transaction}
-use aiken/transaction/credential.{VerificationKey}
+use aiken/transaction.{Input, Mint, ScriptContext}
 use aiken/transaction/value.{AssetName, PolicyId}
-
-type PublicKeyHash =
-  Hash<Blake2b_224, VerificationKey>
+use fractional_minter/helpers
+use fractional_minter/types.{PublicKeyHash}
 
 const prefix_100 =
   #"2831303029"
 
 const prefix_333 =
   #"2833333329"
-
-const newm_key =
-  #"e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
-
-fn must_be_signed_by(transaction: Transaction, vk: PublicKeyHash) -> Bool {
-  list.has(transaction.extra_signatories, vk)
-}
 
 fn get_first_index(inputs: List<Input>) -> Int {
   let first_input =
@@ -152,8 +143,10 @@ test bad_mint() {
   )
 }
 
-validator {
+validator(newm_key_data: Data) {
   fn fractional_minter(_redeemer: Void, context: ScriptContext) -> Bool {
+    expect newm_key: PublicKeyHash =
+      newm_key_data
     let tx =
       context.transaction
     let first_index =
@@ -172,7 +165,7 @@ validator {
       Mint(own_currency_symbol) ->
         list.and(
           [
-            must_be_signed_by(tx, newm_key)?,
+            helpers.must_be_signed_by(tx, newm_key)?,
             (first_index < 256)?,
             correct_mint(mint, own_currency_symbol, reference_tkn, 1)?,
             correct_mint(mint, own_currency_symbol, fractions_tkn, 100000000)?,
