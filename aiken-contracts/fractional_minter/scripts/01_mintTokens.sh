@@ -8,6 +8,10 @@ testnet_magic=$(cat ./data/testnet.magic)
 # get params
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
 
+# cip 68 contract
+cip68_script_path="../cip68.plutus"
+cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --testnet-magic ${testnet_magic})
+
 #
 newm_address=$(cat wallets/newm-wallet/payment.addr)
 newm_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/newm-wallet/payment.vkey)
@@ -63,8 +67,9 @@ MINT_ASSET="1 ${policy_id}.${ref_name} + 100000000 ${policy_id}.${frac_name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out="${receiver_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
-reference_address_out="${receiver_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
+    --tx-out-inline-datum-file ./data/metadata-datum.json \
+    --tx-out="${cip68_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
+reference_address_out="${cip68_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
 
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
