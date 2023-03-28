@@ -12,6 +12,10 @@ ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp
 cip68_script_path="../cip68.plutus"
 cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --testnet-magic ${testnet_magic})
 
+# bundle sale contract
+sale_script_path="../../fractional_sale/fractional_sale.plutus"
+sale_script_address=$(${cli} address build --payment-script-file ${sale_script_path} --testnet-magic ${testnet_magic})
+
 #
 newm_address=$(cat wallets/newm-wallet/payment.addr)
 newm_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/newm-wallet/payment.vkey)
@@ -57,6 +61,21 @@ prefix_bad="283329"
 ref_name=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_100}')")
 frac_name=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_333}')")
 
+# update bundle sale datum with frac token name
+bundle_size=10000000
+lovelace_price=1000000
+jq \
+--arg policy_id "$policy_id" \
+--arg frac_name "$frac_name" \
+--argjson bundle_size "$bundle_size" \
+--argjson lovelace_price "$lovelace_price" \
+'.fields[1].fields[0].bytes=$policy_id | 
+.fields[1].fields[1].bytes=$frac_name |
+.fields[1].fields[2].int=$bundle_size |
+.fields[2].fields[2].int=$lovelace_price 
+' \
+./data/sale-datum.json | sponge ./data/sale-datum.json
+
 REFERENCE_ASSET="1 ${policy_id}.${ref_name}"
 FRACTION_ASSET="100000000 ${policy_id}.${frac_name}"
 
@@ -72,14 +91,15 @@ reference_address_out="${cip68_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASS
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
-    --tx-out="${receiver_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
-fraction_address_out="${receiver_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
+    --tx-out-inline-datum-file ./data/sale-datum.json \
+    --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
+fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}
-
-# exit
-
+#
+exit
+#
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
@@ -106,6 +126,7 @@ FEE=$(${cli} transaction build \
     --tx-out="${reference_address_out}" \
     --tx-out-inline-datum-file ./data/metadata-datum.json \
     --tx-out="${fraction_address_out}" \
+    --tx-out-inline-datum-file ./data/sale-datum.json \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${newm_pkh} \
     --mint="${MINT_ASSET}" \
