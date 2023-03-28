@@ -75,6 +75,8 @@ jq \
 .fields[2].fields[2].int=$lovelace_price 
 ' \
 ./data/sale-datum.json | sponge ./data/sale-datum.json
+cp ./data/sale-datum.json ../../fractional_sale/scripts/data/datum/sale_datum.json
+
 
 REFERENCE_ASSET="1 ${policy_id}.${ref_name}"
 FRACTION_ASSET="100000000 ${policy_id}.${frac_name}"
