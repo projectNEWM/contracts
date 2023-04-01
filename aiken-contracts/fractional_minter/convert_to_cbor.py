@@ -10,3 +10,6 @@ if __name__ == "__main__":
     data = bytes.fromhex(hex_string)
     encoded = cbor2.dumps(data)
     print(encoded.hex())
+
+# one liner
+# python3 -c "import cbor2;hex_string='${string}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())"

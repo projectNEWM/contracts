@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
+# the pkh of the new hot key without the network tag
 NEWM_KEY="e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
-NEWM_KEY_CBOR=$(python ./convert_to_cbor.py ${NEWM_KEY})
+# get cbor with the python one liner
+NEWM_KEY_CBOR=$(python3 -c "import cbor2;hex_string='${NEWM_KEY}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
+# NEWM_KEY_CBOR=$(python ./convert_to_cbor.py ${NEWM_KEY})
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"

@@ -23,6 +23,7 @@ validator(newm_key_data: Data) {
         let script_addr =
           validating_input.output.address
         when redeemer is {
+          // removes the utxo entirely from the contract
           Remove ->
             list.and(
               [
@@ -34,6 +35,7 @@ validator(newm_key_data: Data) {
                 helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
               ],
             )
+          // updates the metadata and can increase the min ada only
           Update { lovelace } -> {
             let validating_value =
               validating_input.output.value

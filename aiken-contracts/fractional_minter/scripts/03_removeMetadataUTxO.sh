@@ -21,7 +21,8 @@ newm_pkh=$(${cli} address key-hash --payment-verification-key-file ./wallets/new
 artist_address=$(cat ./wallets/artist-wallet/payment.addr)
 
 pid=$(cat ../policy.id)
-tkn="283130302902382d3a2b36bfe8b795c74779b4d1cb6e1a879b31c76143093abf"
+tkn=$(cat tmp/reference.token)
+# tkn="283130302902382d3a2b36bfe8b795c74779b4d1cb6e1a879b31c76143093abf"
 # asset to trade
 asset="1 ${pid}.${tkn}"
 

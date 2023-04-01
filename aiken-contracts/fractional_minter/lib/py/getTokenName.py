@@ -11,7 +11,6 @@ def token_name(txHash, index, prefix):
         x = x.replace("x", "0")
     txHash = prefix + x + txHash
     print(txHash[0:64])
-    # return txHash[0:64]
 
 if __name__ == "__main__":
     prefix_100 = "2831303029"
