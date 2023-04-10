@@ -4,10 +4,10 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use fractional/data
 use fractional/helpers
-use fractional/types.{ReferenceDatum}
+use fractional/types.{BurnTokens, MintRedeemer, MintTokens, ReferenceDatum}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
-  fn params(_redeemer: Void, context: ScriptContext) -> Bool {
+  fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
     let tx =
       context.transaction
@@ -42,20 +42,59 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
-        list.and(
-          [
-            helpers.must_be_signed_by(tx, newm_key)?,
-            (first_index < 256)?,
-            helpers.correct_mint(mint, own_currency_symbol, reference_tkn, 1)?,
-            helpers.correct_mint(
-              mint,
-              own_currency_symbol,
-              fractions_tkn,
-              100000000,
-            )?,
-            ref_value_check?,
-          ],
-        )
+        when redeemer is {
+          MintTokens ->
+            list.and(
+              [
+                // newm key must sign
+                helpers.must_be_signed_by(tx, newm_key)?,
+                // prevent roll over double nft attack
+                (first_index < 256)?,
+                // must mint 1 reference token
+                helpers.correct_mint(
+                  mint,
+                  own_currency_symbol,
+                  reference_tkn,
+                  1,
+                )?,
+                // must mint 100 M fractions
+                helpers.correct_mint(
+                  mint,
+                  own_currency_symbol,
+                  fractions_tkn,
+                  100000000,
+                )?,
+                // data reference must be holding correct token
+                ref_value_check?,
+              ],
+            )
+          BurnTokens { burn_amt } ->
+            list.and(
+              [
+                // has to be a multisig action
+                helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) == ref_datum.keepers.threshold,
+                // one ref token or any amount of fractions
+                list.or(
+                  [
+                    helpers.correct_burn(
+                      mint,
+                      own_currency_symbol,
+                      types.prefix_100,
+                      -1,
+                    )?,
+                    helpers.correct_mint(
+                      mint,
+                      own_currency_symbol,
+                      types.prefix_444,
+                      -1 * burn_amt,
+                    )?,
+                  ],
+                ),
+                // data reference must be holding correct token
+                ref_value_check?,
+              ],
+            )
+        }
       // Everything else fails
       _ ->
         False

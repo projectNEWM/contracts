@@ -38,7 +38,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           Withdraw ->
             list.and(
               [
+                // data reference must hold correct token
                 ref_value_check,
+                // reward address must be paid the reward
                 helpers.find_exact_payout(
                   reward_addr,
                   value.from_lovelace(reward),

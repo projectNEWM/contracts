@@ -138,3 +138,8 @@ pub type WithdrawRedeemer {
   Withdraw
   Delegate(StakeData)
 }
+
+pub type MintRedeemer {
+  MintTokens
+  BurnTokens { burn_amt: Int }
+}

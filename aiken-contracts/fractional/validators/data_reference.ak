@@ -14,6 +14,7 @@ validator {
   ) -> Bool {
     when context.purpose is {
       Spend(output_reference) -> {
+        // tx being validated
         let tx =
           context.transaction
         let validating_input =
@@ -22,6 +23,7 @@ validator {
           validating_input.output.value
         let script_addr =
           validating_input.output.address
+        // the datum incoming
         expect cont_datum: ReferenceDatum =
           helpers.get_outbound_datum(tx, validating_input)
         let datum_cont_check =
@@ -35,7 +37,7 @@ validator {
                   datum.contracts == cont_datum.contracts,
                 ],
               )
-            // Update the multisig, 1 more than half
+            // Update the multisig, 1 more than none
             UpdateKeepers -> {
               let l =
                 list.length(cont_datum.keepers.pkhs)
@@ -53,6 +55,7 @@ validator {
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
                   l >= t,
+                  // a*l + b*c <= b*t 
                   a * l + b * c <= b * t,
                 ],
               )

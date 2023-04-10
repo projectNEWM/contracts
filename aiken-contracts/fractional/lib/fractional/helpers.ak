@@ -271,6 +271,27 @@ pub fn correct_mint(
   }
 }
 
+pub fn correct_burn(
+  mint: List<(PolicyId, AssetName, Int)>,
+  pid: PolicyId,
+  prefix: AssetName,
+  amt: Int,
+) -> Bool {
+  when mint is {
+    [(policy, token_name, quantity), ..rest] -> {
+      let p =
+        bytearray.take(token_name, 5)
+      if list.and([policy == pid, prefix == p, quantity == amt]) == True {
+        True
+      } else {
+        correct_burn(rest, pid, prefix, amt)
+      }
+    }
+    [] ->
+      False
+  }
+}
+
 pub fn get_reward_amt(
   withdraws: Dict<StakeCredential, Int>,
   stake_credential: StakeCredential,

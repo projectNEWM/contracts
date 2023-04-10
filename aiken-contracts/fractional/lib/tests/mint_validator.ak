@@ -4,6 +4,14 @@ use aiken/transaction/value
 use fractional/helpers
 use fractional/types
 
+test check_if_it_has_a_prefix() {
+  let x =
+    #"28333333290138c741df813afd1e2ba521d6b798dcabbc813ac7ba84467080b9"
+  let p =
+    bytearray.take(x, 5)
+  p == types.prefix_333
+}
+
 test length_of_prefix() {
   list.and(
     [
