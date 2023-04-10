@@ -2,11 +2,12 @@
 set -e
 
 # the pkh of the new hot key without the network tag
-NEWM_KEY="e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+NEWM_KEY="E6F85717B932788E3B1E57B11E9F8BF190D257C57D369979C18A02DD"
+# echo $NEW_key
 # get cbor with the python one liner
-NEWM_KEY_CBOR=$(python3 -c "import cbor2;hex_string='${NEWM_KEY}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
-# NEWM_KEY_CBOR=$(python ./convert_to_cbor.py ${NEWM_KEY})
-
+NEWM_KEY_CBOR=$(python ./convert_to_cbor.py ${NEWM_KEY})
+echo $NEWM_KEY_CBOR
+echo "(con data #${NEWM_KEY_CBOR})"
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
 aiken build
@@ -19,6 +20,11 @@ aiken blueprint convert -v fractional_minter.fractional_minter > fraction_minter
 echo -e "\033[1;33m Convert CIP68 Contract \033[0m"
 aiken blueprint apply -v cip68.cip68 . "(con data #${NEWM_KEY_CBOR})"
 aiken blueprint convert -v cip68.cip68 > cip68.plutus
+
+# start with data reference
+echo -e "\033[1;33m Convert Sale Contract \033[0m"
+aiken blueprint convert -v fractional_sale.fractional_sale > fractional_sale.plutus
+
 
 # minting contract policy id
 cardano-cli transaction policyid --script-file fraction_minter.plutus > policy.id
