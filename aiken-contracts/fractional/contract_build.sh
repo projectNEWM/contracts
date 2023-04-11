@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+function cat_file_or_empty() {
+  if [ -e "$1" ]; then
+    cat "$1"
+  else
+    echo ""
+  fi
+}
+
 # create directories if dont exist
 mkdir -p contracts
 mkdir -p hashes
@@ -34,6 +42,8 @@ aiken blueprint apply -o plutus.json -v cip68.params "${pid_cbor}" .
 aiken blueprint apply -o plutus.json -v cip68.params "${tkn_cbor}" .
 aiken blueprint apply -o plutus.json -v cip68.params "${ref_cbor}" .
 aiken blueprint convert -v cip68.params > contracts/cip68_contract.plutus
+cardano-cli transaction policyid --script-file contracts/cip68_contract.plutus > hashes/cip68.hash
+
 
 # build the stake contract
 echo -e "\033[1;33m Convert Stake Contract \033[0m"
@@ -47,6 +57,8 @@ cardano-cli stake-address delegation-certificate --stake-script-file contracts/s
 
 echo -e "\033[1;33m Convert Sale Contract \033[0m"
 aiken blueprint convert -v sale.sale > contracts/sale_contract.plutus
+cardano-cli transaction policyid --script-file contracts/sale_contract.plutus > hashes/sale.hash
+
 
 echo -e "\033[1;33m Convert Minting Contract \033[0m"
 aiken blueprint apply -o plutus.json -v minter.params "${pid_cbor}" .
@@ -54,5 +66,45 @@ aiken blueprint apply -o plutus.json -v minter.params "${tkn_cbor}" .
 aiken blueprint apply -o plutus.json -v minter.params "${ref_cbor}" .
 aiken blueprint convert -v minter.params > contracts/mint_contract.plutus
 cardano-cli transaction policyid --script-file contracts/mint_contract.plutus > hashes/policy.hash
+
+###############DATUM AND REDEEMER STUFF
+echo -e "\033[1;33m Updating Reference Datum \033[0m"
+# # build out the reference datum data
+caPkh=$(cat_file_or_empty ./scripts/wallets/newm-wallet/payment.hash)
+# keepers
+pkh1=$(cat_file_or_empty ./scripts/wallets/keeper1-wallet/payment.hash)
+pkh2=$(cat_file_or_empty ./scripts/wallets/keeper2-wallet/payment.hash)
+pkh3=$(cat_file_or_empty ./scripts/wallets/keeper3-wallet/payment.hash)
+pkhs="[{\"bytes\": \"$pkh1\"}, {\"bytes\": \"$pkh2\"}, {\"bytes\": \"$pkh3\"}]"
+thres=3
+# pool stuff
+rewardPkh=$(cat_file_or_empty ./scripts/wallets/reward-wallet/payment.hash)
+rewardSc=""
+# validator hashes
+cip68Hash=$(cat hashes/cip68.hash)
+saleHash=$(cat hashes/sale.hash)
+stakeHash=$(cat hashes/stake.hash)
+#
+jq \
+--arg caPkh "$caPkh" \
+--argjson pkhs "$pkhs" \
+--argjson thres "$thres" \
+--arg poolId "$poolId" \
+--arg rewardPkh "$rewardPkh" \
+--arg rewardSc "$rewardSc" \
+--arg cip68Hash "$cip68Hash" \
+--arg saleHash "$saleHash" \
+--arg stakeHash "$stakeHash" \
+'.fields[0].bytes=$caPkh | 
+.fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
+.fields[1].fields[1].int=$thres | 
+.fields[2].fields[0].bytes=$poolId |
+.fields[2].fields[1].bytes=$rewardPkh |
+.fields[2].fields[2].bytes=$rewardSc |
+.fields[3].fields[0].bytes=$cip68Hash |
+.fields[3].fields[1].bytes=$saleHash |
+.fields[3].fields[2].bytes=$stakeHash
+' \
+./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
 
 echo -e "\033[1;32m Building Complete! \033[0m"
