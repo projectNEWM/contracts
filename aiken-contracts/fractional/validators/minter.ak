@@ -72,7 +72,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // has to be a multisig action
-                helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) == ref_datum.keepers.threshold,
+                helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) >= ref_datum.keepers.threshold,
                 // one ref token or any amount of fractions
                 list.or(
                   [

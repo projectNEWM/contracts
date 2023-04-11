@@ -76,7 +76,7 @@ pkh1=$(cat_file_or_empty ./scripts/wallets/keeper1-wallet/payment.hash)
 pkh2=$(cat_file_or_empty ./scripts/wallets/keeper2-wallet/payment.hash)
 pkh3=$(cat_file_or_empty ./scripts/wallets/keeper3-wallet/payment.hash)
 pkhs="[{\"bytes\": \"$pkh1\"}, {\"bytes\": \"$pkh2\"}, {\"bytes\": \"$pkh3\"}]"
-thres=3
+thres=2
 # pool stuff
 rewardPkh=$(cat_file_or_empty ./scripts/wallets/reward-wallet/payment.hash)
 rewardSc=""

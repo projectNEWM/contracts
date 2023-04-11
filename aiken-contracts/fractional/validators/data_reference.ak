@@ -43,20 +43,12 @@ validator {
                 list.length(cont_datum.keepers.pkhs)
               let t =
                 cont_datum.keepers.threshold
-              let a =
-                1
-              let b =
-                2
-              let c =
-                1
               list.and(
                 [
                   datum.hot_key == cont_datum.hot_key,
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
                   l >= t,
-                  // a*l + b*c <= b*t 
-                  a * l + b * c <= b * t,
                 ],
               )
             }

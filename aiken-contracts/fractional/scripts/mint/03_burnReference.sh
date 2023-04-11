@@ -5,22 +5,8 @@ export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
 cli=$(cat ../data/path_to_cli.sh)
 testnet_magic=$(cat ../data/testnet.magic)
 
-if [[ $# -eq 0 ]] ; then
-    echo -e "\n \033[0;31m Please Supply A Burn Amount \033[0m \n";
-    exit
-fi
-if [[ ${1} -eq 0 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Greater Than Zero \033[0m \n";
-    exit
-fi
-if [[ ${1} -gt 100000000 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To 100 M \033[0m \n";
-    exit
-fi
-
-burnAmt=${1}
 # update the starting lock time
-variable=${burnAmt}; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
+variable=0; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
 mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 
 # get params
@@ -46,7 +32,7 @@ keeper3_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 
 # the minting script policy
 policy_id=$(cat ../../hashes/policy.hash)
-token_name=$(cat ../tmp/fraction.token)
+token_name=$(cat ../tmp/reference.token)
 
 echo -e "\033[0;36m Gathering Artist UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -63,22 +49,11 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/artist_utxo.json)
 artist_tx_in=${TXIN::-8}
 
-echo "Artist UTxO:" $artist_tx_in
+# echo "Artist UTxO:" $artist_tx_in
 
-CURRENT_VALUE=$(jq -r --arg policy_id "${policy_id}" --arg token_name "${token_name}" 'to_entries[] | select(.value.value[$policy_id][$token_name]) | .value.value[$policy_id][$token_name]' ../tmp/artist_utxo.json)
-echo $CURRENT_VALUE
+BURN_ASSET="-1 ${policy_id}.${token_name}"
 
-BURN_ASSET="-${burnAmt} ${policy_id}.${token_name}"
-
-echo $BURN_ASSET
-
-retAmt=$((${CURRENT_VALUE} - ${burnAmt}))
-
-if [[ CURRENT_VALUE -lt burnAmt ]] ; then
-    echo "Not Enough Tokens For The Burn"
-    exit
-fi
-
+# echo $BURN_ASSET
 
 
 RETURN_ASSET="${retAmt} ${policy_id}.${token_name}"
@@ -86,13 +61,9 @@ RETURN_ASSET="${retAmt} ${policy_id}.${token_name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out="${artist_address} + 5000000 + ${RETURN_ASSET}" | tr -dc '0-9')
+    --tx-out="${artist_address} + 5000000" | tr -dc '0-9')
 
-if [[ retAmt -eq 0 ]] ; then
-    artist_address_out="${artist_address} + ${UTXO_VALUE}"
-else
-    artist_address_out="${artist_address} + ${UTXO_VALUE} + ${RETURN_ASSET}"
-fi
+artist_address_out="${artist_address} + ${UTXO_VALUE}"
 
 echo "Artist Return OUTPUT:" ${artist_address_out}
 #

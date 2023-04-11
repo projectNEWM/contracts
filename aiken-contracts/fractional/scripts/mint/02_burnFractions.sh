@@ -63,14 +63,14 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/artist_utxo.json)
 artist_tx_in=${TXIN::-8}
 
-echo "Artist UTxO:" $artist_tx_in
+# echo "Artist UTxO:" $artist_tx_in
 
 CURRENT_VALUE=$(jq -r --arg policy_id "${policy_id}" --arg token_name "${token_name}" 'to_entries[] | select(.value.value[$policy_id][$token_name]) | .value.value[$policy_id][$token_name]' ../tmp/artist_utxo.json)
-echo $CURRENT_VALUE
+# echo $CURRENT_VALUE
 
 BURN_ASSET="-${burnAmt} ${policy_id}.${token_name}"
 
-echo $BURN_ASSET
+# echo $BURN_ASSET
 
 retAmt=$((${CURRENT_VALUE} - ${burnAmt}))
 
@@ -78,8 +78,6 @@ if [[ CURRENT_VALUE -lt burnAmt ]] ; then
     echo "Not Enough Tokens For The Burn"
     exit
 fi
-
-
 
 RETURN_ASSET="${retAmt} ${policy_id}.${token_name}"
 
