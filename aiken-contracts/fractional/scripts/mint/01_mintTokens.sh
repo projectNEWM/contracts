@@ -49,8 +49,8 @@ TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/newm_u
 newm_tx_in=${TXIN::-8}
 
 echo "NEWM UTxO:" $newm_tx_in
-
-string=${newm_tx_in}
+first_utxo=$(jq -r 'keys[0]' ../tmp/newm_utxo.json)
+string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
 prefix_100="2831303029"

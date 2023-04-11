@@ -49,17 +49,17 @@ def create_metadata_datum(path, tag, pid, tkn, version):
     for key in metadata:
         # string conversion
         if isinstance(metadata[key], str):
-            map_object["map"].append({"k": string_to_hex(key), "v":byte_object(string_to_hex(metadata[key]))})
+            map_object["map"].append({"k": byte_object(string_to_hex(key)), "v":byte_object(string_to_hex(metadata[key]))})
 
         # int conversion
         if isinstance(metadata[key], int):
-            map_object["map"].append({"k": string_to_hex(key), "v":int_object(metadata[key])})
+            map_object["map"].append({"k": byte_object(string_to_hex(key)), "v":int_object(metadata[key])})
         
         # list conversion
         if isinstance(metadata[key], list):
             # default it to the empty list object
             if len(metadata[key]) == 0:
-                map_object["map"].append({"k": string_to_hex(key),"v":{"list": []}})
+                map_object["map"].append({"k": byte_object(string_to_hex(key)),"v":{"list": []}})
             
             # list of dicts
             elif isinstance(metadata[key][0], dict):
@@ -68,26 +68,26 @@ def create_metadata_datum(path, tag, pid, tkn, version):
                     for nested_key in value:
                         # dict of strings
                         if isinstance(value[nested_key], str):
-                            nested_map["map"].append({"k": string_to_hex(nested_key), "v":byte_object(string_to_hex(value[nested_key]))})
+                            nested_map["map"].append({"k": byte_object(string_to_hex(nested_key)), "v":byte_object(string_to_hex(value[nested_key]))})
 
                         # dict of ints
                         if isinstance(value[nested_key], int):
-                            nested_map["map"].append({"k": string_to_hex(nested_key), "v":int_object(value[nested_key])})
-                map_object["map"].append({"k": string_to_hex(key),"v":nested_map})
+                            nested_map["map"].append({"k": byte_object(string_to_hex(nested_key)), "v":int_object(value[nested_key])})
+                map_object["map"].append({"k": byte_object(string_to_hex(key)),"v":nested_map})
             
             # list of strings
             elif isinstance(metadata[key][0], str):
                 list_object = []
                 for value in metadata[key]:
                     list_object.append({"bytes": string_to_hex(value)})
-                map_object["map"].append({"k": string_to_hex(key),"v":{"list": list_object}})
+                map_object["map"].append({"k": byte_object(string_to_hex(key)),"v":{"list": list_object}})
             
             # list of ints
             elif isinstance(metadata[key][0], int):
                 list_object = []
                 for value in metadata[key]:
                     list_object.append({"int": value})
-                map_object["map"].append({"k": string_to_hex(key),"v":{"list": list_object}})
+                map_object["map"].append({"k": byte_object(string_to_hex(key)),"v":{"list": list_object}})
     
     metadata_datum['fields'].append(map_object)
     metadata_datum['fields'].append(version_object)
@@ -99,9 +99,9 @@ def create_metadata_datum(path, tag, pid, tkn, version):
 if __name__ == "__main__":
     
     file_path = "AdaNinjaz-Daisuke.metadata.json"
-    datum_path = "AdaNinjaz-Daisuke.metadatUM.json"
+    datum_path = "AdaNinjaz-Daisuke.metadatum.json"
     datum = create_metadata_datum(file_path, '721', '<policy_id_hex>', '<asset_name_ascii>', 1)
     
-    print(datum)
-    # write_metadatum_file(datum_path, datum)
+    # print(datum)
+    write_metadatum_file(datum_path, datum)
    
