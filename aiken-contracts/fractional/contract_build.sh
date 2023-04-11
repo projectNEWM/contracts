@@ -84,7 +84,8 @@ rewardSc=""
 cip68Hash=$(cat hashes/cip68.hash)
 saleHash=$(cat hashes/sale.hash)
 stakeHash=$(cat hashes/stake.hash)
-#
+
+# update reference data
 jq \
 --arg caPkh "$caPkh" \
 --argjson pkhs "$pkhs" \
@@ -106,5 +107,13 @@ jq \
 .fields[3].fields[2].bytes=$stakeHash
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
+
+# Update Staking Redeemer
+echo -e "\033[1;33m Updating Stake Redeemer \033[0m"
+stakeHash=$(cat_file_or_empty ./hashes/stake.hash)
+jq \
+--arg stakeHash "$stakeHash" \
+'.fields[0].fields[0].bytes=$stakeHash' \
+./scripts/data/staking/delegate-redeemer.json | sponge ./scripts/data/staking/delegate-redeemer.json
 
 echo -e "\033[1;32m Building Complete! \033[0m"
