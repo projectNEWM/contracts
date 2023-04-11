@@ -35,18 +35,21 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
-artist_utxo=${TXIN::-8}
-echo SELLER UTXO ${artist_utxo}
+# TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+# artist_utxo=${TXIN::-8}
+
 
 #
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 total_amt=100000000
 
-default_asset="${total_amt} ${pid}.${tkn}"
+TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .key' ../tmp/script_utxo.json)
+artist_tx_in=$TXIN
+echo SELLER UTXO ${artist_tx_in}
 
-CURRENT_VALUE=$(jq -r --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+default_asset="${total_amt} ${pid}.${tkn}"
+CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 echo $CURRENT_VALUE
 
 if [[ $# -eq 0 ]] ; then
@@ -146,7 +149,7 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in-collateral ${collat_utxo} \
     --tx-in ${buyer_tx_in} \
-    --tx-in ${artist_utxo} \
+    --tx-in ${artist_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \

@@ -98,8 +98,8 @@ def create_metadata_datum(path, tag, pid, tkn, version):
 
 if __name__ == "__main__":
     
-    file_path = "AdaNinjaz-Daisuke.metadata.json"
-    datum_path = "AdaNinjaz-Daisuke.metadatum.json"
+    file_path = "example.metadata.json"
+    datum_path = "example.metadatum.json"
     datum = create_metadata_datum(file_path, '721', '<policy_id_hex>', '<asset_name_ascii>', 1)
     
     # print(datum)
