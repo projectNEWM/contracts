@@ -27,7 +27,8 @@ newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/ne
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 #
-receiver_address=$(cat ../wallets/artist-wallet/payment.addr)
+# receiver_address=$(cat ../wallets/artist-wallet/payment.addr)
+receiver_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 # the minting script policy
 policy_id=$(cat ../../hashes/policy.hash)
@@ -69,11 +70,13 @@ echo -n $frac_name > ../tmp/fraction.token
 bundle_size=10000000
 lovelace_price=1000000
 jq \
+--arg pkh "$receiver_pkh" \
 --arg policy_id "$policy_id" \
 --arg frac_name "$frac_name" \
 --argjson bundle_size "$bundle_size" \
 --argjson lovelace_price "$lovelace_price" \
-'.fields[1].fields[0].bytes=$policy_id | 
+'.fields[0].fields[0].bytes=$pkh |
+.fields[1].fields[0].bytes=$policy_id | 
 .fields[1].fields[1].bytes=$frac_name |
 .fields[1].fields[2].int=$bundle_size |
 .fields[2].fields[2].int=$lovelace_price 
@@ -98,7 +101,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
-fraction_address_out="${receiver_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
+fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}

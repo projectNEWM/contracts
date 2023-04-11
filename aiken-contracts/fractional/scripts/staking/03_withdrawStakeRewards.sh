@@ -5,15 +5,11 @@ export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
 cli=$(cat ../data/path_to_cli.sh)
 testnet_magic=$(cat ../data/testnet.magic)
 
-# cip68 address
-script_path="../../contracts/cip68_contract.plutus"
-cip68_address=$(cardano-cli stake-address build --stake-script-file ${script_path} --testnet-magic ${testnet_magic})
-echo cip68_address: $cip68_address
+# staking contract
+stake_script_path="../../contracts/stake_contract.plutus"
+stake_address=$(${cli} stake-address build --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
-# sale address
-script_path="../../contracts/sale_contract.plutus"
-sale_address=$(cardano-cli stake-address build --stake-script-file ${script_path} --testnet-magic ${testnet_magic})
-echo sale_address: $sale_address
+echo "Stake Address: " $stake_address
 
 # collat
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -26,33 +22,20 @@ newm_address=$(cat ../wallets/newm-wallet/payment.addr)
 reward_address=$(cat ../wallets/reward-wallet/payment.addr)
 
 # find rewards
-cip68RewardBalance=$(${cli} query stake-address-info \
+rewardBalance=$(${cli} query stake-address-info \
     --testnet-magic ${testnet_magic} \
-    --address ${cip68_address} | jq -r ".[0].rewardAccountBalance")
-echo rewardBalance: $cip68RewardBalance
+    --address ${stake_address} | jq -r ".[0].rewardAccountBalance")
+echo rewardBalance: $rewardBalance
 
-if [ "$cip68RewardBalance" = "null" ]; then
-   echo -e "\n \033[0;31m No Rewards Found At ${cip68_address} \033[0m \n";
+if [ "$rewardBalance" -eq 0 ]; then
+   echo -e "\n \033[0;31m No Rewards Found At ${stake_address} \033[0m \n";
    exit;
 fi
 
-# find rewards
-saleRewardBalance=$(${cli} query stake-address-info \
-    --testnet-magic ${testnet_magic} \
-    --address ${sale_address} | jq -r ".[0].rewardAccountBalance")
-echo rewardBalance: $saleRewardBalance
-
-if [ "$saleRewardBalance" = "null" ]; then
-   echo -e "\n \033[0;31m No Rewards Found At ${sale_address} \033[0m \n";
-   exit;
-fi
-
-cip68WithdrawalString="${cip68_address}+${cip68RewardBalance}"
-saleWithdrawalString="${sale_address}+${saleRewardBalance}"
-echo "CIP68 Withdraw: " $cip68WithdrawalString
-echo "Sale Withdraw: " $saleWithdrawalString
+withdrawalString="${stake_address}+${rewardBalance}"
+echo "Withdraw: " $withdrawalString
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Gathering UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -95,16 +78,11 @@ FEE=$(${cli} transaction build \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${seller_tx_in} \
-    --withdrawal ${cip68WithdrawalString} \
+    --withdrawal ${withdrawalString} \
     --withdrawal-tx-in-reference="${script_ref_utxo}#1" \
     --withdrawal-plutus-script-v2 \
     --withdrawal-reference-tx-in-redeemer-file ../data/staking/withdraw-redeemer.json \
-    --withdrawal ${saleWithdrawalString} \
-    --withdrawal-tx-in-reference="${script_ref_utxo}#1" \
-    --withdrawal-plutus-script-v2 \
-    --withdrawal-reference-tx-in-redeemer-file ../data/staking/withdraw-redeemer.json \
-    --tx-out="${reward_address}+${cip68RewardBalance}" \
-    --tx-out="${reward_address}+${saleRewardBalance}" \
+    --tx-out="${reward_address}+${rewardBalance}" \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
 
@@ -113,7 +91,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

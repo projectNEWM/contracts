@@ -1,48 +1,53 @@
 #!/bin/bash
 set -e
 
-source ../.env
+export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
+cli=$(cat ../data/path_to_cli.sh)
+testnet_magic=$(cat ../data/testnet.magic)
+
+# staking contract
+stake_script_path="../../contracts/stake_contract.plutus"
+
+# bundle sale contract
+sale_script_path="../../contracts/sale_contract.plutus"
+script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+
+# collat, artist, reference
+artist_address=$(cat ../wallets/artist-wallet/payment.addr)
+artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 #
-script_path="../fractional_sale.plutus"
-script_address=$(${cli} address build --payment-script-file ${script_path} ${network})
+collat_address=$(cat ../wallets/collat-wallet/payment.addr)
+collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
-# collat, seller, reference
-seller_address=$(cat wallets/seller-wallet/payment.addr)
-seller_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
-
-#
-collat_address=$(cat wallets/collat-wallet/payment.addr)
-collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
-
-pid=$(jq -r '.fields[1].fields[0].bytes' data/datum/sale_datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' data/datum/sale_datum.json)
+pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --tx-out-inline-datum-file data/datum/sale_datum.json \
+    --protocol-params-file ../tmp/protocol.json \
+    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    ${network} \
-    --out-file tmp/script_utxo.json
+    --testnet-magic ${testnet_magic} \
+    --out-file ../tmp/script_utxo.json
 # transaction variables
-TXNS=$(jq length tmp/script_utxo.json)
+TXNS=$(jq length ../tmp/script_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
 
-TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-CURRENT_VALUE=$(jq -r --arg sellerPkh "${seller_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .value.value[$pid][$tkn]' tmp/script_utxo.json)
+CURRENT_VALUE=$(jq -r --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
@@ -58,67 +63,67 @@ echo "Update OUTPUT: "${script_address_out}
 #
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
-    ${network} \
-    --address ${seller_address} \
-    --out-file tmp/seller_utxo.json
-TXNS=$(jq length tmp/seller_utxo.json)
+    --testnet-magic ${testnet_magic} \
+    --address ${artist_address} \
+    --out-file ../tmp/artist_utxo.json
+TXNS=$(jq length ../tmp/artist_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${seller_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${artist_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/seller_utxo.json)
-seller_tx_in=${TXIN::-8}
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/artist_utxo.json)
+artist_tx_in=${TXIN::-8}
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
-    ${network} \
+    --testnet-magic ${testnet_magic} \
     --address ${collat_address} \
-    --out-file tmp/collat_utxo.json
-TXNS=$(jq length tmp/collat_utxo.json)
+    --out-file ../tmp/collat_utxo.json
+TXNS=$(jq length ../tmp/collat_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${collat_address} \033[0m \n";
    exit;
 fi
-collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
+collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
-    ${network} \
-    --out-file tmp/script_utxo.json
+    --testnet-magic ${testnet_magic} \
+    --out-file ../tmp/script_utxo.json
 
 # transaction variables
-TXNS=$(jq length tmp/script_utxo.json)
+TXNS=$(jq length ../tmp/script_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
 alltxin=""
-TXIN=$(jq -r --arg alltxin "" --arg sellerPkh "${seller_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $sellerPkh) | .key | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $artistPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 
-script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file tmp/protocol.json \
-    --out-file tmp/tx.draft \
-    --change-address ${seller_address} \
+    --protocol-params-file ../tmp/protocol.json \
+    --out-file ../tmp/tx.draft \
+    --change-address ${artist_address} \
     --tx-in-collateral="${collat_utxo}" \
-    --tx-in ${seller_tx_in} \
+    --tx-in ${artist_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file data/redeemer/update_redeemer.json \
+    --spending-reference-tx-in-redeemer-file ../data/sale/update-redeemer.json \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file data/datum/sale_datum.json  \
-    --required-signer-hash ${seller_pkh} \
+    --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
+    --required-signer-hash ${artist_pkh} \
     --required-signer-hash ${collat_pkh} \
-    ${network})
+    --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
@@ -129,17 +134,18 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
-    --signing-key-file wallets/collat-wallet/payment.skey \
-    --tx-body-file tmp/tx.draft \
-    --out-file tmp/tx.signed \
-    ${network}
+    --signing-key-file ../wallets/artist-wallet/payment.skey \
+    --signing-key-file ../wallets/collat-wallet/payment.skey \
+    --tx-body-file ../tmp/tx.draft \
+    --out-file ../tmp/tx.signed \
+    --testnet-magic ${testnet_magic}
 #    
 # exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
-    ${network} \
-    --tx-file tmp/tx.signed
+    --testnet-magic ${testnet_magic} \
+    --tx-file ../tmp/tx.signed
 
-echo "Tx Hash" $(${cli} transaction txid --tx-file tmp/tx.signed)
+tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
+echo "Tx Hash:" $tx
