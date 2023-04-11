@@ -17,8 +17,6 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 starter_address=$(cat ../wallets/starter-wallet/payment.addr)
 starter_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/starter-wallet/payment.vkey)
 
-
-
 # multisig
 keeper1_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/keeper1-wallet/payment.vkey)
 keeper2_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/keeper2-wallet/payment.vkey)

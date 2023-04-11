@@ -82,7 +82,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                       types.prefix_100,
                       -1,
                     )?,
-                    helpers.correct_mint(
+                    helpers.correct_burn(
                       mint,
                       own_currency_symbol,
                       types.prefix_444,

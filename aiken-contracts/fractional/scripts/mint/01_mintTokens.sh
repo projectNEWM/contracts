@@ -23,9 +23,6 @@ sale_script_address=$(${cli} address build --payment-script-file ${sale_script_p
 newm_address=$(cat ../wallets/newm-wallet/payment.addr)
 newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
 
-# for testing
-bad_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
-
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
@@ -66,6 +63,7 @@ ref_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTok
 frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_444}')")
 
 echo -n $ref_name > ../tmp/reference.token
+echo -n $frac_name > ../tmp/fraction.token
 
 # update bundle sale datum with frac token name
 bundle_size=10000000
