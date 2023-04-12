@@ -161,7 +161,7 @@
           "fields": [
             {
               "title": "lovelace",
-              "$ref": "#/definitions/fractional~1types~1LovelaceData"
+              "$ref": "#/definitions/fractional~1types~1LovelaceAmount"
             }
           ]
         }
@@ -211,11 +211,11 @@
         }
       ]
     },
-    "fractional/types/LovelaceData": {
-      "title": "LovelaceData",
+    "fractional/types/LovelaceAmount": {
+      "title": "LovelaceAmount",
       "anyOf": [
         {
-          "title": "LovelaceData",
+          "title": "LovelaceAmount",
           "dataType": "constructor",
           "index": 0,
           "fields": [
@@ -359,7 +359,7 @@
           "index": 0,
           "fields": [
             {
-              "title": "buy_amt",
+              "title": "buy",
               "$ref": "#/definitions/fractional~1types~1BuyAmount"
             }
           ]

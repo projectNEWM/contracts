@@ -223,6 +223,7 @@ pub fn unique_token_name(
   bytearray.slice(combined_hash, 0, 32)
 }
 
+// using the validating input find the outbound datum
 pub fn get_outbound_datum(tx: Transaction, validating_input: Input) -> Data {
   let script_addr =
     validating_input.output.address
@@ -279,6 +280,7 @@ pub fn correct_burn(
 ) -> Bool {
   when mint is {
     [(policy, token_name, quantity), ..rest] -> {
+      // all prefixes have the same length
       let p =
         bytearray.take(token_name, 5)
       if list.and([policy == pid, prefix == p, quantity == amt]) == True {

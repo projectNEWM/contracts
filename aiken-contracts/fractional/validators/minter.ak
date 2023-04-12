@@ -47,32 +47,32 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // newm key must sign
-                helpers.must_be_signed_by(tx, newm_key)?,
+                helpers.must_be_signed_by(tx, newm_key),
                 // prevent roll over double nft attack
-                (first_index < 256)?,
+                first_index < 256,
                 // must mint 1 reference token
                 helpers.correct_mint(
                   mint,
                   own_currency_symbol,
                   reference_tkn,
                   1,
-                )?,
+                ),
                 // must mint 100 M fractions
                 helpers.correct_mint(
                   mint,
                   own_currency_symbol,
                   fractions_tkn,
                   100000000,
-                )?,
+                ),
                 // data reference must be holding correct token
-                ref_value_check?,
+                ref_value_check,
               ],
             )
           BurnTokens { burn_amt } ->
             list.and(
               [
                 // has to be a multisig action
-                (helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) >= ref_datum.keepers.threshold)?,
+                helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) >= ref_datum.keepers.threshold,
                 // one ref token or any amount of fractions
                 list.or(
                   [
@@ -81,17 +81,17 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                       own_currency_symbol,
                       types.prefix_100,
                       -1,
-                    )?,
+                    ),
                     helpers.correct_burn(
                       mint,
                       own_currency_symbol,
                       types.prefix_444,
                       -1 * burn_amt,
-                    )?,
+                    ),
                   ],
                 ),
                 // data reference must be holding correct token
-                ref_value_check?,
+                ref_value_check,
               ],
             )
         }

@@ -140,13 +140,13 @@ test good_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(4)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, buy_addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == True
 }
 
@@ -160,13 +160,13 @@ test not_enough_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(15)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, buy_addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }
 
@@ -180,13 +180,13 @@ test two_outputs_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(5)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, script_addr, buy_addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }
 
@@ -200,13 +200,13 @@ test two_inputs_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(5)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, script_addr, addr, buy_addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }
 
@@ -219,12 +219,12 @@ test two_inputs_part_buy_tx() {
 // |> credential.with_delegation_key(#"")
 //   let buy_addr = credential.from_verification_key(#"acab")
 // |> credential.with_delegation_key(#"")
-//   let buy_amt = BuyAmount(5)
+//   let buy = BuyAmount(5)
 //   validators.purchase_validation(
 //     datum_a(),
 //     tx_valid(script_addr, addr, addr, buy_addr, addr, #"acab"),
 //     out_ref(),
-//     buy_amt,
+//     buy,
 //   ) == False
 // }
 
@@ -238,13 +238,13 @@ test no_pay_receive_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(5)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, buy_addr, buy_addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }
 
@@ -258,13 +258,13 @@ test bad_signer_part_buy_tx() {
   let buy_addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(5)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, buy_addr, script_addr, #""),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }
 
@@ -275,12 +275,12 @@ test no_buy_receive_part_buy_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  let buy_amt =
+  let buy =
     BuyAmount(5)
   validators.purchase_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, addr, script_addr, #"acab"),
     out_ref(),
-    buy_amt,
+    buy,
   ) == False
 }

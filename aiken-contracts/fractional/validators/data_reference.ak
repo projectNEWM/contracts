@@ -28,7 +28,7 @@ validator {
           helpers.get_outbound_datum(tx, validating_input)
         let datum_cont_check =
           when redeemer is {
-            // Update the hot_key address
+            // Update the newm key
             UpdateHotKey ->
               list.and(
                 [
@@ -37,7 +37,7 @@ validator {
                   datum.contracts == cont_datum.contracts,
                 ],
               )
-            // Update the multisig, 1 more than none
+            // Update the multisig info
             UpdateKeepers -> {
               let l =
                 list.length(cont_datum.keepers.pkhs)
@@ -48,6 +48,7 @@ validator {
                   datum.hot_key == cont_datum.hot_key,
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
+                  // logical thresholds only
                   l >= t,
                 ],
               )

@@ -22,6 +22,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       ref_hash_data
     let ref_addr =
       credential.from_script(ref_hash)
+    // find the first reference input
     let ref_input =
       helpers.find_script_input(tx.reference_inputs, ref_addr)
     let ref_value_check =
@@ -43,7 +44,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // must hold correct data token
-                ref_value_check?,
+                ref_value_check,
                 // owner must sign it
                 helpers.must_be_signed_by(tx, newm_key),
                 // single script input
@@ -63,7 +64,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // must hold correct data token
-                ref_value_check?,
+                ref_value_check,
                 // owner must sign it
                 helpers.must_be_signed_by(tx, newm_key),
                 // single script input

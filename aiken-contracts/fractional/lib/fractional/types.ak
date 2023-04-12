@@ -14,30 +14,33 @@ pub const prefix_333 =
 pub const prefix_444 =
   #"2834343429"
 
+// wallet hash
 pub type PublicKeyHash =
   Hash<Blake2b_224, VerificationKey>
 
+// script hash
 pub type ValidatorHash =
   Hash<Blake2b_224, Script>
 
+// https://cips.cardano.org/cips/cip68/
 pub type CIP68Datum {
   metadata: Dict<Data, Data>,
   version: Int,
 }
 
-pub type LovelaceData {
-  increase: Int,
-}
-
+// Removes
 pub type RemoveMeta =
   Void
 
-pub type RemoveSale =
-  Void
+// increases the lovelace on an utxo
+pub type LovelaceAmount {
+  increase: Int,
+}
 
+// only can remove or update
 pub type CIP68Redeemer {
   RemoveMeta
-  UpdateMeta { lovelace: LovelaceData }
+  UpdateMeta { lovelace: LovelaceAmount }
 }
 
 pub type BuyAmount {
@@ -47,17 +50,22 @@ pub type BuyAmount {
 pub type UpdateSale =
   Void
 
+pub type RemoveSale =
+  Void
+
 pub type SaleRedeemer {
-  Purchase { buy_amt: BuyAmount }
+  Purchase { buy: BuyAmount }
   UpdateSale
   RemoveSale
 }
 
+// hardcoded max bundle size
 const max_bundle_size =
   10
 
-pub fn valid_bundle_size(buy_amt: BuyAmount) -> Bool {
-  buy_amt.amt > 0 && buy_amt.amt <= max_bundle_size
+// greater than zero and less than or equal to the max bundle size
+pub fn valid_bundle_size(buy: BuyAmount) -> Bool {
+  buy.amt > 0 && buy.amt <= max_bundle_size
 }
 
 pub type OwnerInfo {
@@ -77,6 +85,7 @@ pub type SaleDatum {
   cost: TokenInfo,
 }
 
+// simple datum equality
 pub fn purchase_datum_check(
   inbound_datum: SaleDatum,
   outbound_datum: SaleDatum,
@@ -131,7 +140,7 @@ pub type ReferenceRedeemer {
 }
 
 pub type StakeData {
-  stake_cred: Hash<Blake2b_224, Script>,
+  stake_cred: ValidatorHash,
 }
 
 pub type WithdrawRedeemer {

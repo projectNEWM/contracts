@@ -12,12 +12,12 @@ validator {
       Spend(output_reference) ->
         when redeemer is {
           // Buyer can purchase a bundle from the UTxO
-          Purchase { buy_amt } ->
+          Purchase { buy } ->
             validators.purchase_validation(
               datum,
               context.transaction,
               output_reference,
-              buy_amt,
+              buy,
             )
           // Owner can update their UTxO
           UpdateSale ->
