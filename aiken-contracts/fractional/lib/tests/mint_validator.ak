@@ -105,3 +105,14 @@ test bad_mint() {
     ],
   )
 }
+
+test check_or() {
+  list.and(
+    [
+      list.or([True, True]) == True,
+      list.or([True, False]) == True,
+      list.or([False, True]) == True,
+      list.or([False, False]) == False,
+    ],
+  ) == True
+}

@@ -40,7 +40,7 @@ pub type LovelaceAmount {
 // only can remove or update
 pub type CIP68Redeemer {
   RemoveMeta
-  UpdateMeta { lovelace: LovelaceAmount }
+  UpdateMeta { lovelace: LovelaceAmount, direction: Int }
 }
 
 pub type BuyAmount {

@@ -54,13 +54,19 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               ],
             )
           // updates the metadata and can increase the min ada only
-          UpdateMeta { lovelace } -> {
+          UpdateMeta { lovelace, direction } -> {
             let validating_value =
               validating_input.output.value
             let increase_value =
               value.from_lovelace(lovelace.increase)
+            // set a direction for add and remove
             let cont_value =
-              value.add(validating_value, increase_value)
+              when direction is {
+                0 ->
+                  value.add(validating_value, increase_value)
+                _ ->
+                  value.add(validating_value, value.negate(increase_value))
+              }
             list.and(
               [
                 // must hold correct data token
