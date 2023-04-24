@@ -44,7 +44,7 @@ pub fn purchase_validation(
       // check for valid bundle size
       types.valid_bundle_size(amount),
       // the continuing utxo must have a correct datum
-      types.purchase_datum_check(datum, outbound_datum),
+      datum == outbound_datum,
       // the seller gets paid what they want
       helpers.find_token_payout(seller_addr, cost_value, tx.outputs),
       // the leftover partial token gets send back to the script
@@ -70,8 +70,6 @@ pub fn update_validation(
     [
       // the owner must sign it
       helpers.must_be_signed_by(tx, datum.owner.pkh),
-      // a utxo must go back to the script
-      helpers.find_cont_payout(script_addr, tx.outputs),
       // the owner of the cont utxo must remain constant
       datum.owner == outbound_datum.owner,
       // single script input

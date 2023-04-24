@@ -50,6 +50,8 @@ validator {
                   datum.contracts == cont_datum.contracts,
                   // logical thresholds only
                   l >= t,
+                  // Must have at least one
+                  l > 0,
                 ],
               )
             }
