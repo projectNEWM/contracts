@@ -267,6 +267,7 @@ pub fn correct_mint(
       } else {
         correct_mint(rest, pid, tkn, amt)
       }
+    // something wasn't found
     [] ->
       False
   }
@@ -289,6 +290,7 @@ pub fn correct_burn(
         correct_burn(rest, pid, prefix, amt)
       }
     }
+    // something wasn't found
     [] ->
       False
   }

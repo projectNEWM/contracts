@@ -17,6 +17,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       context.transaction
     let ref_input =
       helpers.find_script_input(tx.reference_inputs, ref_addr)
+    // check if the ref input has the correct starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     expect ref_datum: ReferenceDatum =
@@ -29,10 +30,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             ref_datum.staking.reward_pkh,
             ref_datum.staking.reward_sc,
           )
-        let withdraws =
-          tx.withdrawals
         let reward =
-          helpers.get_reward_amt(withdraws, stake_credential)
+          helpers.get_reward_amt(tx.withdrawals, stake_credential)
         when redeemer is {
           // can only withdraw
           Withdraw ->
@@ -40,7 +39,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               [
                 // data reference must hold correct token
                 ref_value_check,
-                // reward address must be paid the reward
+                // reward address must be paid the exact reward
                 helpers.find_exact_payout(
                   reward_addr,
                   value.from_lovelace(reward),

@@ -18,13 +18,13 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       credential.from_script(ref_hash)
     let ref_input =
       helpers.find_script_input(tx.reference_inputs, ref_addr)
+    // ref utxo must have starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+    // Get the reference datum
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
-    // mint stuff
-    let newm_key =
-      ref_datum.hot_key
+    // get tx info
     let first_index =
       helpers.get_first_index(tx.inputs)
     let first_tx_hash =
@@ -46,8 +46,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           MintTokens ->
             list.and(
               [
-                // newm key must sign
-                helpers.must_be_signed_by(tx, newm_key),
+                // hot key must sign
+                helpers.must_be_signed_by(tx, ref_datum.hot_key),
                 // prevent roll over double nft attack
                 first_index < 256,
                 // must mint 1 reference token
@@ -73,15 +73,17 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               [
                 // has to be a multisig action
                 helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) >= ref_datum.keepers.threshold,
-                // one ref token or any amount of fractions
+                // one ref token or any amount of fractions or both
                 list.or(
                   [
+                    // burn only 1 ref token
                     helpers.correct_burn(
                       mint,
                       own_currency_symbol,
                       types.prefix_100,
                       -1,
                     ),
+                    // burn any amount of the fractions
                     helpers.correct_burn(
                       mint,
                       own_currency_symbol,

@@ -29,9 +29,6 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
-    // mint stuff
-    let newm_key =
-      ref_datum.hot_key
     when context.purpose is {
       Spend(output_reference) -> {
         let validating_input =
@@ -46,7 +43,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, newm_key),
+                helpers.must_be_signed_by(tx, ref_datum.hot_key),
                 // single script input
                 helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
                 // single script output
@@ -72,7 +69,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, newm_key),
+                helpers.must_be_signed_by(tx, ref_datum.hot_key),
                 // single script input
                 helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
                 // single script output

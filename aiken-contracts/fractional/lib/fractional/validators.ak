@@ -10,7 +10,7 @@ pub fn purchase_validation(
   output_reference: OutputReference,
   amount: BuyAmount,
 ) -> Bool {
-  // used by both redeemers
+  // the thing being spent
   let validating_input =
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
@@ -19,20 +19,23 @@ pub fn purchase_validation(
     validating_input.output.address
   let seller_addr =
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
+  // the total cost value for the bundle
   let cost_value =
     value.from_asset(
       datum.cost.pid,
       datum.cost.tkn,
       amount.amt * datum.cost.amt,
     )
-  let return_value =
+  // whats going back to the contract
+  let bundle_value =
     value.from_asset(
       datum.bundle.pid,
       datum.bundle.tkn,
       amount.amt * datum.bundle.amt,
     )
+  // the partial value cont to the contract
   let partial_value =
-    value.add(validating_value, value.negate(return_value))
+    value.add(validating_value, value.negate(bundle_value))
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
@@ -60,6 +63,7 @@ pub fn update_validation(
   tx: Transaction,
   output_reference: OutputReference,
 ) -> Bool {
+  // the thing getting spent
   let validating_input =
     helpers.get_validating_input(tx.inputs, output_reference)
   let script_addr =

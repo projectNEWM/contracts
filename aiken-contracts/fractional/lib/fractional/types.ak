@@ -117,6 +117,7 @@ pub type ContractHashData {
   stake: ValidatorHash,
 }
 
+// data to be used inside toher contracts
 pub type ReferenceDatum {
   hot_key: PublicKeyHash,
   keepers: KeeperData,

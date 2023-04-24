@@ -23,12 +23,12 @@ validator {
           validating_input.output.value
         let script_addr =
           validating_input.output.address
-        // the datum incoming
+        // the datum cont
         expect cont_datum: ReferenceDatum =
           helpers.get_outbound_datum(tx, validating_input)
         let datum_cont_check =
           when redeemer is {
-            // Update the newm key
+            // Update the hot key
             UpdateHotKey ->
               list.and(
                 [
