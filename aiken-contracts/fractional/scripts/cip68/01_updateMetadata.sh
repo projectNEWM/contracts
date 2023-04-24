@@ -40,16 +40,30 @@ updated_min_utxo=$(${cli} transaction calculate-min-required-utxo \
 
 difference=$((${updated_min_utxo} - ${current_min_utxo}))
 
-if [ "$difference" -lt "0" ]; then
-    min_utxo=${current_min_utxo}
-    difference=0
-else
-    echo "Increase Min ADA by" ${difference}
+direction=0
+if [ "$difference" -eq "0" ]; then
+    echo "Minimum ADA Constant"
     min_utxo=${updated_min_utxo}
+    difference=0
+elif [ "$difference" -lt "0" ]; then
+    positive=$(( -1 * ${difference}))
+    echo "Minimum ADA Decreasing by" ${positive}
+    direction=1
+    difference=$positive
+else
+    echo "Minimum ADA Increasing by" ${difference}
 fi
 
+# assume the min will always be the updated since updated can just be constant
+min_utxo=${updated_min_utxo}
+
+# update the difference
 variable=${difference}; jq --argjson variable "$variable" '.fields[0].fields[0].int=$variable' ../data/cip68/update-redeemer.json > ../data/cip68/update-redeemer-new.json
 mv ../data/cip68/update-redeemer-new.json ../data/cip68/update-redeemer.json
+
+# update the direciton, 0 is increase
+variable=${direction}; jq --argjson variable "$variable" '.fields[1].int=$variable' ../data/cip68/update-redeemer.json > ../data/cip68/update-redeemer-new.json
+    mv ../data/cip68/update-redeemer-new.json ../data/cip68/update-redeemer.json
 
 script_address_out="${cip68_script_address} + ${min_utxo} + ${asset}"
 echo "Update OUTPUT: "${script_address_out}

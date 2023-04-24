@@ -6,6 +6,10 @@ use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 pub const prefix_100 =
   #"2831303029"
 
+// (222) non-fungible token prefix
+pub const prefix_222 =
+  #"2832323229"
+
 // (333) fungible token prefix
 pub const prefix_333 =
   #"2833333329"

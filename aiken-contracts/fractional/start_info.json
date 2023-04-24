@@ -1,7 +1,7 @@
 {
   "__comment1__": "This is the starter token for the data reference contract",
-  "starterPid": "df8e2ddd300b54a606611a8f20be1aef06dc38d560e00b73e57de5a1",
-  "starterTkn": "01dd939813f389d7109b01f5f6d9172ac4b0d3b8891456f08709e3fa65abf416",
+  "starterPid": "7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3",
+  "starterTkn": "44455631323334",
   "__comment2__": "This is the initial pool id for staking",
   "poolId": "bd66ac291ac521deaf22141fb0e5e2f0ed3da63159b9f49e1f500acf",
   "__comment3__": "The NEWM hot key",
