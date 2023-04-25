@@ -304,7 +304,7 @@ pub fn get_reward_amt(
     Some(reward) ->
       reward
     None ->
-      error @"Nothing to be withdrawn"
+      error @"nothing to be withdrawn"
   }
 }
 

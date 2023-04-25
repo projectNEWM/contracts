@@ -9,6 +9,7 @@ validator {
     context: ScriptContext,
   ) -> Bool {
     when context.purpose is {
+      // @see lib/fractional/validators.ak
       Spend(output_reference) ->
         when redeemer is {
           // Buyer can purchase a bundle from the UTxO

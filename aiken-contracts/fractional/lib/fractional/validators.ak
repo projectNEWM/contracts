@@ -4,6 +4,7 @@ use aiken/transaction/value
 use fractional/helpers
 use fractional/types.{BuyAmount, SaleDatum}
 
+/// Handle the purchasing of a bundle(s)
 pub fn purchase_validation(
   datum: SaleDatum,
   tx: Transaction,
@@ -59,6 +60,7 @@ pub fn purchase_validation(
   )
 }
 
+/// Handle the updating of a sale
 pub fn update_validation(
   datum: SaleDatum,
   tx: Transaction,
@@ -86,6 +88,7 @@ pub fn update_validation(
   )
 }
 
+/// Remove sale back to owners wallet
 pub fn remove_validation(
   datum: SaleDatum,
   tx: Transaction,
