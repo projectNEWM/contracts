@@ -11,5 +11,5 @@ if __name__ == "__main__":
     encoded = cbor2.dumps(data)
     print(encoded.hex())
 
-# one liner
+# one liner version
 # python3 -c "import cbor2;hex_string='${string}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())"
