@@ -32,6 +32,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             ref_datum.staking.reward_pkh,
             ref_datum.staking.reward_sc,
           )
+        // if no reward is found error
         let reward =
           helpers.get_reward_amt(tx.withdrawals, stake_credential)
         when redeemer is {
@@ -55,27 +56,29 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         }
       }
       // handle all delegation certs
-      Publish(certificate) -> {
-        let pool_id =
-          ref_datum.staking.pool_id
+      Publish(certificate) ->
         when redeemer is {
           // only delegate to secific pool
           Delegate(sd) -> {
-            let stake_credential =
-              Inline(ScriptCredential(sd.stake_cred))
             let new_delegation =
               CredentialDelegation {
-                delegator: stake_credential,
-                delegatee: pool_id,
+                delegator: Inline(ScriptCredential(sd.stake_cred)),
+                delegatee: ref_datum.staking.pool_id,
               }
-            list.and([ref_value_check, certificate == new_delegation])
+            list.and(
+              [
+                // data reference must hold correct token
+                ref_value_check,
+                // The only cert is for new delegation
+                certificate == new_delegation,
+              ],
+            )
           }
-          // anything else fails
+          // deregistration fails and anything else but changing delegation
           _ ->
             False
         }
-      }
-      // no other purposes
+      // no other script purposes
       _ ->
         False
     }

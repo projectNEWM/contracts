@@ -53,6 +53,7 @@ aiken blueprint apply -o plutus.json -v staking.params "${ref_cbor}" .
 aiken blueprint convert -v staking.params > contracts/stake_contract.plutus
 cardano-cli transaction policyid --script-file contracts/stake_contract.plutus > hashes/stake.hash
 cardano-cli stake-address registration-certificate --stake-script-file contracts/stake_contract.plutus --out-file certs/stake.cert
+cardano-cli stake-address deregistration-certificate --stake-script-file contracts/stake_contract.plutus --out-file certs/de-stake.cert
 cardano-cli stake-address delegation-certificate --stake-script-file contracts/stake_contract.plutus --stake-pool-id ${poolId} --out-file certs/deleg.cert
 
 echo -e "\033[1;33m Convert Sale Contract \033[0m"
