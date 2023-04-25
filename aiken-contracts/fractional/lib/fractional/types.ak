@@ -84,6 +84,7 @@ pub type TokenInfo {
   amt: Int,
 }
 
+// single token bundle and cost
 pub type SaleDatum {
   owner: OwnerInfo,
   bundle: TokenInfo,

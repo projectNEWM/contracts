@@ -69,6 +69,7 @@ pub fn update_validation(
     helpers.get_validating_input(tx.inputs, output_reference)
   let script_addr =
     validating_input.output.address
+  // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
@@ -90,6 +91,7 @@ pub fn remove_validation(
   tx: Transaction,
   output_reference: OutputReference,
 ) -> Bool {
+  // the input being validated
   let validating_input =
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
