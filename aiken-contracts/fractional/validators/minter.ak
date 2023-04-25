@@ -29,7 +29,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       helpers.get_first_index(tx.inputs)
     let first_tx_hash =
       helpers.get_first_ref(tx.inputs)
-    // use the reference prefix
+    // use the ref prefix
     let reference_tkn =
       helpers.unique_token_name(first_tx_hash, first_index, types.prefix_100)
     // use the sft prefix
@@ -97,7 +97,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               ],
             )
         }
-      // Everything else fails
+      // Minting Only
       _ ->
         False
     }

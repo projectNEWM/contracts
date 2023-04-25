@@ -34,7 +34,7 @@ validator {
               output_reference,
             )
         }
-      // Anything else fails
+      // spending only
       _ ->
         False
     }

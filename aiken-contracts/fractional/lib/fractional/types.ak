@@ -47,6 +47,7 @@ pub type CIP68Redeemer {
   UpdateMeta { lovelace: LovelaceAmount, direction: Int }
 }
 
+// keep this as a data struc so we can add more later
 pub type BuyAmount {
   amt: Int,
 }
@@ -134,6 +135,7 @@ pub type UpdateKeepers =
 pub type UpdateStaking =
   Void
 
+// this endpoint may not be needed
 pub type UpdateContracts =
   Void
 

@@ -7,6 +7,7 @@ use fractional/data
 use fractional/helpers
 use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
+// random_string is for initilizing different stake keys attached to the same starter token
 validator(
   starter_pid: ByteArray,
   starter_tkn: ByteArray,
