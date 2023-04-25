@@ -29,6 +29,7 @@ ref=$(cat hashes/reference_contract.hash)
 pid=$(jq -r '.starterPid' start_info.json)
 tkn=$(jq -r '.starterTkn' start_info.json)
 
+
 # cbor representation
 ref_cbor=$(python ./convert_to_cbor.py ${ref})
 pid_cbor=$(python ./convert_to_cbor.py ${pid})
@@ -46,10 +47,16 @@ cardano-cli transaction policyid --script-file contracts/cip68_contract.plutus >
 
 
 # build the stake contract
+
+ran=$(jq -r '.random' start_info.json)
+ran_cbor=$(python ./convert_to_cbor.py ${ran})
+
+
 echo -e "\033[1;33m Convert Stake Contract \033[0m"
 aiken blueprint apply -o plutus.json -v staking.params "${pid_cbor}" .
 aiken blueprint apply -o plutus.json -v staking.params "${tkn_cbor}" .
 aiken blueprint apply -o plutus.json -v staking.params "${ref_cbor}" .
+aiken blueprint apply -o plutus.json -v staking.params "${ran_cbor}" .
 aiken blueprint convert -v staking.params > contracts/stake_contract.plutus
 cardano-cli transaction policyid --script-file contracts/stake_contract.plutus > hashes/stake.hash
 cardano-cli stake-address registration-certificate --stake-script-file contracts/stake_contract.plutus --out-file certs/stake.cert

@@ -7,7 +7,12 @@ use fractional/data
 use fractional/helpers
 use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
-validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
+validator(
+  starter_pid: ByteArray,
+  starter_tkn: ByteArray,
+  ref_hash_data: Data,
+  _random_string: ByteArray,
+) {
   fn params(redeemer: WithdrawRedeemer, context: ScriptContext) -> Bool {
     let tx =
       context.transaction
