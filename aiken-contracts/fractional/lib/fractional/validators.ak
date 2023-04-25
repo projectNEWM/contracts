@@ -36,6 +36,7 @@ pub fn purchase_validation(
   // the partial value cont to the contract
   let partial_value =
     value.add(validating_value, value.negate(bundle_value))
+  // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
@@ -52,7 +53,7 @@ pub fn purchase_validation(
       helpers.find_token_payout(seller_addr, cost_value, tx.outputs),
       // the leftover partial token gets send back to the script
       helpers.find_exact_payout(script_addr, partial_value, tx.outputs),
-      // owner can not lie
+      // owner can not lie about how much they have
       value.quantity_of(validating_value, datum.bundle.pid, datum.bundle.tkn) >= amount.amt * datum.bundle.amt,
     ],
   )
