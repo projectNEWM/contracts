@@ -55,6 +55,7 @@ library
                       , plutus-script-utils
                       , serialise
                       , useful-funcs
+                      , plutonomy
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
@@ -70,4 +71,9 @@ executable nft-minting-contract
 
   build-depends:        cardano-api
                       , nft-minting-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
 

@@ -1,7 +1,7 @@
 # '../v2-did-locking-contract/src/V2DidLockingContract.hs'
 # '../v2-did-locking-contract/src/V2DidLockingContract-new.hs'
 def changeVoteHash(oldPath,newPath,newText):
-    pattern = 'voteValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString'
+    pattern = 'voteValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -11,7 +11,7 @@ def changeVoteHash(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeLockHash(oldPath,newPath,newText):
-    pattern = 'getValidatorHash = PlutusV2.ValidatorHash $ createBuiltinByteString'
+    pattern = 'getValidatorHash = PlutusV2.ValidatorHash $ UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -21,7 +21,7 @@ def changeLockHash(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeStartLockPid(oldPath,newPath,newText):
-    pattern = 'lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = createBuiltinByteString'
+    pattern = 'lockPid = PlutusV2.CurrencySymbol {PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -31,7 +31,7 @@ def changeStartLockPid(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeStartLockTkn(oldPath,newPath,newText):
-    pattern = 'lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = createBuiltinByteString'
+    pattern = 'lockTkn = PlutusV2.TokenName {PlutusV2.unTokenName = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -41,7 +41,7 @@ def changeStartLockTkn(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeStartVotePid(oldPath,newPath,newText):
-    pattern = 'voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString'
+    pattern = 'voteStartPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -51,7 +51,7 @@ def changeStartVotePid(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeStartVoteTkn(oldPath,newPath,newText):
-    pattern = 'voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = createBuiltinByteString'
+    pattern = 'voteStartTkn = PlutusV2.TokenName { PlutusV2.unTokenName = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -61,7 +61,7 @@ def changeStartVoteTkn(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeTokenizedPid(oldPath,newPath,newText):
-    pattern = 'tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = createBuiltinByteString'
+    pattern = 'tokenizedPid = PlutusV2.CurrencySymbol { PlutusV2.unCurrencySymbol = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -71,7 +71,7 @@ def changeTokenizedPid(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeDelegPkh(oldPath,newPath,newText):
-    pattern = 'getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString'
+    pattern = 'getPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:
@@ -81,9 +81,9 @@ def changeDelegPkh(oldPath,newPath,newText):
                 file2.write(line)
 
 def changeMultiPkh(oldPath,newPath,newText1,newText2,newText3):
-    pattern1 = 'multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString'
-    pattern2 = 'multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString'
-    pattern3 = 'multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString'
+    pattern1 = 'multiPkh1 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString'
+    pattern2 = 'multiPkh2 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString'
+    pattern3 = 'multiPkh3 = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = UsefulFuncs.createBuiltinByteString'
     with open(oldPath, 'r') as file1:
         with open(newPath, 'w+') as file2:
             for line in file1:

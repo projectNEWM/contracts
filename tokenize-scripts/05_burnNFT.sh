@@ -27,7 +27,7 @@ policy_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 
 #pass in the token number to this script
-name=${token_name}$(echo -n "${1}" | xxd -ps)
+name=${token_name}$(echo -n "_${1}" | xxd -ps)
 
 MINT_ASSET="-1 ${policy_id}.${name}"
 # UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
@@ -143,24 +143,24 @@ FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 echo -e "\033[0;35m Sign tmp/tx.signed with multisig keys and submit to burn \033[0m"
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
     --signing-key-file wallets/buyer-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
-    # --signing-key-file wallets/multisig-wallet/multisig1.skey \
-    # --signing-key-file wallets/multisig-wallet/multisig2.skey \
-    # --signing-key-file wallets/multisig-wallet/multisig3.skey \
+    --signing-key-file wallets/multisig-wallet/multisig1.skey \
+    --signing-key-file wallets/multisig-wallet/multisig2.skey \
+    --signing-key-file wallets/multisig-wallet/multisig3.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     ${network}
 #    
 # exit
 #
-# echo -e "\033[0;36m Submitting \033[0m"
-# ${cli} transaction submit \
-#     ${network} \
-#     --tx-file tmp/tx.signed
+echo -e "\033[0;36m Submitting \033[0m"
+${cli} transaction submit \
+    ${network} \
+    --tx-file tmp/tx.signed
 
 

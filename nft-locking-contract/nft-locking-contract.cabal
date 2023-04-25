@@ -20,6 +20,7 @@ common project-config
 
   default-extensions:   NoImplicitPrelude
                         OverloadedStrings
+                        ImportQualifiedPost
 
   ghc-options:          -Wall
                         -Wcompat
@@ -45,7 +46,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      NFTLockingContract
+  exposed-modules:      LockStarterNFTContract
 
   build-depends:        bytestring
                       , cardano-api
@@ -55,6 +56,13 @@ library
                       , plutus-script-utils
                       , serialise
                       , useful-funcs
+                      , plutonomy
+                      , plutus-ledger
+                      , plutus-contract
+                      , plutus-tx-constraints
+                      , plutus-ledger-constraints
+                      , aeson
+                      , cardano-node-emulator
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
@@ -70,3 +78,9 @@ executable nft-locking-contract
 
   build-depends:        cardano-api
                       , nft-locking-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
+                      , plutus-ledger

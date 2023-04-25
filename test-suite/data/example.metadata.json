@@ -1,0 +1,42 @@
+{
+    "721":
+    {
+        "<policy_id_hex>":
+        {
+            "<asset_name_ascii>":
+            {
+                "image": "ar://f5W8RZmAQimuz_vytFY9ofIzd9QpGaDIv2UXrrahTu4",
+                "mediaType": "image/webp",
+                "name": "NIDO - Love In The Water",
+                "artists":
+                [
+                    {
+                        "name": "NIDO"
+                    }
+                ],
+                "album_title": "Love In The Water",
+                "track_number": 1,
+                "song_title": "Love In The Water",
+                "song_duration": "PT2M57S",
+                "genres": ["Electronic", "Dance"],
+                "copyright": "℗ 2022 NIDO",
+                "release_type": "Single",
+                "music_metadata_version": 1,
+                "lyricists": ["Tyler Shamy"],
+                "visual_artist": "NIDO",
+                "explicit": "false",
+                "country_of_origin": "Norway",
+                "distributor": "https://newm.io",
+                "files":
+                [
+                    {
+                        "name": "Love In The Water",
+                        "mediaType": "audio/flac",
+                        "src": "ar://DeVRF-RTkRRHoP4M-L9AjIu35ilzgclhLOrgQB2Px34"
+                    }
+                ]
+            }
+        },
+        "version": 1
+    }
+}

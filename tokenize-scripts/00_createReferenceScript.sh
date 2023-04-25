@@ -11,7 +11,7 @@ mint_script_path="../minting-contract/minting-contract.plutus"
 
 # Addresses
 reference_address=$(cat wallets/reference-wallet/payment.addr)
-seller_address=$(cat wallets/seller-wallet/payment.addr)
+seller_address=$(cat wallets/reference-wallet/payment.addr)
 
 lock_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -114,7 +114,7 @@ ${cli} transaction build-raw \
 
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-1.signed \
     ${network}
@@ -162,7 +162,7 @@ ${cli} transaction build-raw \
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/seller-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx-2.signed \
     ${network}

@@ -45,7 +45,7 @@ library
 
   hs-source-dirs:       src
 
-  exposed-modules:      LockingContract
+  exposed-modules:      LockTokenizedNFTContract
 
   build-depends:        bytestring
                       , cardano-api
@@ -55,6 +55,7 @@ library
                       , plutus-script-utils
                       , serialise
                       , useful-funcs
+                      , plutonomy
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 
@@ -70,4 +71,9 @@ executable locking-contract
 
   build-depends:        cardano-api
                       , locking-contract
+                      , bytestring
+                      , aeson
+                      , plutus-ledger-api
+                      , useful-funcs
+                      , directory
 

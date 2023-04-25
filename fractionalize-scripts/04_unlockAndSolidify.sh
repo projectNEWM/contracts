@@ -24,7 +24,7 @@ nft_id=$(cat ../nft-minting-contract/policy.id)
 token_name=$(cat ../start_info.json | jq -r .starterTkn)
 token_number=$(cat ../tokenize-scripts/data/current_datum.json | jq -r .fields[1].int)
 
-name=${token_name}$(echo -n "${token_number}" | xxd -ps)
+name=${token_name}$(echo -n "_${token_number}" | xxd -ps)
 
 SC_ASSET="1 ${nft_id}.${name}"
 #
@@ -98,7 +98,6 @@ fi
 collat_utxo=$(jq -r 'keys[0]' tmp/collat_utxo.json)
 
 echo -e "\033[0;36m Building Tx \033[0m"
-
 
 FEE=$(${cli} transaction build \
     --babbage-era \
