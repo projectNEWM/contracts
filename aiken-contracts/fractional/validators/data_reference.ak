@@ -26,6 +26,7 @@ validator {
         // the datum cont
         expect cont_datum: ReferenceDatum =
           helpers.get_outbound_datum(tx, validating_input)
+        // datum validation
         let datum_cont_check =
           when redeemer is {
             // Update the hot key

@@ -9,17 +9,19 @@ use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
   fn params(redeemer: WithdrawRedeemer, context: ScriptContext) -> Bool {
+    let tx =
+      context.transaction
+    // get reference utxo
     expect ref_hash: ByteArray =
       ref_hash_data
     let ref_addr =
       credential.from_script(ref_hash)
-    let tx =
-      context.transaction
     let ref_input =
       helpers.find_script_input(tx.reference_inputs, ref_addr)
     // check if the ref input has the correct starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+    // get the reference datum
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
     when context.purpose is {

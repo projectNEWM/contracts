@@ -27,6 +27,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       helpers.find_script_input(tx.reference_inputs, ref_addr)
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+    // the reference datum
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
     when context.purpose is {
@@ -50,7 +51,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
               ],
             )
-          // updates the metadata and can increase the min ada only
+          // updates the metadata and change min ada
           UpdateMeta { lovelace, direction } -> {
             let validating_value =
               validating_input.output.value
@@ -59,8 +60,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             // set a direction for add and remove
             let cont_value =
               when direction is {
+                // add
                 0 ->
                   value.add(validating_value, increase_value)
+                // subtract
                 _ ->
                   value.add(validating_value, value.negate(increase_value))
               }
