@@ -16,7 +16,9 @@ pub fn datum_a() -> SaleDatum {
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
   let cost: TokenInfo =
     TokenInfo { pid: #"acab", tkn: #"beef", amt: 10 }
-  SaleDatum { owner, bundle, cost }
+  let max_bundle_size: Int =
+    10
+  SaleDatum { owner, bundle, cost, max_bundle_size }
 }
 
 pub fn datum_b() -> SaleDatum {
@@ -26,7 +28,9 @@ pub fn datum_b() -> SaleDatum {
     TokenInfo { pid: #"acab", tkn: #"beef", amt: 10 }
   let cost: TokenInfo =
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
-  SaleDatum { owner, bundle, cost }
+  let max_bundle_size: Int =
+    10
+  SaleDatum { owner, bundle, cost, max_bundle_size }
 }
 
 pub fn out_ref() -> OutputReference {

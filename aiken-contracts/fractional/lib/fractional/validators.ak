@@ -47,7 +47,7 @@ pub fn purchase_validation(
       // single script output
       helpers.count_script_outputs(tx.outputs, script_addr, 0) == 1,
       // check for valid bundle size
-      types.valid_bundle_size(amount),
+      types.valid_bundle_size(amount, datum.max_bundle_size),
       // the continuing utxo must have a correct datum
       datum == outbound_datum,
       // the seller gets paid what they want

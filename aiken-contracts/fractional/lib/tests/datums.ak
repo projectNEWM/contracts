@@ -7,7 +7,9 @@ fn datum_a() -> SaleDatum {
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
   let cost: TokenInfo =
     TokenInfo { pid: #"acab", tkn: #"beef", amt: 10 }
-  SaleDatum { owner, bundle, cost }
+  let max_bundle_size: Int =
+    10
+  SaleDatum { owner, bundle, cost, max_bundle_size }
 }
 
 fn datum_c() -> SaleDatum {
@@ -17,7 +19,9 @@ fn datum_c() -> SaleDatum {
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
   let cost: TokenInfo =
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
-  SaleDatum { owner, bundle, cost }
+  let max_bundle_size: Int =
+    10
+  SaleDatum { owner, bundle, cost, max_bundle_size }
 }
 
 test good_purchase_datum() {

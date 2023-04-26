@@ -65,11 +65,11 @@ pub type SaleRedeemer {
 }
 
 // hardcoded max bundle size
-const max_bundle_size =
-  10
+// const max_bundle_size =
+//   10
 
 // greater than zero and less than or equal to the max bundle size
-pub fn valid_bundle_size(buy: BuyAmount) -> Bool {
+pub fn valid_bundle_size(buy: BuyAmount, max_bundle_size: Int) -> Bool {
   buy.amt > 0 && buy.amt <= max_bundle_size
 }
 
@@ -89,6 +89,7 @@ pub type SaleDatum {
   owner: OwnerInfo,
   bundle: TokenInfo,
   cost: TokenInfo,
+  max_bundle_size: Int,
 }
 
 // simple datum equality

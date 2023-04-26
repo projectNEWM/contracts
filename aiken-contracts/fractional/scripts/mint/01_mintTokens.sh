@@ -54,7 +54,6 @@ string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
 prefix_100="2831303029"
-# prefix_333="2833333329"
 prefix_444="2834343429"
 
 # for testing
@@ -69,17 +68,20 @@ echo -n $frac_name > ../tmp/fraction.token
 # update bundle sale datum with frac token name
 bundle_size=10000000
 lovelace_price=1000000
+max_bundle_size=10
 jq \
 --arg pkh "$receiver_pkh" \
 --arg policy_id "$policy_id" \
 --arg frac_name "$frac_name" \
 --argjson bundle_size "$bundle_size" \
 --argjson lovelace_price "$lovelace_price" \
+--argjson max_bundle_size "$max_bundle_size" \
 '.fields[0].fields[0].bytes=$pkh |
 .fields[1].fields[0].bytes=$policy_id | 
 .fields[1].fields[1].bytes=$frac_name |
 .fields[1].fields[2].int=$bundle_size |
-.fields[2].fields[2].int=$lovelace_price 
+.fields[2].fields[2].int=$lovelace_price |
+.fields[3].int=$max_bundle_size
 ' \
 ../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json
 

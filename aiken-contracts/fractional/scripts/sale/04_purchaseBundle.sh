@@ -52,6 +52,7 @@ default_asset="${total_amt} ${pid}.${tkn}"
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 echo $CURRENT_VALUE
 
+max_bundle_size=$(jq -r '.fields[3].int' ../data/sale/sale-datum.json)
 if [[ $# -eq 0 ]] ; then
     echo -e "\n \033[0;31m Please Supply A Bundle Amount \033[0m \n";
     exit
@@ -60,8 +61,8 @@ if [[ ${1} -eq 0 ]] ; then
     echo -e "\n \033[0;31m Bundle Size Must Be Greater Than Zero \033[0m \n";
     exit
 fi
-if [[ ${1} -gt 10 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To Ten \033[0m \n";
+if [[ ${1} -gt ${max_bundle_size} ]] ; then
+    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To ${max_bundle_size} \033[0m \n";
     exit
 fi
 
@@ -166,7 +167,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
