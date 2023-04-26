@@ -5,7 +5,7 @@ use aiken/transaction.{
   TransactionId,
 }
 use aiken/transaction/credential.{Address}
-use aiken/transaction/value
+use aiken/transaction/value.{Value}
 use fractional/types.{OwnerInfo, SaleDatum, TokenInfo}
 use fractional/validators
 
@@ -14,8 +14,8 @@ pub fn datum_a() -> SaleDatum {
     OwnerInfo { pkh: #"", sc: #"" }
   let bundle: TokenInfo =
     TokenInfo { pid: #"", tkn: #"", amt: 10 }
-  let cost: TokenInfo =
-    TokenInfo { pid: #"acab", tkn: #"beef", amt: 10 }
+  let cost: Value =
+    value.from_asset(#"acab", #"beef", 10)
   let max_bundle_size: Int =
     10
   SaleDatum { owner, bundle, cost, max_bundle_size }
@@ -26,8 +26,8 @@ pub fn datum_b() -> SaleDatum {
     OwnerInfo { pkh: #"0102", sc: #"" }
   let bundle: TokenInfo =
     TokenInfo { pid: #"acab", tkn: #"beef", amt: 10 }
-  let cost: TokenInfo =
-    TokenInfo { pid: #"", tkn: #"", amt: 10 }
+  let cost: Value =
+    value.from_asset(#"acab", #"beef", 10)
   let max_bundle_size: Int =
     10
   SaleDatum { owner, bundle, cost, max_bundle_size }

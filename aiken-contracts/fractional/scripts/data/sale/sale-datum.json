@@ -19,7 +19,7 @@
           "bytes": "ce0be087ee8f1967114093dabc99bd278a1101bc4c727e4f02057466"
         },
         {
-          "bytes": "2834343429025f9141cea69df4d55e154ca6f12ed6ab766b32ce8acbff9c704c"
+          "bytes": "283434342902a84d6f8f6b8fcbe87a1beb15a7307aa686daadeb20865ff46530"
         },
         {
           "int": 10000000
@@ -27,16 +27,23 @@
       ]
     },
     {
-      "constructor": 0,
-      "fields": [
+      "map": [
         {
-          "bytes": ""
-        },
-        {
-          "bytes": ""
-        },
-        {
-          "int": 1000000
+          "k": {
+            "bytes": ""
+          },
+          "v": {
+            "map": [
+              {
+                "k": {
+                  "bytes": ""
+                },
+                "v": {
+                  "int": 2000000
+                }
+              }
+            ]
+          }
         }
       ]
     },

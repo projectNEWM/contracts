@@ -22,11 +22,7 @@ pub fn purchase_validation(
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
   // the total cost value for the bundle
   let cost_value =
-    value.from_asset(
-      datum.cost.pid,
-      datum.cost.tkn,
-      amount.amt * datum.cost.amt,
-    )
+    helpers.multiply_value(value.zero(), datum.cost, amount.amt)
   // whats going back to the contract
   let bundle_value =
     value.from_asset(

@@ -1,6 +1,7 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
+use aiken/transaction/value.{Value}
 
 // (100) reference token prefix
 pub const prefix_100 =
@@ -88,7 +89,7 @@ pub type TokenInfo {
 pub type SaleDatum {
   owner: OwnerInfo,
   bundle: TokenInfo,
-  cost: TokenInfo,
+  cost: Value,
   max_bundle_size: Int,
 }
 
