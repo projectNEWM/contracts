@@ -96,3 +96,8 @@ pub type ReferenceDatum {
 }
 ```
 
+TODO
+
+- write about how the data update works
+- write about how the data is contained
+- any other general info here too
