@@ -17,6 +17,7 @@ The `scripts` folder assumes there will be test wallets inside the wallets folde
 ```
 artist-wallet
 collat-wallet
+reference-wallet
 keeper1-wallet
 keeper2-wallet
 keeper3-wallet
@@ -27,11 +28,11 @@ starter-wallet
 
 Use the `create_wallet.sh` script to auto generate simple wallets for testing.
 
-First create the reference scripts with `00_createScriptReferences.sh` found in the scripts folder.
+First create the reference scripts with `00_createScriptReferences.sh` found in the scripts folder. This script will use funds held on the reference-wallet to store the smart contracts on UTxOs. Currently, there are 5 contracts that require approximately 75 ADA to store.
 
-Next, we need to create the data reference UTxO using `01_createReferenceUTxO.sh` script inside the `reference` subfolder. This folder contains test scripts for updating data on the data UTxO. These scripts require a valid multisig using the keeper set of test wallets.
+Next, we need to create the data reference UTxO using `01_createReferenceUTxO.sh` script inside the `reference` subfolder. This script will use the the starter-wallet to send the starter token defined in `start_info.json` into the data reference contract. The starter token acts like a pointer for the other contracts to correctly identify the true reference data. The `reference` folder contains test scripts for updating data on the data UTxO. These scripts require a valid n-out-of-m multisig with the set of keeper wallets held on a datum in the data reference contract. The `keeper*-wallet` do not need funds as they are just signing the transaction. The update scripts assume the `newm-wallet` will pay for the transaction fees.
 
-After the data contract has been set up, register and delegate the stake key used to delegate the ada value inside the cip68 and sale contract. Withdrawing rewards requires a reward value.
+After the data contract has been set up, register and delegate the stake key. The staking contract will delegate the ada value inside the cip68 and sale contract to a specific pool. The test scripts in the `staking` folder assume that the `newm-wallet` will pay for the transaction fee. To withdraw rewards from the staking contract it requires a non-zero reward value.
 
 At this point tokens may be minted and the sale contract can be used.
 
@@ -39,11 +40,11 @@ At this point tokens may be minted and the sale contract can be used.
 
 Inside the `mint` folder are the files required to manage minting and burning tokens. A pair of tokens is minted each time the mint validator is executed. 1 reference token is sent to the cip68 contract and 100 million fractions are sent to the sale contract. The sale parameters are currently generated inside the `01_mintTokens.sh` script. Update the sale data by updating that script. The tokens do not have a validated destination so the reference and fractions can be sent anywhere.
 
-During minting, both tokens must exist inside the same tx but burning allows either just some amount of fractions, the reference to be burned, or both. A burning validation requires a valid multisig defined in the data reference contract.
+During minting, both tokens must exist inside the same tx but burning allows either just some amount of fractions, the reference, or both to be burned. A burning validation requires the valid multisig defined in the data reference contract.
 
 ## Sale
 
-A potential buyer will pick some amount of bundles they want to purchase that is less than or equal to the contract defined maximum, hardcoded to 10. This is an arbitrary pick and can be changed to whatever is needed in production. The seller has the ability to update or remove their sale at will.
+A potential buyer will pick some amount of bundles they wish to purchase that is less than or equal to the defined maximum inside the sale datum. This max bundle size is arbitrary and can be changed to whatever is required for the sale. The seller has the ability to update or remove their sale at will.
 
 The datum for a sale contains the owner address, the bundle token information, and the cost token information.
 
