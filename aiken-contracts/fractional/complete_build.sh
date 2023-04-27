@@ -63,9 +63,20 @@ cardano-cli stake-address registration-certificate --stake-script-file contracts
 cardano-cli stake-address deregistration-certificate --stake-script-file contracts/stake_contract.plutus --out-file certs/de-stake.cert
 cardano-cli stake-address delegation-certificate --stake-script-file contracts/stake_contract.plutus --stake-pool-id ${poolId} --out-file certs/deleg.cert
 
+
 echo -e "\033[1;33m Convert Sale Contract \033[0m"
-aiken blueprint convert -v sale.sale > contracts/sale_contract.plutus
+aiken blueprint apply -o plutus.json -v sale.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v sale.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v sale.params "${ref_cbor}" .
+aiken blueprint convert -v sale.params > contracts/sale_contract.plutus
 cardano-cli transaction policyid --script-file contracts/sale_contract.plutus > hashes/sale.hash
+
+echo -e "\033[1;33m Convert Queue Contract \033[0m"
+aiken blueprint apply -o plutus.json -v queue.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v queue.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v queue.params "${ref_cbor}" .
+aiken blueprint convert -v queue.params > contracts/queue_contract.plutus
+cardano-cli transaction policyid --script-file contracts/queue_contract.plutus > hashes/queue.hash
 
 
 echo -e "\033[1;33m Convert Minting Contract \033[0m"
@@ -75,7 +86,9 @@ aiken blueprint apply -o plutus.json -v minter.params "${ref_cbor}" .
 aiken blueprint convert -v minter.params > contracts/mint_contract.plutus
 cardano-cli transaction policyid --script-file contracts/mint_contract.plutus > hashes/policy.hash
 
-###############DATUM AND REDEEMER STUFF
+###############################################################################
+############## DATUM AND REDEEMER STUFF #######################################
+###############################################################################
 echo -e "\033[1;33m Updating Reference Datum \033[0m"
 # # build out the reference datum data
 caPkh=$(cat_file_or_empty ./scripts/wallets/newm-wallet/payment.hash)
@@ -91,6 +104,7 @@ rewardSc=""
 # validator hashes
 cip68Hash=$(cat hashes/cip68.hash)
 saleHash=$(cat hashes/sale.hash)
+queueHash=$(cat hashes/queue.hash)
 stakeHash=$(cat hashes/stake.hash)
 
 # update reference data
@@ -103,6 +117,7 @@ jq \
 --arg rewardSc "$rewardSc" \
 --arg cip68Hash "$cip68Hash" \
 --arg saleHash "$saleHash" \
+--arg queueHash "$queueHash" \
 --arg stakeHash "$stakeHash" \
 '.fields[0].bytes=$caPkh | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
@@ -112,7 +127,8 @@ jq \
 .fields[2].fields[2].bytes=$rewardSc |
 .fields[3].fields[0].bytes=$cip68Hash |
 .fields[3].fields[1].bytes=$saleHash |
-.fields[3].fields[2].bytes=$stakeHash
+.fields[3].fields[2].bytes=$queueHash |
+.fields[3].fields[3].bytes=$stakeHash
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
 

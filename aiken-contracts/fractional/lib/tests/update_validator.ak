@@ -5,8 +5,8 @@ use aiken/transaction.{
 }
 use aiken/transaction/credential.{Address}
 use aiken/transaction/value.{Value}
+use fractional/sale_validators
 use fractional/types.{OwnerInfo, SaleDatum, TokenInfo}
-use fractional/validators
 
 pub fn datum_a() -> SaleDatum {
   let owner: OwnerInfo =
@@ -118,7 +118,7 @@ test good_update_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.update_validation(
+  sale_validators.update_validation(
     datum_a(),
     tx_valid(script_addr, addr, script_addr, addr, #""),
     out_ref(),
@@ -132,7 +132,7 @@ test bad_signer_update_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.update_validation(
+  sale_validators.update_validation(
     datum_a(),
     tx_valid(script_addr, addr, script_addr, addr, #"acab"),
     out_ref(),
@@ -143,7 +143,7 @@ test bad_signer_update_tx() {
 // test no_cont_update_tx() {
 //   let script_addr = credential.from_verification_key(#"0102") |> credential.with_delegation_key(#"")
 //   let addr = credential.from_verification_key(#"") |> credential.with_delegation_key(#"")
-//   validators.update_validation(
+//   sale_validators.update_validation(
 //     datum_a(),
 //     tx_valid(script_addr, addr, addr, addr, #""),
 //     out_ref(),
@@ -157,7 +157,7 @@ test two_inputs_update_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.update_validation(
+  sale_validators.update_validation(
     datum_a(),
     tx_valid(script_addr, script_addr, script_addr, addr, #""),
     out_ref(),
@@ -171,7 +171,7 @@ test two_ouputs_update_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.update_validation(
+  sale_validators.update_validation(
     datum_a(),
     tx_valid(script_addr, addr, script_addr, script_addr, #""),
     out_ref(),
@@ -185,7 +185,7 @@ test bad_cont_datum_update_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.update_validation(
+  sale_validators.update_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, script_addr, #""),
     out_ref(),

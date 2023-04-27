@@ -1,10 +1,10 @@
 {
   "__comment1__": "This is the starter token for the data reference contract",
-  "starterPid": "ac74c28dcc6b051133f28ebb38cebfaf569f73a0b19ac8b9752c3796",
-  "starterTkn": "01e4a1a245abfb16eb2437731d5e3ea2dfac87de6a3584ca90a216ac64183934",
+  "starterPid": "d6784740a22d3bf55cbd99950035acaba1d7d71889f3f4d4866a9fa4",
+  "starterTkn": "01ef3604c2f7c482ae7a452e9789ba9b061ed8191e452ee05396e4fd39cd3e91",
   "__comment2__": "This is the initial pool id for staking",
   "poolId": "bd66ac291ac521deaf22141fb0e5e2f0ed3da63159b9f49e1f500acf",
-  "__comment3__": "This is the initial pool id for staking",
+  "__comment3__": "This is random string to create multiple stake keys",
   "random": "00",
   "__comment4__": "The NEWM hot key",
   "hotKey": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"

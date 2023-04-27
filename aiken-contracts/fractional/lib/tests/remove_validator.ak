@@ -6,8 +6,8 @@ use aiken/transaction.{
 }
 use aiken/transaction/credential.{Address}
 use aiken/transaction/value.{Value}
+use fractional/sale_validators
 use fractional/types.{OwnerInfo, SaleDatum, TokenInfo}
-use fractional/validators
 
 pub fn datum_a() -> SaleDatum {
   let owner: OwnerInfo =
@@ -111,7 +111,7 @@ test good_remove_tx() {
       |> credential.with_delegation_key(#"")
   let addr =
     credential.from_verification_key(#"")
-  validators.remove_validation(
+  sale_validators.remove_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, #""),
     out_ref(),
@@ -125,7 +125,7 @@ test wrong_signer_remove_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.remove_validation(
+  sale_validators.remove_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, #"acab"),
     out_ref(),
@@ -139,7 +139,7 @@ test double_script_remove_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.remove_validation(
+  sale_validators.remove_validation(
     datum_a(),
     tx_valid(script_addr, script_addr, addr, #""),
     out_ref(),
@@ -153,7 +153,7 @@ test wrong_payout_remove_tx() {
   let addr =
     credential.from_verification_key(#"acab")
       |> credential.with_delegation_key(#"")
-  validators.remove_validation(
+  sale_validators.remove_validation(
     datum_a(),
     tx_valid(script_addr, addr, addr, #""),
     out_ref(),
@@ -167,7 +167,7 @@ test cont_script_remove_tx() {
   let addr =
     credential.from_verification_key(#"")
       |> credential.with_delegation_key(#"")
-  validators.remove_validation(
+  sale_validators.remove_validation(
     datum_a(),
     tx_valid(script_addr, addr, script_addr, #""),
     out_ref(),

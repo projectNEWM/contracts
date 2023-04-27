@@ -4,15 +4,16 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use fractional/data
 use fractional/helpers
-use fractional/sale_validators
+use fractional/queue_validators
 use fractional/types.{
-  Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer, UpdateSale,
+  QueueCancel, QueueDatum, QueuePurchase, QueueRedeemer, QueueRefund,
+  ReferenceDatum,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
   fn params(
-    datum: SaleDatum,
-    redeemer: SaleRedeemer,
+    datum: QueueDatum,
+    redeemer: QueueRedeemer,
     context: ScriptContext,
   ) -> Bool {
     // the transaction being validated
@@ -32,39 +33,39 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
     when context.purpose is {
-      // @see lib/fractional/sale_validators.ak
       Spend(output_reference) ->
         when redeemer is {
-          // Buyer can purchase a bundle from the UTxO
-          Purchase ->
+          QueuePurchase ->
             list.and(
               [
+                // check if correct reference data
                 ref_value_check,
-                sale_validators.purchase_validation(
+                // purchase it
+                queue_validators.purchase_validation(
                   datum,
                   ref_datum,
-                  context.transaction,
+                  tx,
                   output_reference,
                 ),
               ],
             )
-
-          // Owner can update their UTxO
-          UpdateSale ->
-            sale_validators.update_validation(
-              datum,
-              context.transaction,
-              output_reference,
+          QueueRefund ->
+            list.and(
+              [
+                // check if correct reference data
+                ref_value_check,
+                // refund it
+                queue_validators.refund_validation(
+                  datum,
+                  ref_datum,
+                  tx,
+                  output_reference,
+                ),
+              ],
             )
-          // Owner can remove their UTxO
-          RemoveSale ->
-            sale_validators.remove_validation(
-              datum,
-              context.transaction,
-              output_reference,
-            )
+          QueueCancel ->
+            queue_validators.cancel_validation(datum, tx, output_reference)
         }
-      // spending only
       _ ->
         False
     }

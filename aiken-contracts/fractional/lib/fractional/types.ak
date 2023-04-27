@@ -60,7 +60,7 @@ pub type RemoveSale =
   Void
 
 pub type SaleRedeemer {
-  Purchase { buy: BuyAmount }
+  Purchase
   UpdateSale
   RemoveSale
 }
@@ -70,8 +70,8 @@ pub type SaleRedeemer {
 //   10
 
 // greater than zero and less than or equal to the max bundle size
-pub fn valid_bundle_size(buy: BuyAmount, max_bundle_size: Int) -> Bool {
-  buy.amt > 0 && buy.amt <= max_bundle_size
+pub fn valid_bundle_size(buy_amt: Int, max_bundle_size: Int) -> Bool {
+  buy_amt > 0 && buy_amt <= max_bundle_size
 }
 
 pub type OwnerInfo {
@@ -118,6 +118,7 @@ pub type StakePoolData {
 pub type ContractHashData {
   cip68: ValidatorHash,
   sale: ValidatorHash,
+  queue: ValidatorHash,
   stake: ValidatorHash,
 }
 
@@ -161,4 +162,23 @@ pub type WithdrawRedeemer {
 pub type MintRedeemer {
   MintTokens
   BurnTokens { burn_amt: Int }
+}
+
+/// Queue things
+pub type QueueRedeemer {
+  QueuePurchase
+  QueueRefund
+  QueueCancel
+}
+
+pub type PointerInfo {
+  pid: ByteArray,
+  tkn: ByteArray,
+}
+
+// single token bundle and cost
+pub type QueueDatum {
+  owner: OwnerInfo,
+  pointer: PointerInfo,
+  amt: Int,
 }
