@@ -348,3 +348,21 @@ pub fn multiply_value(total: Value, add_val: Value, n: Int) -> Value {
     multiply_value(new_val, add_val, n - 1)
   }
 }
+
+pub fn does_value_exist_in_value(
+  total: Value,
+  flat: List<(PolicyId, AssetName, Int)>,
+) -> Bool {
+  when flat is {
+    [(pid, tkn, amt), ..rest] ->
+      if value.quantity_of(total, pid, tkn) >= amt {
+        does_value_exist_in_value(total, rest)
+      } else {
+        // something is missing
+        False
+      }
+    // found all of them
+    [] ->
+      True
+  }
+}

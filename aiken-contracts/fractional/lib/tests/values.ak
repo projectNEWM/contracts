@@ -28,3 +28,25 @@ test can_if_be_value() {
     }
   v == 0
 }
+
+test check_value_in_value() {
+  let total =
+    value.from_lovelace(100)
+      |> value.add(value.from_asset(#"acab", #"beef", 10))
+      |> value.add(value.from_asset(#"face", #"cafe", 1))
+      |> value.add(value.from_asset(#"deaf", #"fade", 100))
+  let flat =
+    value.from_asset(#"face", #"cafe", 1) |> value.flatten()
+  helpers.does_value_exist_in_value(total, flat) == True
+}
+
+test check_no_value_in_value() {
+  let total =
+    value.from_lovelace(100)
+      |> value.add(value.from_asset(#"acab", #"beef", 10))
+      |> value.add(value.from_asset(#"face", #"cafe", 1))
+      |> value.add(value.from_asset(#"deaf", #"fade", 100))
+  let flat =
+    value.from_asset(#"face", #"dace", 1) |> value.flatten()
+  helpers.does_value_exist_in_value(total, flat) == False
+}

@@ -1,5 +1,6 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
+use aiken/list
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
@@ -181,4 +182,19 @@ pub type QueueDatum {
   owner: OwnerInfo,
   pointer: PointerInfo,
   amt: Int,
+  incentive: TokenInfo,
+}
+
+pub fn prove_existence_of_incentive(
+  validating_value: Value,
+  the_incentive: TokenInfo,
+) -> Bool {
+  list.and(
+    [
+      // The incentive must exist
+      value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
+      // the amount cant be zero
+      the_incentive.amt != 0,
+    ],
+  )
 }

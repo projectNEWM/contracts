@@ -48,7 +48,7 @@ buyer_assets=$(python3 -c "import sys; sys.path.append('../py/'); from convertMa
 pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
 payAmt=$((${bundleSize} * ${pSize}))
 
-gas=2000000
+gas=$((2000000 + 1000000))
 if [ -z "$buyer_assets" ]; then
     min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
         --babbage-era \

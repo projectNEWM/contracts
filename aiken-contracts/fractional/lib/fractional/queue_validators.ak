@@ -1,7 +1,6 @@
 use aiken/list
 use aiken/string
 use aiken/transaction.{OutputReference, Transaction}
-use aiken/transaction/credential.{Address, StakeCredential}
 use aiken/transaction/value
 use fractional/data
 use fractional/helpers
@@ -44,10 +43,50 @@ pub fn refund_validation(
   output_reference: OutputReference,
 ) -> Bool {
   // the input being validated
+  let sale_addr =
+    helpers.create_script_address(
+      ref_datum.contracts.sale,
+      ref_datum.contracts.stake,
+    )
+  let sale_input =
+    helpers.find_script_input(tx.reference_inputs, sale_addr)
+  // need this for return calculation
+  let sale_value =
+    sale_input.output.value
+  // the sale datum
+  expect sale_datum: SaleDatum =
+    data.find_inbound_datum(sale_input)
+  // the total cost value for the bundle
+  let cost_value =
+    helpers.multiply_value(value.zero(), sale_datum.cost, datum.amt)
+  let quantity_of_pointer =
+    value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
+  // the input being validated
   let validating_input =
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
+  // check cost valu here
+  let cost_value_check =
+    if
+    helpers.does_value_exist_in_value(
+      validating_value,
+      value.flatten(cost_value),
+    ) == True{
+    
+      // this utxo has teh cost value
+      if quantity_of_pointer >= sale_datum.bundle.amt {
+        // the sale has at least one bundle
+        False
+      } else {
+        // the sale doesn't have any bundles for sale, incentive to refund here?
+        // What if you point this to a random sale wouldn't it always return true?
+        True
+      }
+    } else {
+      // no cost value for a sale to be made, refund after sale
+      True
+    }
   let script_addr =
     validating_input.output.address
   let seller_addr =
@@ -59,14 +98,14 @@ pub fn refund_validation(
   trace fee
   list.and(
     [
-      // newm must sign it
-      helpers.must_be_signed_by(tx, ref_datum.hot_key),
+      // check if utxo has cost and check if cant make sale
+      cost_value_check?,
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs),
+      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs)?,
       // single script input
-      helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
+      (helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1)?,
       // no script outputs
-      helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
+      (helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0)?,
     ],
   )
 }
@@ -127,6 +166,13 @@ pub fn purchase_validation(
       sale_datum.bundle.tkn,
       number_of_bundles * sale_datum.bundle.amt,
     )
+  // whats being paid to the batcher
+  let the_incentive =
+    value.from_asset(
+      datum.incentive.pid,
+      datum.incentive.tkn,
+      datum.incentive.amt,
+    )
   // calc the value cont to the sale contract
   let return_sale_value =
     value.add(sale_value, value.negate(bundle_value)) |> value.add(cost_value)
@@ -136,19 +182,20 @@ pub fn purchase_validation(
     value.add(validating_value, value.negate(tx.fee))
       |> value.add(value.negate(cost_value))
       |> value.add(bundle_value)
+      |> value.add(value.negate(the_incentive))
   // the datum going back to the contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
     [
+      // prove existance of incentive
+      types.prove_existence_of_incentive(validating_value, datum.incentive)?,
       // valid bundle size
       types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
       (datum == outbound_datum)?,
       // must have eenough for the sale
       sale_value_check?,
-      // newm must sign it
-      helpers.must_be_signed_by(tx, ref_datum.hot_key)?,
       // queue gets the bundle
       helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
       // sale gets the cost and return

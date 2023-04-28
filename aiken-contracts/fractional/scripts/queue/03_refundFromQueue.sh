@@ -47,8 +47,8 @@ echo $script_tx_in
 #     buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
 # fi
 
-utxo_value=2969395
-tokens="40000000 e5a1ce84bca4c4d2c533e56b54121b02d4ef02709488b9941636c059.2834343429024b45981dceec92e165afd9dea17fbfd33d8379be43d702469e80"
+utxo_value=3003353
+tokens="100000000 e5a1ce84bca4c4d2c533e56b54121b02d4ef02709488b9941636c059.283434342902974d087a3b74d0f4872fb0d62daeb919a1e9945d6cf7a2eadb21"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 #
 # exit
@@ -81,9 +81,10 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
+last_sale_utxo=$(${cli} transaction txid --tx-file ../tmp/last-sale-utxo.signed )
 
-cpu_steps=270000000
-mem_steps=1000000
+cpu_steps=600000000
+mem_steps=2000000
 
 execution_unts="(${cpu_steps}, ${mem_steps})"
 
@@ -98,6 +99,7 @@ ${cli} transaction build-raw \
     --out-file ../tmp/tx.draft \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
+    --read-only-tx-in-reference="${last_sale_utxo}#1" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -126,6 +128,7 @@ ${cli} transaction build-raw \
     --out-file ../tmp/tx.draft \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
+    --read-only-tx-in-reference="${last_sale_utxo}#1" \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \

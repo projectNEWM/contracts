@@ -21,6 +21,9 @@ queue_script_address=$(${cli} address build --payment-script-file ${queue_script
 newm_address=$(cat ../wallets/newm-wallet/payment.addr)
 newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
 
+batcher_address=$(cat ../wallets/batcher-wallet/payment.addr)
+batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/batcher-wallet/payment.vkey)
+
 
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
@@ -101,22 +104,33 @@ bundle_value="${buyAmt} ${pid}.${tkn}"
 
 returning_asset="${retAmt} ${pid}.${tkn}"
 
+incentive=1000000
+batcher_address_out="${batcher_address} + ${incentive}"
+
 # queue contract return
 # the cost value is ada
 if [ -z "$cost_value" ]; then
     queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
-    queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
+    queue_ada_return=$((${queue_utxo_value} - ${payAmt} - ${incentive}))
     sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
     sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
 
     if [[ retAmt -le 0 ]] ; then
-        exit
+        # echo "THIS CLEANS THE SALE OUT"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return}"
+        queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
+        # echo $sale_script_address_out
+        # exit
     else
         # echo "somethig to continue" ${returning_asset}
         queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
         sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset}"
     fi
 fi
+
+echo "Batcher OUTPUT: "${batcher_address_out}
+echo "Sale Script OUTPUT: "${sale_script_address_out}
+echo "Queue Script OUTPUT: "${queue_script_address_out}
 
 # echo "Sale Script OUTPUT: "${sale_script_address_out}
 # echo "Queue Script OUTPUT: "${queue_script_address_out}
@@ -224,7 +238,7 @@ sale_execution_unts="(${cpu_steps}, ${mem_steps})"
 sale_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
 
-cpu_steps=600000000
+cpu_steps=800000000
 mem_steps=3000000
 queue_execution_unts="(${cpu_steps}, ${mem_steps})"
 queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
@@ -280,11 +294,12 @@ ${cli} transaction build-raw \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${queue_execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
+    --tx-out="${batcher_address_out}" \
     --tx-out="${sale_script_address_out}" \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
     --tx-out="${queue_script_address_out}" \
     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
-    --required-signer-hash ${newm_pkh} \
+    --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee 400000
 
@@ -296,9 +311,9 @@ total_fee=$((${fee} + ${sale_computation_fee_int} + ${queue_computation_fee_int}
 echo Tx Fee: $total_fee
 change_value=$((${queue_ada_return} - ${total_fee}))
 queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
-echo "Sale Script OUTPUT: "${sale_script_address_out}
-echo "Queue Script OUTPUT: "${queue_script_address_out}
+echo "Without Fee: Queue Script OUTPUT: "${queue_script_address_out}
 
+# exit
 
 ${cli} transaction build-raw \
     --babbage-era \
@@ -318,11 +333,12 @@ ${cli} transaction build-raw \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${queue_execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
+    --tx-out="${batcher_address_out}" \
     --tx-out="${sale_script_address_out}" \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
     --tx-out="${queue_script_address_out}" \
     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
-    --required-signer-hash ${newm_pkh} \
+    --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}
 
@@ -337,7 +353,7 @@ ${cli} transaction build-raw \
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file ../wallets/newm-wallet/payment.skey \
+    --signing-key-file ../wallets/batcher-wallet/payment.skey \
     --signing-key-file ../wallets/collat-wallet/payment.skey \
     --tx-body-file ../tmp/tx.draft \
     --out-file ../tmp/tx.signed \
@@ -352,3 +368,5 @@ ${cli} transaction submit \
 
 tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx
+
+cp ../tmp/tx.signed ../tmp/last-sale-utxo.signed
