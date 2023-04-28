@@ -52,6 +52,7 @@ script_tx_in=$TXIN
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
+
 if [[ CURRENT_VALUE -le 0 ]] ; then
     artist_address_out="${artist_address} + ${utxo_value}"
 else

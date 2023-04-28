@@ -6,7 +6,7 @@ use aiken/transaction.{Input, Output, OutputReference, Transaction}
 use aiken/transaction/credential.{Address, StakeCredential}
 use aiken/transaction/value.{AssetName, PolicyId, Value}
 use fractional/data
-use fractional/types.{PublicKeyHash}
+use fractional/types.{PublicKeyHash, ValidatorHash}
 
 pub fn get_validating_input(
   inputs: List<Input>,
@@ -160,7 +160,7 @@ pub fn create_address(pkh: PublicKeyHash, sc: PublicKeyHash) -> Address {
   }
 }
 
-pub fn create_script_address(pkh: ByteArray, sc: ByteArray) -> Address {
+pub fn create_script_address(pkh: ValidatorHash, sc: ValidatorHash) -> Address {
   // empty bytearrays means dont add the sc to the pkh
   if sc == #"" {
     credential.from_script(pkh)
@@ -305,6 +305,24 @@ pub fn get_reward_amt(
       reward
     None ->
       error @"nothing to be withdrawn"
+  }
+}
+
+pub fn find_script_input_by_pkh(
+  inputs: List<Input>,
+  script_addr: Address,
+) -> Input {
+  when inputs is {
+    [input, ..rest] ->
+      if
+      input.output.address.payment_credential == script_addr.payment_credential{
+      
+        input
+      } else {
+        find_script_input(rest, script_addr)
+      }
+    [] ->
+      error @"no script input found"
   }
 }
 

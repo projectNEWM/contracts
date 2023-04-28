@@ -16,7 +16,7 @@ mkdir -p certs
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
-aiken build
+aiken build -k
 
 echo -e "\033[1;33m Convert Reference Contract \033[0m"
 aiken blueprint convert -v data_reference.data_reference > contracts/reference_contract.plutus

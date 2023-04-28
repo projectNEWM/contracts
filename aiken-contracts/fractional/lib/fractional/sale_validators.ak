@@ -25,11 +25,11 @@ pub fn purchase_validation(
   list.and(
     [
       // single script input
-      helpers.count_script_inputs(tx.inputs, queue_addr, 0) == 1,
+      (helpers.count_script_inputs(tx.inputs, queue_addr, 0) == 1)?,
       // single script output
-      helpers.count_script_outputs(tx.outputs, queue_addr, 0) == 1,
-      datum == outbound_datum,
-      helpers.must_be_signed_by(tx, ref_datum.hot_key),
+      (helpers.count_script_outputs(tx.outputs, queue_addr, 0) == 1)?,
+      (datum == outbound_datum)?,
+      helpers.must_be_signed_by(tx, ref_datum.hot_key)?,
     ],
   )
 }

@@ -7,7 +7,7 @@ use fractional/helpers
 use fractional/queue_validators
 use fractional/types.{
   QueueCancel, QueueDatum, QueuePurchase, QueueRedeemer, QueueRefund,
-  ReferenceDatum,
+  ReferenceDatum, ValidatorHash,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -20,7 +20,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let tx =
       context.transaction
     // data reference stuff
-    expect ref_hash: ByteArray =
+    expect ref_hash: ValidatorHash =
       ref_hash_data
     let ref_addr =
       credential.from_script(ref_hash)

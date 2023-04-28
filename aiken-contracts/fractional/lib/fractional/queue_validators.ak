@@ -1,5 +1,7 @@
 use aiken/list
+use aiken/string
 use aiken/transaction.{OutputReference, Transaction}
+use aiken/transaction/credential.{Address, StakeCredential}
 use aiken/transaction/value
 use fractional/data
 use fractional/helpers
@@ -52,6 +54,9 @@ pub fn refund_validation(
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
   let outbound_value =
     value.add(validating_value, value.negate(tx.fee))
+  let fee =
+    string.from_int(value.lovelace_of(tx.fee))
+  trace fee
   list.and(
     [
       // newm must sign it
@@ -123,43 +128,35 @@ pub fn purchase_validation(
       number_of_bundles * sale_datum.bundle.amt,
     )
   // calc the value cont to the sale contract
-  // remove the bundle
-  let sale_value0 =
-    value.add(sale_value, value.negate(bundle_value))
-  // add the cost value
-  let sale_value1 =
-    value.add(sale_value0, cost_value)
+  let return_sale_value =
+    value.add(sale_value, value.negate(bundle_value)) |> value.add(cost_value)
   // calcu the value return to the queue contract
   // remove the fee
-  let queue_value =
+  let return_queue_value =
     value.add(validating_value, value.negate(tx.fee))
-  // remove the cost value
-  let queue_value0 =
-    value.add(queue_value, value.negate(cost_value))
-  // add the bundle
-  let queue_value1 =
-    value.add(queue_value0, bundle_value)
+      |> value.add(value.negate(cost_value))
+      |> value.add(bundle_value)
   // the datum going back to the contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
     [
       // valid bundle size
-      types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size),
+      types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
-      datum == outbound_datum,
+      (datum == outbound_datum)?,
       // must have eenough for the sale
-      sale_value_check,
+      sale_value_check?,
       // newm must sign it
-      helpers.must_be_signed_by(tx, ref_datum.hot_key),
+      helpers.must_be_signed_by(tx, ref_datum.hot_key)?,
       // queue gets the bundle
-      helpers.find_exact_payout(script_addr, queue_value1, tx.outputs),
+      helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
       // sale gets the cost and return
-      helpers.find_exact_payout(sale_addr, sale_value1, tx.outputs),
+      helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs)?,
       // single sale script input
-      helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1,
+      (helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1)?,
       // one  sale script output
-      helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1,
+      (helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1)?,
     ],
   )
 }

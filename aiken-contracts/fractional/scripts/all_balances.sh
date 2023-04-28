@@ -16,6 +16,10 @@ cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script
 sale_script_path="../contracts/sale_contract.plutus"
 sale_script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
+# bundle sale contract
+queue_script_path="../contracts/queue_contract.plutus"
+queue_script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+
 # staked smart contract address
 ref_script_path="../contracts/reference_contract.plutus"
 ref_script_address=$(${cli} address build --payment-script-file ${ref_script_path} --testnet-magic ${testnet_magic})
@@ -34,6 +38,10 @@ ${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_ma
 echo -e "\033[1;35m Bundle Sale Script Address: \033[0m" 
 echo -e "\n \033[1;35m ${sale_script_address} \033[0m \n";
 ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic}
+#
+echo -e "\033[1;35m Queue Script Address: \033[0m" 
+echo -e "\n \033[1;35m ${queue_script_address} \033[0m \n";
+${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_magic}
 
 # Loop through each -wallet folder
 for wallet_folder in wallets/*-wallet; do

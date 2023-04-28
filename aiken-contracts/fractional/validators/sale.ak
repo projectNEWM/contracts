@@ -7,6 +7,7 @@ use fractional/helpers
 use fractional/sale_validators
 use fractional/types.{
   Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer, UpdateSale,
+  ValidatorHash,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -19,7 +20,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let tx =
       context.transaction
     // data reference stuff
-    expect ref_hash: ByteArray =
+    expect ref_hash: ValidatorHash =
       ref_hash_data
     let ref_addr =
       credential.from_script(ref_hash)
