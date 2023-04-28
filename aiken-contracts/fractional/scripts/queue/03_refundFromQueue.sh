@@ -35,7 +35,7 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
- TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
 # exit
@@ -47,8 +47,8 @@ echo $script_tx_in
 #     buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
 # fi
 
-utxo_value=3003353
-tokens="100000000 e5a1ce84bca4c4d2c533e56b54121b02d4ef02709488b9941636c059.283434342902974d087a3b74d0f4872fb0d62daeb919a1e9945d6cf7a2eadb21"
+utxo_value=4504147
+tokens="100000000 e5a1ce84bca4c4d2c533e56b54121b02d4ef02709488b9941636c059.2834343429022181992795d527230e88b86a91c91c9f5af6ef32347a2f2f9e38"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 #
 # exit

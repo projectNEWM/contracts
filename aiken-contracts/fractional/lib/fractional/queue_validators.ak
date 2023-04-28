@@ -117,7 +117,7 @@ pub fn purchase_validation(
   tx: Transaction,
   output_reference: OutputReference,
 ) -> Bool {
-  // the input being validated
+  // the sale input being validated
   let sale_addr =
     helpers.create_script_address(
       ref_datum.contracts.sale,

@@ -45,8 +45,9 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .key' ../tmp/script_utxo.json)
-script_tx_in=$TXIN
+TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+script_tx_in=${TXIN::-8}
+echo $script_tx_in
 
 # exit
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
@@ -54,6 +55,8 @@ returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 
 if [[ CURRENT_VALUE -le 0 ]] ; then
+    utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+
     artist_address_out="${artist_address} + ${utxo_value}"
 else
     artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
@@ -90,6 +93,7 @@ fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
+data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -98,6 +102,7 @@ FEE=$(${cli} transaction build \
     --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${artist_address} \
+    --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${artist_tx_in} \
     --tx-in ${script_tx_in} \

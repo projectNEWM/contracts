@@ -36,6 +36,24 @@ buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/b
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
+echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
+${cli} query utxo \
+    --address ${batcher_address} \
+    --testnet-magic ${testnet_magic} \
+    --out-file ../tmp/batcher_utxo.json
+# transaction variables
+TXNS=$(jq length ../tmp/batcher_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${batcher_address} \033[0m \n";
+   exit;
+fi
+
+TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
+batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
+batcher_tx_in=${TXIN::-8}
+echo Batcher UTXO ${batcher_tx_in}
+# exit
+
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${queue_script_address} \
@@ -89,6 +107,9 @@ bSize=$(jq -r '.fields[1].fields[2].int' ../data/sale/sale-datum.json)
 
 # the pure ada part
 pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
+if [[ -z $pSize ]]; then
+  pSize=0
+fi
 payAmt=$((${bundleSize} * ${pSize}))
 
 buyAmt=$((${bundleSize} * ${bSize}))
@@ -104,16 +125,19 @@ bundle_value="${buyAmt} ${pid}.${tkn}"
 
 returning_asset="${retAmt} ${pid}.${tkn}"
 
-incentive=1000000
-batcher_address_out="${batcher_address} + ${incentive}"
+incentive="1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive}"
+
+# need better way for this
+cost_value="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
 # queue contract return
 # the cost value is ada
+queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
+sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
+queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
+sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
 if [ -z "$cost_value" ]; then
-    queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
-    queue_ada_return=$((${queue_utxo_value} - ${payAmt} - ${incentive}))
-    sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
-    sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
 
     if [[ retAmt -le 0 ]] ; then
         # echo "THIS CLEANS THE SALE OUT"
@@ -126,92 +150,22 @@ if [ -z "$cost_value" ]; then
         queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
         sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset}"
     fi
+else
+    echo "cost value isnt empty"
+    queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
+    if [[ retAmt -le 0 ]] ; then
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${cost_value}"
+    else
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${cost_value}"
+    fi
 fi
 
 echo "Batcher OUTPUT: "${batcher_address_out}
 echo "Sale Script OUTPUT: "${sale_script_address_out}
 echo "Queue Script OUTPUT: "${queue_script_address_out}
-
-# echo "Sale Script OUTPUT: "${sale_script_address_out}
-# echo "Queue Script OUTPUT: "${queue_script_address_out}
-
-
-# exit
-# queue_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --tx-out-inline-datum-file ../data/queue/queue-datum.json \
-#     --tx-out="${queue_script_address} + 5000000 + ${buyer_assets}" | tr -dc '0-9')
-# queue_script_address_out="${queue_script_address}"
-# # sale contract return
-# sale_script_address_out="${sale_script_address}"
-
-# if [ -z "$cost_value" ]; then
-#     adaPay=$((${artist_utxo_value} + ${payAmt}))
-#     script_address_out="${sale_script_address} + ${adaPay}"
-# else
-#     artist_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-#         --babbage-era \
-#         --protocol-params-file ../tmp/protocol.json \
-#         --tx-out="${artist_address} + 5000000 + ${cost_value}" | tr -dc '0-9')
-
-#     pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
-#     adaPay=$((${artist_utxo_value} + ${payAmt}))
-#     artist_address_out="${artist_address} + ${adaPay} + ${cost_value}"
-# fi
-
-# echo $cost_value $adaPay
-
-# exit 
-
-
-
-# buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --tx-out="${sale_script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
-
-# buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
-
-# # script info
-# script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-#     --tx-out="${sale_script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
-
-# returning_asset="${retAmt} ${pid}.${tkn}"
-
-# if [[ retAmt -le 0 ]] ; then
-#     script_address_out="${sale_script_address} + ${script_utxo_value}"
-# else
-#     script_address_out="${sale_script_address} + ${script_utxo_value} + ${returning_asset}"
-# fi
-
-
-
-
-# echo "Script OUTPUT: "${script_address_out}
-# echo "Buyer OUTPUT: "${buyer_address_out}
-# echo "Seller OUTPUT: "${artist_address_out}
 #
 # exit
 #
-# Get tx payer info
-# echo -e "\033[0;36m Gathering Batcher Bot UTxO Information  \033[0m"
-# ${cli} query utxo \
-#     --testnet-magic ${testnet_magic} \
-#     --address ${buyer_address} \
-#     --out-file ../tmp/buyer_utxo.json
-
-# TXNS=$(jq length ../tmp/buyer_utxo.json)
-# if [ "${TXNS}" -eq "0" ]; then
-#    echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
-#    exit;
-# fi
-# alltxin=""
-# TXIN=$(jq -r --arg alltxin "" 'to_entries[] | select(.value.value | length < 2) | .key | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
-# buyer_tx_in=${TXIN::-8}
 
 # collat info
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
@@ -238,7 +192,7 @@ sale_execution_unts="(${cpu_steps}, ${mem_steps})"
 sale_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
 
-cpu_steps=800000000
+cpu_steps=1000000000
 mem_steps=3000000
 queue_execution_unts="(${cpu_steps}, ${mem_steps})"
 queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
@@ -282,6 +236,7 @@ ${cli} transaction build-raw \
     --out-file ../tmp/tx.draft \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
+    --tx-in ${batcher_tx_in} \
     --tx-in ${sale_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
@@ -304,7 +259,7 @@ ${cli} transaction build-raw \
     --fee 400000
 
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 2 --tx-out-count 2 --witness-count 2)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
 total_fee=$((${fee} + ${sale_computation_fee_int} + ${queue_computation_fee_int}))
@@ -321,6 +276,7 @@ ${cli} transaction build-raw \
     --out-file ../tmp/tx.draft \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
+    --tx-in ${batcher_tx_in} \
     --tx-in ${sale_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \

@@ -46,10 +46,21 @@ buyer_assets=$(python3 -c "import sys; sys.path.append('../py/'); from convertMa
 
 # the pure ada part
 pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
+pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
+if [[ -z $pSize ]]; then
+  pSize=0
+fi
 payAmt=$((${bundleSize} * ${pSize}))
 
-gas=$((2000000 + 1000000))
-if [ -z "$buyer_assets" ]; then
+incentive=" + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+
+queue_value="${buyer_assets}${incentive}"
+
+# this pays for the fees
+gas=$((3000000))
+
+# check if its ada or not
+if [ -z "$queue_value" ]; then
     min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
         --babbage-era \
         --protocol-params-file ../tmp/protocol.json \
@@ -62,9 +73,9 @@ else
         --babbage-era \
         --protocol-params-file ../tmp/protocol.json \
         --tx-out-inline-datum-file ../data/queue/queue-datum.json \
-        --tx-out="${script_address} + 5000000 + ${buyer_assets}" | tr -dc '0-9')
+        --tx-out="${script_address} + 5000000 + ${queue_value}" | tr -dc '0-9')
     adaPay=$((${min_utxo_value} + ${payAmt} + ${gas}))
-    script_address_out="${script_address} + ${adaPay} + ${buyer_assets}"
+    script_address_out="${script_address} + ${adaPay} + ${queue_value}"
 fi
 
 echo "Buyer OUTPUT: "${script_address_out}
