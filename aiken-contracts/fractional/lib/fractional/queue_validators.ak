@@ -1,5 +1,4 @@
 use aiken/list
-use aiken/string
 use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value
 use fractional/data
@@ -67,39 +66,39 @@ pub fn refund_validation(
   let validating_value =
     validating_input.output.value
   // check cost valu here
-  let cost_value_check =
+  let refund_value_check =
     if
     helpers.does_value_exist_in_value(
       validating_value,
       value.flatten(cost_value),
     ) == True{
     
-      // this utxo has teh cost value
+      // the queue utxo has the cost value check if the sale utxo has enough
       if quantity_of_pointer >= sale_datum.bundle.amt {
         // the sale has at least one bundle
         False
       } else {
-        // the sale doesn't have any bundles for sale, incentive to refund here?
+        // the sale doesn't have any bundles for sale
         // What if you point this to a random sale wouldn't it always return true?
+        // there is no incentive to refund here
         True
       }
     } else {
-      // no cost value for a sale to be made, refund after sale
+      // no cost value for a sale to be made
+      // there is no incentive to refund here
       True
     }
+  // the queue script address
   let script_addr =
     validating_input.output.address
   let seller_addr =
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
   let outbound_value =
     value.add(validating_value, value.negate(tx.fee))
-  let fee =
-    string.from_int(value.lovelace_of(tx.fee))
-  trace fee
   list.and(
     [
       // check if utxo has cost and check if cant make sale
-      cost_value_check?,
+      refund_value_check?,
       // owner must get the utxo back
       helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs)?,
       // single script input
@@ -176,25 +175,24 @@ pub fn purchase_validation(
   // calc the value cont to the sale contract
   let return_sale_value =
     value.add(sale_value, value.negate(bundle_value)) |> value.add(cost_value)
-  // calcu the value return to the queue contract
-  // remove the fee
+  // calcu the valu retu to the queu contract
   let return_queue_value =
     value.add(validating_value, value.negate(tx.fee))
       |> value.add(value.negate(cost_value))
       |> value.add(bundle_value)
       |> value.add(value.negate(the_incentive))
-  // the datum going back to the contract
+  // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
     [
-      // prove existance of incentive
+      // prove existance of at least the incentive
       types.prove_existence_of_incentive(validating_value, datum.incentive)?,
       // valid bundle size
       types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
       (datum == outbound_datum)?,
-      // must have eenough for the sale
+      // must have enough for the sale
       sale_value_check?,
       // queue gets the bundle
       helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
