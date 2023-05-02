@@ -121,7 +121,7 @@ pub fn refund_validation(
       // check if the pointer is equal to the bundle
       correct_sale_check?,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound)?,
       // check if utxo has cost and check if cant make sale
       refund_value_check?,
       // owner must get the utxo back
@@ -217,7 +217,7 @@ pub fn purchase_validation(
       // must have enough for the sale
       sale_value_check?,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound)?,
       // prove existance of at least the incentive on the intermediate value
       types.prove_existence_of_incentive(validating_value, datum.incentive)?,
       // valid bundle size

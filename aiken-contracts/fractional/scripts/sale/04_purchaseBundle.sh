@@ -138,6 +138,7 @@ sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
 queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
 sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
 if [ -z "$cost_value" ]; then
+    echo "cost value is empty"
 
     if [[ retAmt -le 0 ]] ; then
         # echo "THIS CLEANS THE SALE OUT"

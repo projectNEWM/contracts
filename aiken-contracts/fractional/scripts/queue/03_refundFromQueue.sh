@@ -47,8 +47,9 @@ echo $script_tx_in
 #     buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
 # fi
 
-utxo_value=4504147
-tokens="100000000 e5a1ce84bca4c4d2c533e56b54121b02d4ef02709488b9941636c059.2834343429022181992795d527230e88b86a91c91c9f5af6ef32347a2f2f9e38"
+# this needs to be dynamic
+utxo_value=3505731
+tokens="100000000 1e96520bcf7655dfaec66de5c1b2e4080fd59333ec8d153ac379d0a9.2834343429024c553a17567893e9c526091d2dcb2c598ec46058ca2e44eac755"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 #
 # exit
@@ -112,13 +113,13 @@ ${cli} transaction build-raw \
     --fee 400000
 
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 1 --tx-out-count 1 --witness-count 2)
-echo $FEE
+# echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
 total_fee=$((${fee} + ${computation_fee_int}))
 change_value=$((${utxo_value} - ${total_fee}))
 buyer_address_out="${buyer_address} + ${change_value} + ${tokens}"
-echo "Return OUTPUT: "${buyer_address_out}
+echo "Refund OUTPUT: "${buyer_address_out}
 
 # exit
 

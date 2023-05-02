@@ -6,7 +6,7 @@ cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/buyer-wallet/"
+sender_path="wallets/batcher-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
 receiver_address="addr_test1qppp0mcjel3kztftz36k0cc5j77qcz4vt0udvc3fzzz9djeq7v27xnzv5664myxhzfvgj5tlymus096u0y7xfrx9sazqpvjzrv"

@@ -33,18 +33,21 @@ fi
  TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
+
 # exit
 # CURRENT_VALUE=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-# returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
+# returning_asset="${CURRENT_VALUE} ${pid}.${tkn}
 # if [[ CURRENT_VALUE -le 0 ]] ; then
+#     buyer_address_out="${buyer_address} + ${utxo_value}"
 # else
-#     buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
 # fi
 
 utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+# this needs to be dynamic
+returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379 + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
-buyer_address_out="${buyer_address} + ${utxo_value}"
+buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
 echo "Return OUTPUT: "${buyer_address_out}
 #
 # exit

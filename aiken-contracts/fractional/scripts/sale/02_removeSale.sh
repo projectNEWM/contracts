@@ -54,14 +54,20 @@ CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 
-if [[ CURRENT_VALUE -le 0 ]] ; then
-    utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+# if [[ CURRENT_VALUE -le 0 ]] ; then
+#     utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
 
-    artist_address_out="${artist_address} + ${utxo_value}"
-else
-    artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-fi
+#     artist_address_out="${artist_address} + ${utxo_value}"
+# else
+#     artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
+# fi
 
+# this needs to be dynamic
+utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+
+artist_address_out="${artist_address} + ${utxo_value}"
+artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 echo "Return OUTPUT: "${artist_address_out}
 #
 # exit

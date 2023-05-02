@@ -57,7 +57,10 @@ incentive=" + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7
 queue_value="${buyer_assets}${incentive}"
 
 # this pays for the fees
-gas=$((3000000))
+pub=$(jq '.fields[4].fields[0].int' ../data/reference/reference-datum.json)
+rub=$(jq '.fields[4].fields[1].int' ../data/reference/reference-datum.json)
+gas=$((${pub} + ${rub}))
+echo "Maximum Gas Fee:" $gas
 
 # check if its ada or not
 if [ -z "$queue_value" ]; then
@@ -78,7 +81,7 @@ else
     script_address_out="${script_address} + ${adaPay} + ${queue_value}"
 fi
 
-echo "Buyer OUTPUT: "${script_address_out}
+echo "Script OUTPUT: "${script_address_out}
 #
 # exit
 #
