@@ -66,15 +66,25 @@ pub fn refund_validation(
   let validating_value =
     validating_input.output.value
   // The sale datum bundle info and the queue pointer info must equal
+  // A sale must exist for the refund action to take place
+  // short circuit the sale check
   let correct_sale_check =
-    sale_datum.bundle.pid == datum.pointer.pid && sale_datum.bundle.tkn == datum.pointer.tkn
+    if
+    (
+      sale_datum.bundle.pid == datum.pointer.pid && sale_datum.bundle.tkn == datum.pointer.tkn
+    ) == True{
+    
+      True
+    } else {
+      error @"not the correct bundle sale"
+    }
   // check the state of the sale with a queue item
   let refund_value_check =
     if
     // Does the cost value exist in the validating value
     helpers.does_value_exist_in_value(
-      validating_value,
       value.flatten(cost_value),
+      validating_value,
     ) == True{
     
       // The validating value does contain the cost value.
@@ -105,14 +115,15 @@ pub fn refund_validation(
   // subtract the fee from the value being spent
   let outbound_value =
     value.add(validating_value, value.negate(tx.fee))
+  // The refunding of a queue item is not incentivised.
   list.and(
     [
+      // check if the pointer is equal to the bundle
+      correct_sale_check?,
       // The transaction fee can not exceed an upperbound
       types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound),
       // check if utxo has cost and check if cant make sale
       refund_value_check?,
-      // check if the pointer is equal to the bundle
-      correct_sale_check?,
       // owner must get the utxo back
       helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs)?,
       // single script input
@@ -186,41 +197,40 @@ pub fn purchase_validation(
       datum.incentive.tkn,
       datum.incentive.amt,
     )
-  // remove bundle and add cost
+  // remove bundle
+  // add cost
   let return_sale_value =
-    value.add(sale_value, value.negate(bundle_value)) |> value.add(cost_value)
-  // remove the fee and cost
-  let cost_removed_value =
-    value.add(validating_value, value.negate(tx.fee))
-      |> value.add(value.negate(cost_value))
-  // add the bundle value and remove the incentive
+    value.add(sale_value, cost_value) |> value.add(value.negate(bundle_value))
+  // remove the fee, cost value, and incentive
+  // add the bundle value
   let return_queue_value =
-    cost_removed_value
-      |> value.add(bundle_value)
+    value.add(validating_value, bundle_value)
+      |> value.add(value.negate(cost_value))
       |> value.add(value.negate(the_incentive))
+      |> value.add(value.negate(tx.fee))
   // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
   // the incentive is left open for whoever completes the tx to take
   list.and(
     [
+      // must have enough for the sale
+      sale_value_check?,
       // The transaction fee can not exceed an upperbound
       types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
       // prove existance of at least the incentive on the intermediate value
-      types.prove_existence_of_incentive(cost_removed_value, datum.incentive)?,
+      types.prove_existence_of_incentive(validating_value, datum.incentive)?,
       // valid bundle size
       types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
       (datum == outbound_datum)?,
-      // must have enough for the sale
-      sale_value_check?,
       // queue gets the bundle
       helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
       // sale gets the cost
       helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs)?,
       // single sale script input
       (helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1)?,
-      // one  sale script output
+      // one sale script output
       (helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1)?,
     ],
   )

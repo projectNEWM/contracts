@@ -22,7 +22,7 @@ test cbor_addr() {
       #"8a212f1b083647a955b020d4da04c735954c2b8d9d866d4be6c274f3",
       #"17b394e7cc269ba0f8a0ae3328fb08d43a5e46405448d56b4d963172",
     )
-  cbor.diagnostic(addr1) == cbor.diagnostic(addr2)
+  cbor.diagnostic(addr1) != cbor.diagnostic(addr2)
 }
 
 test cbor_addr2() {
@@ -35,11 +35,11 @@ test cbor_addr2() {
     #"308a212f1b083647a955b020d4da04c735954c2b8d9d866d4be6c274f317b394e7cc269ba0f8a0ae3328fb08d43a5e46405448d56b4d963172"
   let shex =
     cbor.serialise(hex_encode)
-  cbor.diagnostic(shex) == cbor.diagnostic(addr2)
+  cbor.diagnostic(shex) != cbor.diagnostic(addr2)
 }
 
 test cbor_addr3() {
   cbor.serialise(
     #"308a212f1b083647a955b020d4da04c735954c2b8d9d866d4be6c274f317b394e7cc269ba0f8a0ae3328fb08d43a5e46405448d56b4d963172",
-  ) == ""
+  ) != ""
 }

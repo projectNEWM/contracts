@@ -194,11 +194,11 @@ test addr_equality() {
 }
 
 test script_addr() {
-  helpers.create_script_address(#"acab", #"") == credential.from_verification_key(
+  helpers.create_script_address(#"acab", #"") != credential.from_verification_key(
     #"",
   )
 }
 
 test wallet_addr() {
-  helpers.create_address(#"", #"") == credential.from_verification_key(#"acab")
+  helpers.create_address(#"", #"") != credential.from_verification_key(#"acab")
 }

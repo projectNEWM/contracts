@@ -37,7 +37,7 @@ test check_value_in_value() {
       |> value.add(value.from_asset(#"deaf", #"fade", 100))
   let flat =
     value.from_asset(#"face", #"cafe", 1) |> value.flatten()
-  helpers.does_value_exist_in_value(total, flat) == True
+  helpers.does_value_exist_in_value(flat, total) == True
 }
 
 test check_no_value_in_value() {
@@ -48,5 +48,5 @@ test check_no_value_in_value() {
       |> value.add(value.from_asset(#"deaf", #"fade", 100))
   let flat =
     value.from_asset(#"face", #"dace", 1) |> value.flatten()
-  helpers.does_value_exist_in_value(total, flat) == False
+  helpers.does_value_exist_in_value(flat, total) == False
 }
