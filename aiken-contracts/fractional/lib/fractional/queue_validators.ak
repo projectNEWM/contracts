@@ -5,7 +5,7 @@ use fractional/data
 use fractional/helpers
 use fractional/types.{QueueDatum, ReferenceDatum, SaleDatum}
 
-/// Remove item from queue at any point at their expense
+/// Remove item from queue at any point at owner's expense
 pub fn cancel_validation(
   datum: QueueDatum,
   tx: Transaction,
@@ -65,7 +65,7 @@ pub fn refund_validation(
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
-  // correct sale?
+  // The sale datum bundle info and the queue pointer info must equal
   let correct_sale_check =
     sale_datum.bundle.pid == datum.pointer.pid && sale_datum.bundle.tkn == datum.pointer.tkn
   // check the state of the sale with a queue item
@@ -77,7 +77,7 @@ pub fn refund_validation(
       value.flatten(cost_value),
     ) == True{
     
-      // The validating value does contain the cost value
+      // The validating value does contain the cost value.
       //
       // Does the current sale have enough tokens for at least 1 bundle?
       if quantity_of_pointer >= sale_datum.bundle.amt {
@@ -184,22 +184,26 @@ pub fn purchase_validation(
       datum.incentive.tkn,
       datum.incentive.amt,
     )
-  // calc the value cont to the sale contract
+  // remove bundle and add cost
   let return_sale_value =
     value.add(sale_value, value.negate(bundle_value)) |> value.add(cost_value)
-  // calcu the valu retu to the queu contract
-  let return_queue_value =
+  // remove the fee and cost
+  let cost_removed_value =
     value.add(validating_value, value.negate(tx.fee))
       |> value.add(value.negate(cost_value))
+  // add the bundle value and remove the incentive
+  let return_queue_value =
+    cost_removed_value
       |> value.add(bundle_value)
       |> value.add(value.negate(the_incentive))
   // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
+  // the incentive is left open for whoever completes the tx to take
   list.and(
     [
-      // prove existance of at least the incentive
-      types.prove_existence_of_incentive(validating_value, datum.incentive)?,
+      // prove existance of at least the incentive on the intermediate value
+      types.prove_existence_of_incentive(cost_removed_value, datum.incentive)?,
       // valid bundle size
       types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
@@ -208,7 +212,7 @@ pub fn purchase_validation(
       sale_value_check?,
       // queue gets the bundle
       helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
-      // sale gets the cost and return
+      // sale gets the cost
       helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs)?,
       // single sale script input
       (helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1)?,

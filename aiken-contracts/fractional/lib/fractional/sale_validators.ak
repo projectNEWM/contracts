@@ -22,6 +22,7 @@ pub fn purchase_validation(
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
+  // purchasing requires a constant datum and 1 thing being spent from the queue
   list.and(
     [
       // single script input
