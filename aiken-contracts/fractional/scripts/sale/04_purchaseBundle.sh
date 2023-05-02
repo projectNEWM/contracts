@@ -50,8 +50,9 @@ echo SELLER UTXO ${artist_tx_in}
 
 default_asset="${total_amt} ${pid}.${tkn}"
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-echo $CURRENT_VALUE
+# echo $CURRENT_VALUE
 
+max_bundle_size=$(jq -r '.fields[3].int' ../data/sale/sale-datum.json)
 if [[ $# -eq 0 ]] ; then
     echo -e "\n \033[0;31m Please Supply A Bundle Amount \033[0m \n";
     exit
@@ -60,8 +61,8 @@ if [[ ${1} -eq 0 ]] ; then
     echo -e "\n \033[0;31m Bundle Size Must Be Greater Than Zero \033[0m \n";
     exit
 fi
-if [[ ${1} -gt 10 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To Ten \033[0m \n";
+if [[ ${1} -gt ${max_bundle_size} ]] ; then
+    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To ${max_bundle_size} \033[0m \n";
     exit
 fi
 
@@ -71,10 +72,31 @@ variable=${bundleSize}; jq --argjson variable "$variable" '.fields[0].fields[0].
 mv ../data/sale/purchase-redeemer-new.json ../data/sale/purchase-redeemer.json
 
 bSize=$(jq -r '.fields[1].fields[2].int' ../data/sale/sale-datum.json)
-pSize=$(jq -r '.fields[2].fields[2].int' ../data/sale/sale-datum.json)
+
+# the cost of a bundle is defined in the sale data folder
+
+# artist receive info
+# need to build the cost object and calculate the total cost
+artist_assets=$(python3 -c "import sys; sys.path.append('../py/'); from convertMapToOutput import get_map; get_map($(jq -r '.fields[2].map' ../data/sale/sale-datum.json), ${bundleSize})")
+
+# the pure ada part
+pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
+payAmt=$((${bundleSize} * ${pSize}))
+
+if [ -z "$artist_assets" ]; then
+    artist_address_out="${artist_address} + ${payAmt}"
+else
+    artist_utxo_value=$(${cli} transaction calculate-min-required-utxo \
+        --babbage-era \
+        --protocol-params-file ../tmp/protocol.json \
+        --tx-out="${artist_address} + 5000000 + ${artist_assets}" | tr -dc '0-9')
+
+    pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
+    adaPay=$((${artist_utxo_value} + ${payAmt}))
+    artist_address_out="${artist_address} + ${adaPay} + ${artist_assets}"
+fi
 
 buyAmt=$((${bundleSize} * ${bSize}))
-payAmt=$((${bundleSize} * ${pSize}))
 retAmt=$((${CURRENT_VALUE} - ${buyAmt}))
 
 if [[ CURRENT_VALUE -lt buyAmt ]] ; then
@@ -82,12 +104,16 @@ if [[ CURRENT_VALUE -lt buyAmt ]] ; then
     exit
 fi
 
+# buyer info
 buyer_asset="${buyAmt} ${pid}.${tkn}"
 buyer_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out="${script_address} + 5000000 + ${buyer_asset}" | tr -dc '0-9')
 
+buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
+
+# script info
 script_utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
@@ -101,8 +127,8 @@ if [[ retAmt -le 0 ]] ; then
 else
     script_address_out="${script_address} + ${script_utxo_value} + ${returning_asset}"
 fi
-buyer_address_out="${buyer_address} + ${buyer_utxo_value} + ${buyer_asset}"
-artist_address_out="${artist_address} + ${payAmt}"
+
+
 echo "Script OUTPUT: "${script_address_out}
 echo "Buyer OUTPUT: "${buyer_address_out}
 echo "Seller OUTPUT: "${artist_address_out}
@@ -166,7 +192,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

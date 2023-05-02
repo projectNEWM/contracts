@@ -16,10 +16,10 @@
       "constructor": 0,
       "fields": [
         {
-          "bytes": "92834b4f4faad53a55b755f307110dada8f2df3cd54318d92df2203e"
+          "bytes": "ce0be087ee8f1967114093dabc99bd278a1101bc4c727e4f02057466"
         },
         {
-          "bytes": "28343434290147f8a78d77a1da6cfd67cc8e560356ccc11bce8d89bb64619b8b"
+          "bytes": "283434342902a84d6f8f6b8fcbe87a1beb15a7307aa686daadeb20865ff46530"
         },
         {
           "int": 10000000
@@ -27,18 +27,28 @@
       ]
     },
     {
-      "constructor": 0,
-      "fields": [
+      "map": [
         {
-          "bytes": ""
-        },
-        {
-          "bytes": ""
-        },
-        {
-          "int": 1000000
+          "k": {
+            "bytes": ""
+          },
+          "v": {
+            "map": [
+              {
+                "k": {
+                  "bytes": ""
+                },
+                "v": {
+                  "int": 2000000
+                }
+              }
+            ]
+          }
         }
       ]
+    },
+    {
+      "int": 10
     }
   ]
 }

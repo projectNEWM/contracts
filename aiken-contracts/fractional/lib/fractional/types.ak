@@ -1,6 +1,7 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
+use aiken/transaction/value.{Value}
 
 // (100) reference token prefix
 pub const prefix_100 =
@@ -47,6 +48,7 @@ pub type CIP68Redeemer {
   UpdateMeta { lovelace: LovelaceAmount, direction: Int }
 }
 
+// keep this as a data struc so we can add more later
 pub type BuyAmount {
   amt: Int,
 }
@@ -64,11 +66,11 @@ pub type SaleRedeemer {
 }
 
 // hardcoded max bundle size
-const max_bundle_size =
-  10
+// const max_bundle_size =
+//   10
 
 // greater than zero and less than or equal to the max bundle size
-pub fn valid_bundle_size(buy: BuyAmount) -> Bool {
+pub fn valid_bundle_size(buy: BuyAmount, max_bundle_size: Int) -> Bool {
   buy.amt > 0 && buy.amt <= max_bundle_size
 }
 
@@ -83,10 +85,12 @@ pub type TokenInfo {
   amt: Int,
 }
 
+// single token bundle and cost
 pub type SaleDatum {
   owner: OwnerInfo,
   bundle: TokenInfo,
-  cost: TokenInfo,
+  cost: Value,
+  max_bundle_size: Int,
 }
 
 // simple datum equality
@@ -117,7 +121,7 @@ pub type ContractHashData {
   stake: ValidatorHash,
 }
 
-// data to be used inside toher contracts
+// data to be used inside other contracts
 pub type ReferenceDatum {
   hot_key: PublicKeyHash,
   keepers: KeeperData,
@@ -134,6 +138,7 @@ pub type UpdateKeepers =
 pub type UpdateStaking =
   Void
 
+// this endpoint may not be needed
 pub type UpdateContracts =
   Void
 

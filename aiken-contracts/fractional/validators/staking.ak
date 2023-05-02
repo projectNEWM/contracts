@@ -7,19 +7,27 @@ use fractional/data
 use fractional/helpers
 use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
-validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
+// random_string is for initilizing different stake keys attached to the same starter token
+validator(
+  starter_pid: ByteArray,
+  starter_tkn: ByteArray,
+  ref_hash_data: Data,
+  _random_string: ByteArray,
+) {
   fn params(redeemer: WithdrawRedeemer, context: ScriptContext) -> Bool {
+    let tx =
+      context.transaction
+    // get reference utxo
     expect ref_hash: ByteArray =
       ref_hash_data
     let ref_addr =
       credential.from_script(ref_hash)
-    let tx =
-      context.transaction
     let ref_input =
       helpers.find_script_input(tx.reference_inputs, ref_addr)
     // check if the ref input has the correct starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+    // get the reference datum
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
     when context.purpose is {
@@ -30,6 +38,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             ref_datum.staking.reward_pkh,
             ref_datum.staking.reward_sc,
           )
+        // if no reward is found error
         let reward =
           helpers.get_reward_amt(tx.withdrawals, stake_credential)
         when redeemer is {
@@ -53,27 +62,29 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         }
       }
       // handle all delegation certs
-      Publish(certificate) -> {
-        let pool_id =
-          ref_datum.staking.pool_id
+      Publish(certificate) ->
         when redeemer is {
           // only delegate to secific pool
           Delegate(sd) -> {
-            let stake_credential =
-              Inline(ScriptCredential(sd.stake_cred))
             let new_delegation =
               CredentialDelegation {
-                delegator: stake_credential,
-                delegatee: pool_id,
+                delegator: Inline(ScriptCredential(sd.stake_cred)),
+                delegatee: ref_datum.staking.pool_id,
               }
-            list.and([ref_value_check, certificate == new_delegation])
+            list.and(
+              [
+                // data reference must hold correct token
+                ref_value_check,
+                // The only cert is for new delegation
+                certificate == new_delegation,
+              ],
+            )
           }
-          // anything else fails
+          // deregistration fails and anything else but changing delegation
           _ ->
             False
         }
-      }
-      // no other purposes
+      // no other script purposes
       _ ->
         False
     }

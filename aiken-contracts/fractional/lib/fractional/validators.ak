@@ -4,6 +4,7 @@ use aiken/transaction/value
 use fractional/helpers
 use fractional/types.{BuyAmount, SaleDatum}
 
+/// Handle the purchasing of a bundle(s)
 pub fn purchase_validation(
   datum: SaleDatum,
   tx: Transaction,
@@ -21,11 +22,7 @@ pub fn purchase_validation(
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
   // the total cost value for the bundle
   let cost_value =
-    value.from_asset(
-      datum.cost.pid,
-      datum.cost.tkn,
-      amount.amt * datum.cost.amt,
-    )
+    helpers.multiply_value(value.zero(), datum.cost, amount.amt)
   // whats going back to the contract
   let bundle_value =
     value.from_asset(
@@ -36,6 +33,7 @@ pub fn purchase_validation(
   // the partial value cont to the contract
   let partial_value =
     value.add(validating_value, value.negate(bundle_value))
+  // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
@@ -45,19 +43,20 @@ pub fn purchase_validation(
       // single script output
       helpers.count_script_outputs(tx.outputs, script_addr, 0) == 1,
       // check for valid bundle size
-      types.valid_bundle_size(amount),
+      types.valid_bundle_size(amount, datum.max_bundle_size),
       // the continuing utxo must have a correct datum
       datum == outbound_datum,
       // the seller gets paid what they want
       helpers.find_token_payout(seller_addr, cost_value, tx.outputs),
       // the leftover partial token gets send back to the script
       helpers.find_exact_payout(script_addr, partial_value, tx.outputs),
-      // owner can not lie
+      // owner can not lie about how much they have
       value.quantity_of(validating_value, datum.bundle.pid, datum.bundle.tkn) >= amount.amt * datum.bundle.amt,
     ],
   )
 }
 
+/// Handle the updating of a sale
 pub fn update_validation(
   datum: SaleDatum,
   tx: Transaction,
@@ -68,6 +67,7 @@ pub fn update_validation(
     helpers.get_validating_input(tx.inputs, output_reference)
   let script_addr =
     validating_input.output.address
+  // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
@@ -84,11 +84,13 @@ pub fn update_validation(
   )
 }
 
+/// Remove sale back to owners wallet
 pub fn remove_validation(
   datum: SaleDatum,
   tx: Transaction,
   output_reference: OutputReference,
 ) -> Bool {
+  // the input being validated
   let validating_input =
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =

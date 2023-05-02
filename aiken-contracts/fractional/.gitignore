@@ -4,3 +4,7 @@ artifacts/
 build/
 # Aiken's default documentation export
 docs/
+# we dont need to store the hashes, certs, or contracts
+hashes/
+certs/
+contracts/

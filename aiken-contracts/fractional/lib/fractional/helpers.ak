@@ -304,7 +304,7 @@ pub fn get_reward_amt(
     Some(reward) ->
       reward
     None ->
-      error @"Nothing to be withdrawn"
+      error @"nothing to be withdrawn"
   }
 }
 
@@ -318,5 +318,15 @@ pub fn find_script_input(inputs: List<Input>, script_addr: Address) -> Input {
       }
     [] ->
       error @"no script input found"
+  }
+}
+
+pub fn multiply_value(total: Value, add_val: Value, n: Int) -> Value {
+  if n == 0 {
+    total
+  } else {
+    let new_val =
+      value.add(total, add_val)
+    multiply_value(new_val, add_val, n - 1)
   }
 }
