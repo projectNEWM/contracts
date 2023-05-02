@@ -75,6 +75,7 @@ validator {
                 ],
               )
           }
+        // The validaiton criteria
         list.and(
           [
             // owner must get the utxo back

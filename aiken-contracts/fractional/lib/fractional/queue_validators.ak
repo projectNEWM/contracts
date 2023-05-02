@@ -65,27 +65,36 @@ pub fn refund_validation(
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
-  // check cost valu here
+  // correct sale?
+  let correct_sale_check =
+    sale_datum.bundle.pid == datum.pointer.pid && sale_datum.bundle.tkn == datum.pointer.tkn
+  // check the state of the sale with a queue item
   let refund_value_check =
     if
+    // Does the cost value exist in the validating value
     helpers.does_value_exist_in_value(
       validating_value,
       value.flatten(cost_value),
     ) == True{
     
-      // the queue utxo has the cost value check if the sale utxo has enough
+      // The validating value does contain the cost value
+      //
+      // Does the current sale have enough tokens for at least 1 bundle?
       if quantity_of_pointer >= sale_datum.bundle.amt {
         // the sale has at least one bundle
+        //
+        // Do Not Refund!
         False
       } else {
         // the sale doesn't have any bundles for sale
-        // What if you point this to a random sale wouldn't it always return true?
-        // there is no incentive to refund here
+        //
+        // Refund!
         True
       }
     } else {
-      // no cost value for a sale to be made
-      // there is no incentive to refund here
+      // The validating value does not contain the cost value.
+      //
+      // Refund!
       True
     }
   // the queue script address
@@ -93,12 +102,15 @@ pub fn refund_validation(
     validating_input.output.address
   let seller_addr =
     helpers.create_address(datum.owner.pkh, datum.owner.sc)
+  // subtract the fee from the value being spent
   let outbound_value =
     value.add(validating_value, value.negate(tx.fee))
   list.and(
     [
       // check if utxo has cost and check if cant make sale
       refund_value_check?,
+      // check if the pointer is equal to the bundle
+      correct_sale_check?,
       // owner must get the utxo back
       helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs)?,
       // single script input
