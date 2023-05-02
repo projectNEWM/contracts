@@ -2,8 +2,8 @@ use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use fractional/helpers
 use fractional/types.{
-  ReferenceDatum, ReferenceRedeemer, UpdateContracts, UpdateHotKey,
-  UpdateKeepers, UpdateStaking,
+  ReferenceDatum, ReferenceRedeemer, UpdateContracts, UpdateFeeInfo,
+  UpdateHotKey, UpdateKeepers, UpdateStaking,
 }
 
 validator {
@@ -36,6 +36,7 @@ validator {
                   datum.keepers == cont_datum.keepers,
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
+                  datum.fee_info == cont_datum.fee_info,
                 ],
               )
             // Update the multisig info
@@ -49,6 +50,7 @@ validator {
                   datum.hot_key == cont_datum.hot_key,
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
+                  datum.fee_info == cont_datum.fee_info,
                   // logical thresholds only
                   l >= t,
                   // Must have at least one
@@ -63,6 +65,7 @@ validator {
                   datum.hot_key == cont_datum.hot_key,
                   datum.keepers == cont_datum.keepers,
                   datum.contracts == cont_datum.contracts,
+                  datum.fee_info == cont_datum.fee_info,
                 ],
               )
             // Update contract hash info
@@ -72,6 +75,17 @@ validator {
                   datum.hot_key == cont_datum.hot_key,
                   datum.keepers == cont_datum.keepers,
                   datum.staking == cont_datum.staking,
+                  datum.fee_info == cont_datum.fee_info,
+                ],
+              )
+            // update the fee info
+            UpdateFeeInfo ->
+              list.and(
+                [
+                  datum.hot_key == cont_datum.hot_key,
+                  datum.keepers == cont_datum.keepers,
+                  datum.staking == cont_datum.staking,
+                  datum.contracts == cont_datum.contracts,
                 ],
               )
           }

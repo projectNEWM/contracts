@@ -107,6 +107,12 @@ saleHash=$(cat hashes/sale.hash)
 queueHash=$(cat hashes/queue.hash)
 stakeHash=$(cat hashes/stake.hash)
 
+# the purchase upper bound
+pub=$(jq -r '.purchase_upper_bound' start_info.json)
+# the refund upper bound
+rub=$(jq -r '.refund_upper_bound' start_info.json)
+
+
 # update reference data
 jq \
 --arg caPkh "$caPkh" \
@@ -119,6 +125,8 @@ jq \
 --arg saleHash "$saleHash" \
 --arg queueHash "$queueHash" \
 --arg stakeHash "$stakeHash" \
+--argjson pub "$pub" \
+--argjson rub "$rub" \
 '.fields[0].bytes=$caPkh | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
 .fields[1].fields[1].int=$thres | 
@@ -128,7 +136,9 @@ jq \
 .fields[3].fields[0].bytes=$cip68Hash |
 .fields[3].fields[1].bytes=$saleHash |
 .fields[3].fields[2].bytes=$queueHash |
-.fields[3].fields[3].bytes=$stakeHash
+.fields[3].fields[3].bytes=$stakeHash |
+.fields[4].fields[0].int=$pub |
+.fields[4].fields[1].int=$rub
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
 

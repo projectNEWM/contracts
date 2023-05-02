@@ -123,12 +123,23 @@ pub type ContractHashData {
   stake: ValidatorHash,
 }
 
+pub type FeeInfoData {
+  purchase_upper_bound: Int,
+  refund_upper_bound: Int,
+}
+
 // data to be used inside other contracts
 pub type ReferenceDatum {
   hot_key: PublicKeyHash,
   keepers: KeeperData,
   staking: StakePoolData,
   contracts: ContractHashData,
+  fee_info: FeeInfoData,
+}
+
+// The tx fee must be less than the upper bound
+pub fn valid_tx_fee(fee: Value, upper_bound: Int) -> Bool {
+  value.lovelace_of(fee) <= upper_bound
 }
 
 pub type UpdateHotKey =
@@ -140,8 +151,10 @@ pub type UpdateKeepers =
 pub type UpdateStaking =
   Void
 
-// this endpoint may not be needed
 pub type UpdateContracts =
+  Void
+
+pub type UpdateFeeInfo =
   Void
 
 pub type ReferenceRedeemer {
@@ -149,6 +162,7 @@ pub type ReferenceRedeemer {
   UpdateKeepers
   UpdateStaking
   UpdateContracts
+  UpdateFeeInfo
 }
 
 pub type StakeData {
