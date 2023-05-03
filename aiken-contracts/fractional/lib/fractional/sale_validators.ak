@@ -26,11 +26,11 @@ pub fn purchase_validation(
   list.and(
     [
       // single script input
-      (helpers.count_script_inputs(tx.inputs, queue_addr, 0) == 1)?,
+      helpers.count_script_inputs(tx.inputs, queue_addr, 0) == 1,
       // single script output
-      (helpers.count_script_outputs(tx.outputs, queue_addr, 0) == 1)?,
+      helpers.count_script_outputs(tx.outputs, queue_addr, 0) == 1,
       // input datum and output datum must equal
-      (datum == outbound_datum)?,
+      datum == outbound_datum,
     ],
   )
 }

@@ -119,17 +119,17 @@ pub fn refund_validation(
   list.and(
     [
       // check if the pointer is equal to the bundle
-      correct_sale_check?,
+      correct_sale_check,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound)?,
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound),
       // check if utxo has cost and check if cant make sale
-      refund_value_check?,
+      refund_value_check,
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs)?,
+      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs),
       // single script input
-      (helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1)?,
+      helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
       // no script outputs
-      (helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0)?,
+      helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
     ],
   )
 }
@@ -215,23 +215,23 @@ pub fn purchase_validation(
   list.and(
     [
       // must have enough for the sale
-      sale_value_check?,
+      sale_value_check,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound)?,
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
       // prove existance of at least the incentive on the intermediate value
-      types.prove_existence_of_incentive(validating_value, datum.incentive)?,
+      types.prove_existence_of_incentive(validating_value, datum.incentive),
       // valid bundle size
-      types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
+      types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size),
       // just continue the datum
-      (datum == outbound_datum)?,
+      datum == outbound_datum,
       // queue gets the bundle
-      helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs)?,
+      helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs),
       // sale gets the cost
-      helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs)?,
+      helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs),
       // single sale script input
-      (helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1)?,
+      helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1,
       // one sale script output
-      (helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1)?,
+      helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1,
     ],
   )
 }
