@@ -186,7 +186,7 @@ queue_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.s
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 
-cpu_steps=200000000
+cpu_steps=300000000
 mem_steps=1000000
 
 sale_execution_unts="(${cpu_steps}, ${mem_steps})"
@@ -199,16 +199,24 @@ queue_execution_unts="(${cpu_steps}, ${mem_steps})"
 queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
 
-# # Add metadata to this build function for nfts with data
-# echo -e "\033[0;36m Building Tx \033[0m"
-# change_value=$((${queue_ada_return} - 375629))
-# queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
+# Add metadata to this build function for nfts with data
+echo -e "\033[0;36m Building Tx \033[0m"
+change_value=$((${queue_ada_return} - 375629))
+queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
+
+
+# queue_script_address_out="${buyer_address} + 4051560 + 20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379 + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+# sale_script_address_out="${artist_address} + 2004150 + 100000000 1fc326a6af663acec10a9fbffa2b86dbd1f7fb5aa32c5ae7bb3c1a5c.283434342902eb58cc34b594e9d4cbda391297f95dfb105bda4ad727ffde3f48"
+
+
+
 # FEE=$(${cli} transaction build \
 #     --babbage-era \
 #     --protocol-params-file ../tmp/protocol.json \
 #     --out-file ../tmp/tx.draft \
-#     --change-address ${newm_address} \
+#     --change-address ${batcher_address} \
 #     --tx-in-collateral="${collat_utxo}" \
+#     --tx-in ${batcher_tx_in} \
 #     --tx-in ${sale_tx_in} \
 #     --spending-tx-in-reference="${script_ref_utxo}#1" \
 #     --spending-plutus-script-v2 \
@@ -219,13 +227,17 @@ queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
 #     --spending-plutus-script-v2 \
 #     --spending-reference-tx-in-inline-datum-present \
 #     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
+#     --tx-out="${batcher_address_out}" \
 #     --tx-out="${sale_script_address_out}" \
 #     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
 #     --tx-out="${queue_script_address_out}" \
 #     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
 #     --read-only-tx-in-reference="${data_ref_utxo}#0" \
 #     --required-signer-hash ${newm_pkh} \
+#     --required-signer-hash ${artist_pkh} \
+#     --required-signer-hash ${buyer_pkh} \
 #     --required-signer-hash ${collat_pkh} \
+#     --required-signer-hash ${batcher_pkh} \
 #     --testnet-magic ${testnet_magic})
 
 # exit

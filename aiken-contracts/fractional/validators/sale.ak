@@ -44,7 +44,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 sale_validators.purchase_validation(
                   datum,
                   ref_datum,
-                  context.transaction,
+                  tx,
                   output_reference,
                 ),
               ],
@@ -52,18 +52,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
 
           // Owner can update their UTxO
           UpdateSale ->
-            sale_validators.update_validation(
-              datum,
-              context.transaction,
-              output_reference,
-            )
+            sale_validators.update_validation(datum, tx, output_reference)
           // Owner can remove their UTxO
           RemoveSale ->
-            sale_validators.remove_validation(
-              datum,
-              context.transaction,
-              output_reference,
-            )
+            sale_validators.remove_validation(datum, tx, output_reference)
         }
       // spending only
       _ ->

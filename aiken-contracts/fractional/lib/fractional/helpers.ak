@@ -2,7 +2,9 @@ use aiken/bytearray
 use aiken/dict.{Dict}
 use aiken/hash
 use aiken/list
-use aiken/transaction.{Input, Output, OutputReference, Transaction}
+use aiken/transaction.{
+  Input, Output, OutputReference, Redeemer, ScriptPurpose, Spend, Transaction,
+}
 use aiken/transaction/credential.{Address, StakeCredential}
 use aiken/transaction/value.{AssetName, PolicyId, Value}
 use fractional/data
@@ -364,5 +366,18 @@ pub fn does_value_exist_in_value(
     // found all of them
     [] ->
       True
+  }
+}
+
+pub fn get_that_redeemer(
+  redeemers: Dict<ScriptPurpose, Redeemer>,
+  out_ref: OutputReference,
+) -> Data {
+  // make sure only the purchase redeemer is used in the queue
+  when dict.get(redeemers, Spend(out_ref)) is {
+    Some(redeemer) ->
+      redeemer
+    None ->
+      error @"no redeemer"
   }
 }

@@ -48,8 +48,8 @@ echo $script_tx_in
 # fi
 
 # this needs to be dynamic
-utxo_value=3505731
-tokens="100000000 1e96520bcf7655dfaec66de5c1b2e4080fd59333ec8d153ac379d0a9.2834343429024c553a17567893e9c526091d2dcb2c598ec46058ca2e44eac755"
+utxo_value=3498521
+tokens="100000000 1fc326a6af663acec10a9fbffa2b86dbd1f7fb5aa32c5ae7bb3c1a5c.283434342902eb58cc34b594e9d4cbda391297f95dfb105bda4ad727ffde3f48"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 #
 # exit

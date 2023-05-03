@@ -54,6 +54,9 @@ pub type BuyAmount {
   amt: Int,
 }
 
+pub type Purchase =
+  Void
+
 pub type UpdateSale =
   Void
 
@@ -178,6 +181,9 @@ pub type MintRedeemer {
   MintTokens
   BurnTokens { burn_amt: Int }
 }
+
+pub type QueuePurchase =
+  Void
 
 /// Queue things
 pub type QueueRedeemer {

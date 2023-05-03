@@ -3,7 +3,7 @@ use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value
 use fractional/data
 use fractional/helpers
-use fractional/types.{QueueDatum, ReferenceDatum, SaleDatum}
+use fractional/types.{Purchase, QueueDatum, ReferenceDatum, SaleDatum}
 
 /// Remove item from queue at any point at owner's expense
 pub fn cancel_validation(
@@ -23,9 +23,9 @@ pub fn cancel_validation(
   list.and(
     [
       // owner must sign it
-      helpers.must_be_signed_by(tx, datum.owner.pkh),
+      helpers.must_be_signed_by(tx, datum.owner.pkh)?,
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, validating_value, tx.outputs),
+      helpers.find_exact_payout(seller_addr, validating_value, tx.outputs)?,
       // single script input
       helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
       // no script outputs
@@ -150,6 +150,8 @@ pub fn purchase_validation(
   // find the first sale input input
   let sale_input =
     helpers.find_script_input(tx.inputs, sale_addr)
+  let sale_out_ref =
+    sale_input.output_reference
   // need this for return calculation
   let sale_value =
     sale_input.output.value
@@ -211,6 +213,9 @@ pub fn purchase_validation(
   // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
     helpers.get_outbound_datum(tx, validating_input)
+  // this should fail for bad data
+  expect _: Purchase =
+    helpers.get_that_redeemer(tx.redeemers, sale_out_ref)
   // the incentive is left open for whoever completes the tx to take
   list.and(
     [

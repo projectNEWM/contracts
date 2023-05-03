@@ -1,7 +1,7 @@
 use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
 use fractional/helpers
-use fractional/types.{ReferenceDatum, SaleDatum}
+use fractional/types.{QueuePurchase, ReferenceDatum, SaleDatum}
 
 /// Handle the purchasing of a bundle(s)
 pub fn purchase_validation(
@@ -19,9 +19,17 @@ pub fn purchase_validation(
       ref_datum.contracts.queue,
       ref_datum.contracts.stake,
     )
+  // find the first sale input input
+  let queue_input =
+    helpers.find_script_input(tx.inputs, queue_addr)
+  let queue_out_ref =
+    queue_input.output_reference
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
+  // this should fail for bad data
+  expect _: QueuePurchase =
+    helpers.get_that_redeemer(tx.redeemers, queue_out_ref)
   // purchasing requires a constant datum and 1 thing being spent from the queue
   list.and(
     [
