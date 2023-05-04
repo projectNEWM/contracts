@@ -53,7 +53,7 @@
       "hash": "b6925357759296f81dd297381b13b336716e29bfe31132e6d52f0880"
     },
     {
-      "title": "pointer_nft.params",
+      "title": "pointer.params",
       "redeemer": {
         "title": "redeemer",
         "schema": {

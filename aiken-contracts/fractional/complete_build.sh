@@ -9,10 +9,13 @@ function cat_file_or_empty() {
   fi
 }
 
+
 # create directories if dont exist
 mkdir -p contracts
 mkdir -p hashes
 mkdir -p certs
+
+rm contracts/* || true
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
@@ -87,11 +90,11 @@ aiken blueprint convert -v minter.params > contracts/mint_contract.plutus
 cardano-cli transaction policyid --script-file contracts/mint_contract.plutus > hashes/policy.hash
 
 echo -e "\033[1;33m Convert Pointer Contract \033[0m"
-aiken blueprint apply -o plutus.json -v pointer_nft.params "${pid_cbor}" .
-aiken blueprint apply -o plutus.json -v pointer_nft.params "${tkn_cbor}" .
-aiken blueprint apply -o plutus.json -v pointer_nft.params "${ref_cbor}" .
-aiken blueprint convert -v pointer_nft.params > contracts/pointer_nft_contract.plutus
-cardano-cli transaction policyid --script-file contracts/pointer_nft_contract.plutus > hashes/pointer_nft_policy.hash
+aiken blueprint apply -o plutus.json -v pointer.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v pointer.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v pointer.params "${ref_cbor}" .
+aiken blueprint convert -v pointer.params > contracts/pointer_contract.plutus
+cardano-cli transaction policyid --script-file contracts/pointer_contract.plutus > hashes/pointer_policy.hash
 
 ###############################################################################
 ############## DATUM AND REDEEMER STUFF #######################################
@@ -115,7 +118,7 @@ queueHash=$(cat hashes/queue.hash)
 stakeHash=$(cat hashes/stake.hash)
 
 # pointer hash
-pointerHash=$(cat hashes/pointer_nft_policy.hash)
+pointerHash=$(cat hashes/pointer_policy.hash)
 
 # the purchase upper bound
 pub=$(jq -r '.purchase_upper_bound' start_info.json)
@@ -123,8 +126,8 @@ pub=$(jq -r '.purchase_upper_bound' start_info.json)
 rub=$(jq -r '.refund_upper_bound' start_info.json)
 
 
+# this needs to be placed or auto generated somewhere
 signer_map=$(cat ./scripts/data/reference/workers.json)
-
 
 # update reference data
 jq \
@@ -141,7 +144,7 @@ jq \
 --argjson pub "$pub" \
 --argjson rub "$rub" \
 --arg pointerHash "$pointerHash" \
-'.fields[0].map=$signer_map | 
+'.fields[0]=$signer_map | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
 .fields[1].fields[1].int=$thres | 
 .fields[2].fields[0].bytes=$poolId |
