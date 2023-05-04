@@ -1,14 +1,15 @@
 use aiken/bytearray
 use aiken/dict.{Dict}
-use aiken/hash
+use aiken/hash.{Blake2b_256, Hash}
 use aiken/list
+use aiken/string
 use aiken/transaction.{
   Input, Output, OutputReference, Redeemer, ScriptPurpose, Spend, Transaction,
 }
 use aiken/transaction/credential.{Address, StakeCredential}
 use aiken/transaction/value.{AssetName, PolicyId, Value}
 use fractional/data
-use fractional/types.{PublicKeyHash, ValidatorHash}
+use fractional/types.{PublicKeyHash, TokenInfo, ValidatorHash}
 
 pub fn get_validating_input(
   inputs: List<Input>,
@@ -95,6 +96,7 @@ pub fn count_script_outputs(
   }
 }
 
+// proves the existence of a --tx-out inside a tx
 pub fn find_exact_payout(
   pay_address: Address,
   pay_value: Value,
@@ -102,6 +104,7 @@ pub fn find_exact_payout(
 ) -> Bool {
   when outputs is {
     [output, ..rest] ->
+      // exact address and value
       if output.address == pay_address && output.value == pay_value {
         True
       } else {
@@ -369,15 +372,73 @@ pub fn does_value_exist_in_value(
   }
 }
 
+// this should return the redeemer data from some spending action on an output reference
 pub fn get_that_redeemer(
   redeemers: Dict<ScriptPurpose, Redeemer>,
   out_ref: OutputReference,
 ) -> Data {
-  // make sure only the purchase redeemer is used in the queue
+  // make sure only the spend purpose here
   when dict.get(redeemers, Spend(out_ref)) is {
     Some(redeemer) ->
       redeemer
     None ->
-      error @"no redeemer"
+      error @"missing spend redeemer"
   }
+}
+
+pub fn get_the_sale_hash(
+  datums: Dict<Hash<Blake2b_256, Data>, Data>,
+  datum_data: Data,
+) {
+  when dict.find(datums, datum_data) is {
+    Some(datum_hash) ->
+      datum_hash
+    None ->
+      error @"No Datum Hash"
+  }
+}
+
+// sha3 256 the integer
+pub fn int_to_hash(num: Int) -> ByteArray {
+  hash.sha3_256(bytearray.from_string(string.from_int(num)))
+}
+
+pub fn compute_token_info_hash(bundle: TokenInfo) -> ByteArray {
+  let hashed_amt =
+    int_to_hash(bundle.amt)
+  let concatted =
+    bytearray.concat(bundle.pid, bundle.tkn) |> bytearray.concat(hashed_amt)
+  hash.sha3_256(concatted)
+}
+
+pub fn compute_value_hash(
+  flat: List<(PolicyId, AssetName, Int)>,
+  total: ByteArray,
+) -> ByteArray {
+  when flat is {
+    [(pid, tkn, amt), ..rest] -> {
+      let hashed_amt =
+        int_to_hash(amt)
+      let concatted =
+        bytearray.concat(pid, tkn)
+          |> bytearray.concat(hashed_amt)
+          |> bytearray.concat(total)
+      let next =
+        hash.sha3_256(concatted)
+      compute_value_hash(rest, next)
+    }
+    [] ->
+      total
+  }
+}
+
+pub fn compute_sale_hash(
+  bundle: TokenInfo,
+  total: List<(PolicyId, AssetName, Int)>,
+) -> ByteArray {
+  let a =
+    compute_token_info_hash(bundle)
+  let b =
+    compute_value_hash(total, #"")
+  hash.sha3_256(bytearray.concat(a, b))
 }

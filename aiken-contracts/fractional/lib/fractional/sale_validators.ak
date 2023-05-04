@@ -25,6 +25,10 @@ pub fn purchase_validation(
   let queue_out_ref =
     queue_input.output_reference
   // the datum going back to the contract
+  // let data =
+  //   helpers.get_outbound_datum(tx, validating_input)
+  // let data_hash =
+  //   helpers.get_the_sale_hash(tx.datums, data)
   expect outbound_datum: SaleDatum =
     helpers.get_outbound_datum(tx, validating_input)
   // this should fail for bad data

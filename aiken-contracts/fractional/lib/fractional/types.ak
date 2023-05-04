@@ -203,6 +203,7 @@ pub type QueueDatum {
   pointer: PointerInfo,
   amt: Int,
   incentive: TokenInfo,
+  sale_hash: ByteArray,
 }
 
 pub fn prove_existence_of_incentive(

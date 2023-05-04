@@ -118,6 +118,11 @@ pub fn refund_validation(
   // The refunding of a queue item is not incentivised.
   list.and(
     [
+      // compute the merkle-like hash of the sale
+      // helpers.compute_sale_hash(
+      //   sale_datum.bundle,
+      //   value.flatten(sale_datum.cost),
+      // ) == datum.sale_hash,
       // check if the pointer is equal to the bundle
       correct_sale_check,
       // The transaction fee can not exceed an upperbound
@@ -156,8 +161,16 @@ pub fn purchase_validation(
   let sale_value =
     sale_input.output.value
   // the sale datum
+  // the datum going back to the contract
+  let data =
+    data.find_inbound_datum(sale_input)
+  // let data_hash =
+  //   helpers.get_the_sale_hash(tx.datums, data)
   expect sale_datum: SaleDatum =
     data.find_inbound_datum(sale_input)
+  // data
+  // data.find_inbound_datum(sale_input)
+  // find the quantity of the pointer token on the sale utxo
   let quantity_of_pointer =
     value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
   // short circuit the amount check
@@ -219,6 +232,8 @@ pub fn purchase_validation(
   // the incentive is left open for whoever completes the tx to take
   list.and(
     [
+      // check if the datum hash is correct
+      // data_hash == datum.sale_hash,
       // must have enough for the sale
       sale_value_check,
       // The transaction fee can not exceed an upperbound
