@@ -20,6 +20,15 @@ pub const prefix_333 =
 pub const prefix_444 =
   #"2834343429"
 
+pub const metadata_key =
+  #"6d65746164617461"
+
+pub const minter_key =
+  #"6d696e746572"
+
+pub const pointer_key =
+  #"706f696e746572"
+
 // wallet hash
 pub type PublicKeyHash =
   Hash<Blake2b_224, VerificationKey>
@@ -105,6 +114,18 @@ pub fn purchase_datum_check(
   inbound_datum == outbound_datum
 }
 
+pub type Workers =
+  Dict<ByteArray, PublicKeyHash>
+
+pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
+  when dict.get(workers, job) is {
+    Some(one) ->
+      one
+    None ->
+      error @"worker not found"
+  }
+}
+
 // keepers are like admins
 pub type KeeperData {
   pkhs: List<PublicKeyHash>,
@@ -133,11 +154,12 @@ pub type FeeInfoData {
 
 // data to be used inside other contracts
 pub type ReferenceDatum {
-  hot_key: PublicKeyHash,
+  hot_key: Workers,
   keepers: KeeperData,
   staking: StakePoolData,
   contracts: ContractHashData,
   fee_info: FeeInfoData,
+  pointer_pid: ByteArray,
 }
 
 // The tx fee must be less than the upper bound
@@ -160,12 +182,16 @@ pub type UpdateContracts =
 pub type UpdateFeeInfo =
   Void
 
+pub type UpdatePointer =
+  Void
+
 pub type ReferenceRedeemer {
   UpdateHotKey
   UpdateKeepers
   UpdateStaking
   UpdateContracts
   UpdateFeeInfo
+  UpdatePointer
 }
 
 pub type StakeData {
@@ -203,7 +229,7 @@ pub type QueueDatum {
   pointer: PointerInfo,
   amt: Int,
   incentive: TokenInfo,
-  sale_hash: ByteArray,
+  pointer_tkn: ByteArray,
 }
 
 pub fn prove_existence_of_incentive(

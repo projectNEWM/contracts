@@ -55,6 +55,9 @@ pub fn refund_validation(
   // the sale datum
   expect sale_datum: SaleDatum =
     data.find_inbound_datum(sale_input)
+  // official sale?
+  let official_sale_check =
+    value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
   // the total cost value for the bundle
   let cost_value =
     helpers.multiply_value(value.zero(), sale_datum.cost, datum.amt)
@@ -118,11 +121,8 @@ pub fn refund_validation(
   // The refunding of a queue item is not incentivised.
   list.and(
     [
-      // compute the merkle-like hash of the sale
-      // helpers.compute_sale_hash(
-      //   sale_datum.bundle,
-      //   value.flatten(sale_datum.cost),
-      // ) == datum.sale_hash,
+      // check if official sale
+      official_sale_check,
       // check if the pointer is equal to the bundle
       correct_sale_check,
       // The transaction fee can not exceed an upperbound
@@ -168,8 +168,9 @@ pub fn purchase_validation(
   //   helpers.get_the_sale_hash(tx.datums, data)
   expect sale_datum: SaleDatum =
     data.find_inbound_datum(sale_input)
-  // data
-  // data.find_inbound_datum(sale_input)
+  // official sale?
+  let official_sale_check =
+    value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
   // find the quantity of the pointer token on the sale utxo
   let quantity_of_pointer =
     value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
@@ -232,8 +233,8 @@ pub fn purchase_validation(
   // the incentive is left open for whoever completes the tx to take
   list.and(
     [
-      // check if the datum hash is correct
-      // data_hash == datum.sale_hash,
+      // check if official sale
+      official_sale_check,
       // must have enough for the sale
       sale_value_check,
       // The transaction fee can not exceed an upperbound

@@ -30,6 +30,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     // the reference datum
     expect ref_datum: ReferenceDatum =
       data.find_inbound_datum(ref_input)
+    // the job that signs this, 
+    // 6d65746164617461 == metadata
+    let signer =
+      types.find_worker(ref_datum.hot_key, types.metadata_key)
     when context.purpose is {
       Spend(output_reference) -> {
         let validating_input =
@@ -44,7 +48,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, ref_datum.hot_key),
+                helpers.must_be_signed_by(tx, signer),
                 // single script input
                 helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
                 // single script output
@@ -72,7 +76,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, ref_datum.hot_key),
+                helpers.must_be_signed_by(tx, signer),
                 // single script input
                 helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
                 // single script output

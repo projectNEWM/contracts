@@ -30,71 +30,39 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let first_tx_hash =
       helpers.get_first_ref(tx.inputs)
     // use the ref prefix
-    let reference_tkn =
-      helpers.unique_token_name(first_tx_hash, first_index, types.prefix_100)
-    // use the sft prefix
-    let fractions_tkn =
-      helpers.unique_token_name(first_tx_hash, first_index, types.prefix_444)
+    let pointer_tkn =
+      helpers.unique_token_name(first_tx_hash, first_index, #"")
     let mint =
       tx.mint
         |> value.without_lovelace()
         |> value.flatten()
-    // the job that signs this, 
-    let signer =
-      types.find_worker(ref_datum.hot_key, types.minter_key)
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
-          MintTokens ->
+          MintTokens -> {
+            // the job that signs this, 
+            let signer =
+              types.find_worker(ref_datum.hot_key, types.pointer_key)
             list.and(
               [
                 // hot key must sign
                 helpers.must_be_signed_by(tx, signer),
                 // prevent roll over double nft attack
                 first_index < 256,
-                // must mint 1 reference token
-                helpers.correct_mint(
-                  mint,
-                  own_currency_symbol,
-                  reference_tkn,
-                  1,
-                ),
-                // must mint 100 M fractions
-                helpers.correct_mint(
-                  mint,
-                  own_currency_symbol,
-                  fractions_tkn,
-                  100000000,
-                ),
+                // must mint 1 pointer token
+                helpers.correct_mint(mint, own_currency_symbol, pointer_tkn, 1),
                 // data reference must be holding correct token
                 ref_value_check,
               ],
             )
+          }
           BurnTokens { burn_amt } ->
             list.and(
               [
-                // has to be a multisig action
-                helpers.valid_multisig(tx, ref_datum.keepers.pkhs, 0) >= ref_datum.keepers.threshold,
-                // one ref token or any amount of fractions or both
-                list.or(
-                  [
-                    // burn only 1 ref token
-                    helpers.correct_burn(
-                      mint,
-                      own_currency_symbol,
-                      types.prefix_100,
-                      -1,
-                    ),
-                    // burn any amount of the fractions
-                    helpers.correct_burn(
-                      mint,
-                      own_currency_symbol,
-                      types.prefix_444,
-                      -1 * burn_amt,
-                    ),
-                  ],
-                ),
+                burn_amt == 0,
+                // must burn 1 pointer token
+                helpers.correct_mint(mint, own_currency_symbol, pointer_tkn, -1),
                 // data reference must be holding correct token
                 ref_value_check,
               ],

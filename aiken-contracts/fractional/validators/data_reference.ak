@@ -3,7 +3,7 @@ use aiken/transaction.{ScriptContext, Spend}
 use fractional/helpers
 use fractional/types.{
   ReferenceDatum, ReferenceRedeemer, UpdateContracts, UpdateFeeInfo,
-  UpdateHotKey, UpdateKeepers, UpdateStaking,
+  UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
 }
 
 validator {
@@ -37,6 +37,7 @@ validator {
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
                   datum.fee_info == cont_datum.fee_info,
+                  datum.pointer_pid == cont_datum.pointer_pid,
                 ],
               )
             // Update the multisig info
@@ -51,6 +52,7 @@ validator {
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
                   datum.fee_info == cont_datum.fee_info,
+                  datum.pointer_pid == cont_datum.pointer_pid,
                   // logical thresholds only
                   l >= t,
                   // Must have at least one
@@ -66,6 +68,7 @@ validator {
                   datum.keepers == cont_datum.keepers,
                   datum.contracts == cont_datum.contracts,
                   datum.fee_info == cont_datum.fee_info,
+                  datum.pointer_pid == cont_datum.pointer_pid,
                 ],
               )
             // Update contract hash info
@@ -76,6 +79,7 @@ validator {
                   datum.keepers == cont_datum.keepers,
                   datum.staking == cont_datum.staking,
                   datum.fee_info == cont_datum.fee_info,
+                  datum.pointer_pid == cont_datum.pointer_pid,
                 ],
               )
             // update the fee info
@@ -86,9 +90,22 @@ validator {
                   datum.keepers == cont_datum.keepers,
                   datum.staking == cont_datum.staking,
                   datum.contracts == cont_datum.contracts,
+                  datum.pointer_pid == cont_datum.pointer_pid,
+                ],
+              )
+            // Update The pointer_pid info
+            UpdatePointer ->
+              list.and(
+                [
+                  datum.hot_key == cont_datum.hot_key,
+                  datum.keepers == cont_datum.keepers,
+                  datum.staking == cont_datum.staking,
+                  datum.contracts == cont_datum.contracts,
+                  datum.fee_info == cont_datum.fee_info,
                 ],
               )
           }
+
         // The validaiton criteria
         list.and(
           [
