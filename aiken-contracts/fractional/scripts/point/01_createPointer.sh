@@ -31,7 +31,7 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 receiver_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 # the minting script policy
-policy_id=$(cat ../../hashes/policy.hash)
+policy_id=$(cat ../../hashes/pointer_policy.hash)
 
 echo -e "\033[0;36m Gathering NEWM UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -53,62 +53,24 @@ first_utxo=$(jq -r 'keys[0]' ../tmp/newm_utxo.json)
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
-prefix_100="2831303029"
-prefix_444="2834343429"
+prefix_555="2835353529"
 
-# for testing
-prefix_bad="283329"
+pointer_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_555}')")
 
-ref_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_100}')")
-frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_444}')")
+echo "Pointer Token Name:" $pointer_name
 
-echo -n $ref_name > ../tmp/reference.token
-echo -n $frac_name > ../tmp/fraction.token
-
-# the cost of a bundle is defined in the sale data folder
-value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
-
-# update bundle sale datum with frac token name
-bundle_size=10000000
-max_bundle_size=10
-jq \
---arg pkh "$receiver_pkh" \
---arg policy_id "$policy_id" \
---arg frac_name "$frac_name" \
---argjson bundle_price "$value_map" \
---argjson bundle_size "$bundle_size" \
---argjson max_bundle_size "$max_bundle_size" \
-'.fields[0].fields[0].bytes=$pkh |
-.fields[1].fields[0].bytes=$policy_id | 
-.fields[1].fields[1].bytes=$frac_name |
-.fields[1].fields[2].int=$bundle_size |
-.fields[2].map=$bundle_price |
-.fields[3].int=$max_bundle_size
-' \
-../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json
+echo -n $pointer_name > ../tmp/pointer.token
 
 
-REFERENCE_ASSET="1 ${policy_id}.${ref_name}"
-FRACTION_ASSET="100000000 ${policy_id}.${frac_name}"
-
-MINT_ASSET="1 ${policy_id}.${ref_name} + 100000000 ${policy_id}.${frac_name}"
+MINT_ASSET="1 ${policy_id}.${pointer_name}"
 
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
-    --tx-out="${cip68_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
-reference_address_out="${cip68_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
+    --tx-out="${newm_address} + 5000000 + ${MINT_ASSET}" | tr -dc '0-9')
+pointer_address_out="${newm_address} + ${UTXO_VALUE} + ${MINT_ASSET}"
 
-UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
-fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
-
-echo "Reference Mint OUTPUT:" ${reference_address_out}
-echo "Fraction Mint OUTPUT:" ${fraction_address_out}
+echo "Pointer Mint OUTPUT:" ${pointer_address_out}
 #
 # exit
 #
@@ -124,7 +86,7 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/mint-reference-utxo.signed)
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # Add metadata to this build function for nfts with data
@@ -137,10 +99,7 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${newm_tx_in} \
-    --tx-out="${reference_address_out}" \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
-    --tx-out="${fraction_address_out}" \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
+    --tx-out="${pointer_address_out}" \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${newm_pkh} \
     --mint="${MINT_ASSET}" \

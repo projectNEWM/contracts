@@ -31,7 +31,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       helpers.get_first_ref(tx.inputs)
     // use the ref prefix
     let pointer_tkn =
-      helpers.unique_token_name(first_tx_hash, first_index, #"")
+      helpers.unique_token_name(first_tx_hash, first_index, types.prefix_555)
     let mint =
       tx.mint
         |> value.without_lovelace()
@@ -62,7 +62,12 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               [
                 burn_amt == 0,
                 // must burn 1 pointer token
-                helpers.correct_mint(mint, own_currency_symbol, pointer_tkn, -1),
+                helpers.correct_burn(
+                  mint,
+                  own_currency_symbol,
+                  types.prefix_555,
+                  -1,
+                ),
                 // data reference must be holding correct token
                 ref_value_check,
               ],

@@ -20,12 +20,19 @@ pub const prefix_333 =
 pub const prefix_444 =
   #"2834343429"
 
+// (555) pointer token prefix (NOT IMPLEMENTED IN CIP68)
+pub const prefix_555 =
+  #"2835353529"
+
+// metadata
 pub const metadata_key =
   #"6d65746164617461"
 
+// minter
 pub const minter_key =
   #"6d696e746572"
 
+// pointer
 pub const pointer_key =
   #"706f696e746572"
 
