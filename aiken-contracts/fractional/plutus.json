@@ -170,6 +170,26 @@
         "$ref": "#/definitions/aiken~1dict~1Dict$ByteArray_Int"
       }
     },
+    "fractional/types/BundleInfo": {
+      "title": "BundleInfo",
+      "anyOf": [
+        {
+          "title": "BundleInfo",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "pid",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "tkn",
+              "$ref": "#/definitions/ByteArray"
+            }
+          ]
+        }
+      ]
+    },
     "fractional/types/CIP68Datum": {
       "title": "CIP68Datum",
       "anyOf": [
@@ -342,26 +362,6 @@
         }
       ]
     },
-    "fractional/types/PointerInfo": {
-      "title": "PointerInfo",
-      "anyOf": [
-        {
-          "title": "PointerInfo",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "pid",
-              "$ref": "#/definitions/ByteArray"
-            },
-            {
-              "title": "tkn",
-              "$ref": "#/definitions/ByteArray"
-            }
-          ]
-        }
-      ]
-    },
     "fractional/types/QueueDatum": {
       "title": "QueueDatum",
       "anyOf": [
@@ -376,7 +376,7 @@
             },
             {
               "title": "pointer",
-              "$ref": "#/definitions/fractional~1types~1PointerInfo"
+              "$ref": "#/definitions/fractional~1types~1BundleInfo"
             },
             {
               "title": "amt",

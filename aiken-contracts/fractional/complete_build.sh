@@ -15,7 +15,10 @@ mkdir -p contracts
 mkdir -p hashes
 mkdir -p certs
 
+# remove old files
 rm contracts/* || true
+rm hashes/* || true
+rm certs/* || true
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
@@ -129,6 +132,7 @@ rub=$(jq -r '.refund_upper_bound' start_info.json)
 # this needs to be placed or auto generated somewhere
 signer_map=$(cat ./scripts/data/reference/workers.json)
 
+cp ./scripts/data/reference/reference-datum.json ./scripts/data/reference/backup-reference-datum.json
 # update reference data
 jq \
 --argjson signer_map "$signer_map" \
@@ -168,4 +172,19 @@ jq \
 '.fields[0].fields[0].bytes=$stakeHash' \
 ./scripts/data/staking/delegate-redeemer.json | sponge ./scripts/data/staking/delegate-redeemer.json
 
+backup="./scripts/data/reference/backup-reference-datum.json"
+frontup="./scripts/data/reference/reference-datum.json"
+
+# Get the SHA-256 hash values of the files using sha256sum and command substitution
+hash1=$(sha256sum "$backup" | awk '{ print $1 }')
+hash2=$(sha256sum "$frontup" | awk '{ print $1 }')
+
+# Check if the hash values are equal using string comparison in an if statement
+if [ "$hash1" = "$hash2" ]; then
+  echo -e "\033[1;46mNo Datum Changes Required.\033[0m"
+else
+  echo -e "\033[1;43mA Datum Update Is Required.\033[0m"
+fi
+
+# end of build
 echo -e "\033[1;32m Building Complete! \033[0m"

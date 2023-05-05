@@ -225,7 +225,7 @@ pub type QueueRedeemer {
   QueueCancel
 }
 
-pub type PointerInfo {
+pub type BundleInfo {
   pid: ByteArray,
   tkn: ByteArray,
 }
@@ -233,7 +233,7 @@ pub type PointerInfo {
 // single token bundle and cost
 pub type QueueDatum {
   owner: OwnerInfo,
-  pointer: PointerInfo,
+  pointer: BundleInfo,
   amt: Int,
   incentive: TokenInfo,
   pointer_tkn: ByteArray,
