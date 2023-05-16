@@ -40,7 +40,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           Purchase ->
             list.and(
               [
+                // must be the correct reference data
                 ref_value_check,
+                // purchase sale validation
                 sale_validators.purchase_validation(
                   datum,
                   ref_datum,
@@ -51,11 +53,30 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             )
 
           // Owner can update their UTxO
-          UpdateSale ->
+          UpdateSale { lovelace } ->
             sale_validators.update_validation(datum, tx, output_reference)
-          // Owner can remove their UTxO
-          RemoveSale ->
-            sale_validators.remove_validation(datum, tx, output_reference)
+          // Owner can remove their UTxO by burning the pointer
+          RemoveSale -> {
+            let mint =
+              tx.mint
+                |> value.without_lovelace()
+                |> value.flatten()
+            list.and(
+              [
+                // must be the correct reference data
+                ref_value_check,
+                // must burn 1 pointer token
+                helpers.correct_burn(
+                  mint,
+                  ref_datum.pointer_pid,
+                  types.prefix_555,
+                  -1,
+                ),
+                // remove validation logic
+                sale_validators.remove_validation(datum, tx, output_reference),
+              ],
+            )
+          }
         }
       // spending only
       _ ->

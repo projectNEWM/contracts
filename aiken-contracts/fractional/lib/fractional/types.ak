@@ -73,15 +73,12 @@ pub type BuyAmount {
 pub type Purchase =
   Void
 
-pub type UpdateSale =
-  Void
-
 pub type RemoveSale =
   Void
 
 pub type SaleRedeemer {
   Purchase
-  UpdateSale
+  UpdateSale { lovelace: LovelaceAmount }
   RemoveSale
 }
 
@@ -124,6 +121,7 @@ pub fn purchase_datum_check(
 pub type Workers =
   Dict<ByteArray, PublicKeyHash>
 
+// find a worker by job title inside the worker hot key dictionary.
 pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
   when dict.get(workers, job) is {
     Some(one) ->

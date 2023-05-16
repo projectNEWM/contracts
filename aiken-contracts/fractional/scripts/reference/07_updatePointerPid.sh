@@ -89,7 +89,6 @@ script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/data-reference-utxo.s
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${starter_address} \
     --tx-in-collateral ${collat_tx_in} \

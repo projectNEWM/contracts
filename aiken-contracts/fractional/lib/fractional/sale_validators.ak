@@ -1,5 +1,6 @@
 use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
+use aiken/transaction/value
 use fractional/helpers
 use fractional/types.{QueuePurchase, ReferenceDatum, SaleDatum}
 
@@ -59,10 +60,11 @@ pub fn update_validation(
     helpers.get_outbound_datum(tx, validating_input)
   list.and(
     [
+      // need to make sure the pointer is here
       // the owner must sign it
       helpers.must_be_signed_by(tx, datum.owner.pkh),
-      // the owner of the cont utxo must remain constant
-      datum.owner == outbound_datum.owner,
+      // the datum can not change
+      datum == outbound_datum,
       // single script input
       helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
       // single script output
@@ -82,6 +84,11 @@ pub fn remove_validation(
     helpers.get_validating_input(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
+  let burned_value =
+    tx.mint
+      |> value.without_lovelace()
+  let outbound_value =
+    value.add(validating_value, burned_value)
   let script_addr =
     validating_input.output.address
   let seller_addr =
@@ -91,7 +98,7 @@ pub fn remove_validation(
       // owner must sign it
       helpers.must_be_signed_by(tx, datum.owner.pkh),
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, validating_value, tx.outputs),
+      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs),
       // single script input
       helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
       // no script outputs

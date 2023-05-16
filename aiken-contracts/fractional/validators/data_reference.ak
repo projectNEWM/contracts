@@ -1,6 +1,9 @@
 use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
-use fractional/helpers
+use assist/count
+use assist/find
+use assist/payout
+use assist/signing
 use fractional/types.{
   ReferenceDatum, ReferenceRedeemer, UpdateContracts, UpdateFeeInfo,
   UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
@@ -18,14 +21,14 @@ validator {
         let tx =
           context.transaction
         let validating_input =
-          helpers.get_validating_input(tx.inputs, output_reference)
+          find.input_by_ref(tx.inputs, output_reference)
         let validating_value =
           validating_input.output.value
         let script_addr =
           validating_input.output.address
         // the datum cont
         expect cont_datum: ReferenceDatum =
-          helpers.get_outbound_datum(tx, validating_input)
+          find.output_datum_by_addr(tx.outputs, script_addr)
         // datum validation
         let datum_cont_check =
           when redeemer is {
@@ -109,14 +112,18 @@ validator {
         // The validaiton criteria
         list.and(
           [
-            // owner must get the utxo back
-            helpers.find_token_payout(script_addr, validating_value, tx.outputs),
+            // send back to script but allow lovelace increase
+            payout.find_token(script_addr, validating_value, tx.outputs),
             // single script input
-            helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
+            count.script_inputs(tx.inputs, script_addr, 1),
             // single script output
-            helpers.count_script_outputs(tx.outputs, script_addr, 0) == 1,
+            count.script_outputs(tx.outputs, script_addr, 1),
             // only keepers can update the data
-            helpers.valid_multisig(tx, datum.keepers.pkhs, 0) >= datum.keepers.threshold,
+            signing.verify_multisig(
+              tx,
+              datum.keepers.pkhs,
+              datum.keepers.threshold,
+            ),
             // the cont datum check
             datum_cont_check,
           ],
