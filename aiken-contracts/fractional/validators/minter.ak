@@ -82,7 +82,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   tx,
                   ref_datum.keepers.pkhs,
                   ref_datum.keepers.threshold,
-                ),
+                )?,
                 // one ref token or any amount of fractions or both
                 list.or(
                   [
@@ -92,18 +92,18 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                       own_currency_symbol,
                       values.prefix_100,
                       -1,
-                    ),
+                    )?,
                     // burn any amount of the fractions
                     mint_validators.correct_burn(
                       mint,
                       own_currency_symbol,
                       values.prefix_444,
                       -1 * burn_amt,
-                    ),
+                    )?,
                   ],
                 ),
                 // data reference must be holding correct token
-                ref_value_check,
+                ref_value_check?,
               ],
             )
         }
