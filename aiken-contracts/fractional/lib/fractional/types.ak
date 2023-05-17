@@ -62,7 +62,8 @@ pub type RemoveSale =
 
 pub type SaleRedeemer {
   Purchase
-  UpdateSale
+  StartSale { pointer: Value }
+  ExtractSale { profit: Value }
   RemoveSale
 }
 
