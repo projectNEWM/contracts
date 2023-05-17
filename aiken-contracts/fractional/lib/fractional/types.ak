@@ -4,22 +4,6 @@ use aiken/list
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
-// (100) reference token prefix
-pub const prefix_100 =
-  #"2831303029"
-
-// (222) non-fungible token prefix
-pub const prefix_222 =
-  #"2832323229"
-
-// (333) fungible token prefix
-pub const prefix_333 =
-  #"2833333329"
-
-// (444) semi-fungible token prefix
-pub const prefix_444 =
-  #"2834343429"
-
 // (555) pointer token prefix (NOT IMPLEMENTED IN CIP68)
 pub const prefix_555 =
   #"2835353529"
@@ -73,9 +57,6 @@ pub type BuyAmount {
 pub type Purchase =
   Void
 
-pub type UpdateSale =
-  Void
-
 pub type RemoveSale =
   Void
 
@@ -124,6 +105,7 @@ pub fn purchase_datum_check(
 pub type Workers =
   Dict<ByteArray, PublicKeyHash>
 
+// find a worker by job title inside the worker hot key dictionary.
 pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
   when dict.get(workers, job) is {
     Some(one) ->

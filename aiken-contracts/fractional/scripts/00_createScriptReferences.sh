@@ -168,7 +168,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${stake_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
@@ -208,7 +208,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${refer_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
@@ -247,7 +247,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${mint_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
@@ -286,7 +286,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${sale_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
@@ -325,7 +325,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${queue_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
@@ -364,7 +364,7 @@ ${cli} transaction build-raw \
     --tx-out-reference-script-file ${pointer_script_path} \
     --fee 900000
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft ${network} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 

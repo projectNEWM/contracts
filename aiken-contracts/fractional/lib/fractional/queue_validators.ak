@@ -1,8 +1,13 @@
 use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value
-use fractional/data
-use fractional/helpers
+use assist/addresses
+use assist/count
+use assist/data
+use assist/find
+use assist/payout
+use assist/signing
+use assist/values
 use fractional/types.{Purchase, QueueDatum, ReferenceDatum, SaleDatum}
 
 /// Remove item from queue at any point at owner's expense
@@ -13,23 +18,23 @@ pub fn cancel_validation(
 ) -> Bool {
   // the input being validated
   let validating_input =
-    helpers.get_validating_input(tx.inputs, output_reference)
+    find.input_by_ref(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
   let script_addr =
     validating_input.output.address
   let seller_addr =
-    helpers.create_address(datum.owner.pkh, datum.owner.sc)
+    addresses.create_address(datum.owner.pkh, datum.owner.sc)
   list.and(
     [
       // owner must sign it
-      helpers.must_be_signed_by(tx, datum.owner.pkh)?,
+      signing.verify_sig(tx, datum.owner.pkh)?,
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, validating_value, tx.outputs)?,
+      payout.exact(seller_addr, validating_value, tx.outputs)?,
       // single script input
-      helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
+      count.script_inputs(tx.inputs, script_addr, 1),
       // no script outputs
-      helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
+      count.script_outputs(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -43,29 +48,29 @@ pub fn refund_validation(
 ) -> Bool {
   // the input being validated
   let sale_addr =
-    helpers.create_script_address(
+    addresses.create_script_address(
       ref_datum.contracts.sale,
       ref_datum.contracts.stake,
     )
   let sale_input =
-    helpers.find_script_input(tx.reference_inputs, sale_addr)
+    find.input_by_addr(tx.reference_inputs, sale_addr)
   // need this for return calculation
   let sale_value =
     sale_input.output.value
   // the sale datum
   expect sale_datum: SaleDatum =
-    data.find_inbound_datum(sale_input)
+    data.input_datum(sale_input)
   // official sale?
   let official_sale_check =
     value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
   // the total cost value for the bundle
   let cost_value =
-    helpers.multiply_value(value.zero(), sale_datum.cost, datum.amt)
+    values.multiply(sale_datum.cost, datum.amt)
   let quantity_of_pointer =
     value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
   // the input being validated
   let validating_input =
-    helpers.get_validating_input(tx.inputs, output_reference)
+    find.input_by_ref(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
   // The sale datum bundle info and the queue pointer info must equal
@@ -85,10 +90,7 @@ pub fn refund_validation(
   let refund_value_check =
     if
     // Does the cost value exist in the validating value
-    helpers.does_value_exist_in_value(
-      value.flatten(cost_value),
-      validating_value,
-    ) == True{
+    values.contains(cost_value, validating_value) == True{
     
       // The validating value does contain the cost value.
       //
@@ -114,7 +116,7 @@ pub fn refund_validation(
   let script_addr =
     validating_input.output.address
   let seller_addr =
-    helpers.create_address(datum.owner.pkh, datum.owner.sc)
+    addresses.create_address(datum.owner.pkh, datum.owner.sc)
   // subtract the fee from the value being spent
   let outbound_value =
     value.add(validating_value, value.negate(tx.fee))
@@ -130,11 +132,11 @@ pub fn refund_validation(
       // check if utxo has cost and check if cant make sale
       refund_value_check,
       // owner must get the utxo back
-      helpers.find_exact_payout(seller_addr, outbound_value, tx.outputs),
+      payout.exact(seller_addr, outbound_value, tx.outputs),
       // single script input
-      helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
+      count.script_inputs(tx.inputs, script_addr, 1),
       // no script outputs
-      helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
+      count.script_outputs(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -148,26 +150,21 @@ pub fn purchase_validation(
 ) -> Bool {
   // the sale input being validated
   let sale_addr =
-    helpers.create_script_address(
+    addresses.create_script_address(
       ref_datum.contracts.sale,
       ref_datum.contracts.stake,
     )
   // find the first sale input input
   let sale_input =
-    helpers.find_script_input(tx.inputs, sale_addr)
+    find.input_by_addr(tx.inputs, sale_addr)
   let sale_out_ref =
     sale_input.output_reference
   // need this for return calculation
   let sale_value =
     sale_input.output.value
   // the sale datum
-  // the datum going back to the contract
-  let data =
-    data.find_inbound_datum(sale_input)
-  // let data_hash =
-  //   helpers.get_the_sale_hash(tx.datums, data)
   expect sale_datum: SaleDatum =
-    data.find_inbound_datum(sale_input)
+    data.input_datum(sale_input)
   // official sale?
   let official_sale_check =
     value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
@@ -190,7 +187,7 @@ pub fn purchase_validation(
     }
   // this value we are currently spending
   let validating_input =
-    helpers.get_validating_input(tx.inputs, output_reference)
+    find.input_by_ref(tx.inputs, output_reference)
   let validating_value =
     validating_input.output.value
   // this script we are current spending from
@@ -198,7 +195,7 @@ pub fn purchase_validation(
     validating_input.output.address
   // the total cost value for the bundle
   let cost_value =
-    helpers.multiply_value(value.zero(), sale_datum.cost, number_of_bundles)
+    values.multiply(sale_datum.cost, number_of_bundles)
   // whats going back to the sale contract
   let bundle_value =
     value.from_asset(
@@ -226,10 +223,10 @@ pub fn purchase_validation(
       |> value.add(value.negate(tx.fee))
   // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
-    helpers.get_outbound_datum(tx, validating_input)
+    find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data
   expect _: Purchase =
-    helpers.get_that_redeemer(tx.redeemers, sale_out_ref)
+    find.redeemer_by_ref(tx.redeemers, sale_out_ref)
   // the incentive is left open for whoever completes the tx to take
   list.and(
     [
@@ -246,13 +243,13 @@ pub fn purchase_validation(
       // just continue the datum
       datum == outbound_datum,
       // queue gets the bundle
-      helpers.find_exact_payout(script_addr, return_queue_value, tx.outputs),
+      payout.exact(script_addr, return_queue_value, tx.outputs),
       // sale gets the cost
-      helpers.find_exact_payout(sale_addr, return_sale_value, tx.outputs),
+      payout.exact(sale_addr, return_sale_value, tx.outputs),
       // single sale script input
-      helpers.count_script_inputs(tx.inputs, sale_addr, 0) == 1,
+      count.script_inputs(tx.inputs, sale_addr, 1),
       // one sale script output
-      helpers.count_script_outputs(tx.outputs, sale_addr, 0) == 1,
+      count.script_outputs(tx.outputs, sale_addr, 1),
     ],
   )
 }
