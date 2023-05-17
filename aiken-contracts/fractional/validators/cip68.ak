@@ -2,8 +2,11 @@ use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
 use aiken/transaction/value
-use fractional/data
-use fractional/helpers
+use assist/count
+use assist/data
+use assist/find
+use assist/payout
+use assist/signing
 use fractional/types.{
   CIP68Datum, CIP68Redeemer, ReferenceDatum, RemoveMeta, UpdateMeta,
 }
@@ -24,12 +27,12 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       credential.from_script(ref_hash)
     // find the first reference input
     let ref_input =
-      helpers.find_script_input(tx.reference_inputs, ref_addr)
+      find.input_by_addr(tx.reference_inputs, ref_addr)
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     // the reference datum
     expect ref_datum: ReferenceDatum =
-      data.find_inbound_datum(ref_input)
+      data.input_datum(ref_input)
     // the job that signs this, 
     // 6d65746164617461 == metadata
     let signer =
@@ -37,7 +40,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     when context.purpose is {
       Spend(output_reference) -> {
         let validating_input =
-          helpers.get_input_by_ref(tx.inputs, output_reference)
+          find.input_by_ref(tx.inputs, output_reference)
         let script_addr =
           validating_input.output.address
         when redeemer is {
@@ -48,11 +51,11 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, signer),
+                signing.verify_sig(tx, signer),
                 // single script input
-                helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
-                // single script output
-                helpers.count_script_outputs(tx.outputs, script_addr, 0) == 0,
+                count.script_inputs(tx.inputs, script_addr, 1),
+                // no script output
+                count.script_outputs(tx.outputs, script_addr, 0),
               ],
             )
           // updates the metadata and change min ada
@@ -76,13 +79,13 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // must hold correct data token
                 ref_value_check,
                 // owner must sign it
-                helpers.must_be_signed_by(tx, signer),
+                signing.verify_sig(tx, signer),
                 // single script input
-                helpers.count_script_inputs(tx.inputs, script_addr, 0) == 1,
+                count.script_inputs(tx.inputs, script_addr, 1),
                 // single script output
-                helpers.count_script_outputs(tx.outputs, script_addr, 0) == 1,
+                count.script_outputs(tx.outputs, script_addr, 1),
                 // make sure value is continuing
-                helpers.find_exact_payout(script_addr, cont_value, tx.outputs),
+                payout.find_exact(script_addr, cont_value, tx.outputs),
               ],
             )
           }
