@@ -113,7 +113,7 @@ validator {
         list.and(
           [
             // send back to script but allow lovelace increase
-            payout.find_token(script_addr, validating_value, tx.outputs),
+            payout.at_least(script_addr, validating_value, tx.outputs),
             // single script input
             count.script_inputs(tx.inputs, script_addr, 1),
             // single script output

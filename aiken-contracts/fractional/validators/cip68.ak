@@ -85,7 +85,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // single script output
                 count.script_outputs(tx.outputs, script_addr, 1),
                 // make sure value is continuing
-                payout.find_exact(script_addr, cont_value, tx.outputs),
+                payout.exact(script_addr, cont_value, tx.outputs),
               ],
             )
           }

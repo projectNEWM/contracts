@@ -78,7 +78,7 @@ pub type RemoveSale =
 
 pub type SaleRedeemer {
   Purchase
-  UpdateSale { lovelace: LovelaceAmount }
+  UpdateSale
   RemoveSale
 }
 

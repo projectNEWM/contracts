@@ -23,7 +23,7 @@ test length_of_prefix() {
 }
 
 test simple_token() {
-  helpers.unique_token_name(#"", 0, types.prefix_100) == #"283130302900a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d8"
+  helpers.unique_token_name(#"", 0, types.prefix_100) == #"283130302900a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a"
 }
 
 test tx_hash_token() {
@@ -33,7 +33,7 @@ test tx_hash_token() {
       1,
       types.prefix_333,
     )
-  tkn == #"28333333290138c741df813afd1e2ba521d6b798dcabbc813ac7ba84467080b9"
+  tkn == #"28333333290138c741df813afd1e2ba521d6b798dcabbc813ac7ba84467080b9b6"
 }
 
 test different_index() {
