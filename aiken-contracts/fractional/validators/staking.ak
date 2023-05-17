@@ -3,8 +3,10 @@ use aiken/transaction.{Publish, ScriptContext, WithdrawFrom}
 use aiken/transaction/certificate.{CredentialDelegation}
 use aiken/transaction/credential.{Inline, ScriptCredential}
 use aiken/transaction/value
-use fractional/data
-use fractional/helpers
+use assist/addresses
+use assist/data
+use assist/find
+use assist/payout
 use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
 // random_string is for initilizing different stake keys attached to the same starter token
@@ -23,24 +25,24 @@ validator(
     let ref_addr =
       credential.from_script(ref_hash)
     let ref_input =
-      helpers.find_script_input(tx.reference_inputs, ref_addr)
+      find.input_by_addr(tx.reference_inputs, ref_addr)
     // check if the ref input has the correct starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     // get the reference datum
     expect ref_datum: ReferenceDatum =
-      data.find_inbound_datum(ref_input)
+      data.input_datum(ref_input)
     when context.purpose is {
       // handle all withdrawals
       WithdrawFrom(stake_credential) -> {
         let reward_addr =
-          helpers.create_address(
+          addresses.create_address(
             ref_datum.staking.reward_pkh,
             ref_datum.staking.reward_sc,
           )
         // if no reward is found error
         let reward =
-          helpers.get_reward_amt(tx.withdrawals, stake_credential)
+          find.stake_reward_by_sc(tx.withdrawals, stake_credential)
         when redeemer is {
           // can only withdraw
           Withdraw ->
@@ -49,7 +51,7 @@ validator(
                 // data reference must hold correct token
                 ref_value_check,
                 // reward address must be paid the exact reward
-                helpers.find_exact_payout(
+                payout.exact(
                   reward_addr,
                   value.from_lovelace(reward),
                   tx.outputs,
