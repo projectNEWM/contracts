@@ -88,14 +88,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // must be the correct reference data
-                ref_value_check?,
+                ref_value_check,
                 // remove validation logic
                 sale_validators.remove_validation(
                   datum,
                   tx,
                   output_reference,
                   ref_datum,
-                )?,
+                ),
               ],
             )
         }
