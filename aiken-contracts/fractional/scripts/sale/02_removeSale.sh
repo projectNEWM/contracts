@@ -45,7 +45,7 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${artist_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[1].fields[1].bytes == $tkn) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
 
