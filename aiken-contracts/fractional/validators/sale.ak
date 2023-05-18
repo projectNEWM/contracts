@@ -63,7 +63,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   output_reference,
                   pointer,
                   ref_datum,
-                ),
+                )?,
               ],
             )
           // Extract profit back to wallet

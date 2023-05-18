@@ -16,6 +16,9 @@ script_address=$(${cli} address build --payment-script-file ${sale_script_path} 
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
+# pointer minter key
+newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
+
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
@@ -59,31 +62,42 @@ CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-pointer_asset="-${POINTER_VALUE} ${pointer_pid}.${pointer_tkn}"
 
-if [ -z "$POINTER_VALUE" ]; then
-    echo "No pointer found."
+if [ ! -z "$POINTER_VALUE" ]; then
+    echo "UTxO has pointer."
     exit 1
 fi
+prefix_555="2835353529"
+
+echo "NEWM UTxO:" $newm_tx_in
+first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
+string=${first_utxo}
+IFS='#' read -ra array <<< "$string"
+
+point_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_555}')")
+echo -n $point_name > ../tmp/pointer.token
+
+pointer_asset="1 ${pointer_pid}.${point_name}"
+
+# echo '{"${pointer_pid}":{"${point_name}": 1}}' > ../data/sale/pointer.json
+echo "{\"${pointer_pid}\":{\"${point_name}\": 1}}" > ../data/sale/pointer.json
 
 
-if [[ CURRENT_VALUE -le 0 ]] ; then
-    utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+# the cost of a bundle is defined in the sale data folder
+value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/pointer.json')")
 
-    artist_address_out="${artist_address} + ${utxo_value}"
-else
-    artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-fi
+# update the value map inside the start redeemer
+jq \
+--argjson value_map "$value_map" \
+'.fields[0].map=$value_map' \
+../data/sale/start-redeemer.json | sponge ../data/sale/start-redeemer.json
 
-# this needs to be dynamic
-# utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+# compute the correct start redeemer 
 
-# artist_address_out="${artist_address} + ${utxo_value}"
-# artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-echo "Return OUTPUT: "${artist_address_out}
+script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + ${pointer_asset}"
+echo "Return OUTPUT: "${script_address_out}
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -115,41 +129,87 @@ script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.s
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 
+# CPU MEM UNITS
+cpu_steps=350000000
+mem_steps=1000000
+# sale
+sale_execution_unts="(${cpu_steps}, ${mem_steps})"
+sale_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
+sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
+
+cpu_steps=150000000
+mem_steps=500000
+# pointer minter
+pointer_execution_unts="(${cpu_steps}, ${mem_steps})"
+pointer_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
+pointer_computation_fee_int=$(printf "%.0f" "$pointer_computation_fee")
+
+# change_value=$((${queue_ada_return} - 375629))
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
-FEE=$(${cli} transaction build \
+${cli} transaction build-raw \
     --babbage-era \
     --out-file ../tmp/tx.draft \
-    --change-address ${artist_address} \
+    --protocol-params-file ../tmp/protocol.json \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
-    --tx-in ${artist_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file ../data/sale/remove-redeemer.json \
-    --tx-out="${artist_address_out}" \
+    --spending-reference-tx-in-execution-units="${sale_execution_unts}" \
+    --spending-reference-tx-in-redeemer-file ../data/sale/start-redeemer.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --mint="${pointer_asset}" \
     --mint-tx-in-reference="${pointer_ref_utxo}#1" \
     --mint-plutus-script-v2 \
     --policy-id="${pointer_pid}" \
-    --mint-reference-tx-in-redeemer-file ../data/mint/burn-redeemer.json \
-    --required-signer-hash ${artist_pkh} \
+    --mint-reference-tx-in-execution-units="${pointer_execution_unts}" \
+    --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
+    --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --testnet-magic ${testnet_magic})
+    --fee 400000
 
-IFS=':' read -ra VALUE <<< "${FEE}"
-IFS=' ' read -ra FEE <<< "${VALUE[1]}"
-FEE=${FEE[1]}
-echo -e "\033[1;32m Fee: \033[0m" $FEE
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
+fee=$(echo $FEE | rev | cut -c 9- | rev)
+
+total_fee=$((${fee} + ${sale_computation_fee_int} + ${pointer_computation_fee_int}))
+echo Tx Fee: $total_fee
+change_value=$((${LOVELACE_VALUE} - ${total_fee}))
+script_address_out="${script_address} + ${change_value} + ${returning_asset} + ${pointer_asset}"
+
+${cli} transaction build-raw \
+    --babbage-era \
+    --out-file ../tmp/tx.draft \
+    --protocol-params-file ../tmp/protocol.json \
+    --read-only-tx-in-reference="${data_ref_utxo}#0" \
+    --tx-in-collateral="${collat_utxo}" \
+    --tx-in ${script_tx_in} \
+    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-plutus-script-v2 \
+    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-execution-units="${sale_execution_unts}" \
+    --spending-reference-tx-in-redeemer-file ../data/sale/start-redeemer.json \
+    --tx-out="${script_address_out}" \
+    --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
+    --mint="${pointer_asset}" \
+    --mint-tx-in-reference="${pointer_ref_utxo}#1" \
+    --mint-plutus-script-v2 \
+    --policy-id="${pointer_pid}" \
+    --mint-reference-tx-in-execution-units="${pointer_execution_unts}" \
+    --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
+    --required-signer-hash ${newm_pkh} \
+    --required-signer-hash ${collat_pkh} \
+    --fee ${total_fee}
+
 #
 # exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file ../wallets/artist-wallet/payment.skey \
+    --signing-key-file ../wallets/newm-wallet/payment.skey \
     --signing-key-file ../wallets/collat-wallet/payment.skey \
     --tx-body-file ../tmp/tx.draft \
     --out-file ../tmp/tx.signed \

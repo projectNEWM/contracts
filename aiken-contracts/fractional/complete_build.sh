@@ -128,7 +128,7 @@ pub=$(jq -r '.purchase_upper_bound' start_info.json)
 # the refund upper bound
 rub=$(jq -r '.refund_upper_bound' start_info.json)
 # the start upper bound
-srub=$(jq -r '.start_upper_bound' start_info.json)
+sub=$(jq -r '.start_upper_bound' start_info.json)
 
 
 # this needs to be placed or auto generated somewhere
@@ -149,6 +149,7 @@ jq \
 --arg stakeHash "$stakeHash" \
 --argjson pub "$pub" \
 --argjson rub "$rub" \
+--argjson sub "$sub" \
 --arg pointerHash "$pointerHash" \
 '.fields[0]=$signer_map | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 

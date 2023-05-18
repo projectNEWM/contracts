@@ -105,7 +105,9 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
-fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
+self_start_fee=1000000
+min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
+fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}

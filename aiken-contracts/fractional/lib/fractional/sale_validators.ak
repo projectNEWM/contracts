@@ -78,11 +78,11 @@ pub fn start_validation(
       // The transaction fee can not exceed an upperbound
       types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_upper_bound),
       // prove pointer has pointer token
-      values.prove_nft(ref_datum.pointer_pid, pointer),
+      values.prove_nft(ref_datum.pointer_pid, pointer)?,
       // prove validating value doesn't have pointer token
-      !values.prove_nft(ref_datum.pointer_pid, validating_value),
+      !values.prove_nft(ref_datum.pointer_pid, validating_value)?,
       // value must go back to script
-      payout.exact(script_addr, cont_value, tx.outputs),
+      payout.exact(script_addr, cont_value, tx.outputs)?,
       // the datum can not change
       datum == outbound_datum,
       // single script input
