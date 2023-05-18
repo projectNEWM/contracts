@@ -39,14 +39,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       tx.mint
         |> value.without_lovelace()
         |> value.flatten()
+    // the job that signs this, 
+    let signer =
+      types.find_worker(ref_datum.hot_key, types.pointer_key)
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
-          MintTokens -> {
-            // the job that signs this, 
-            let signer =
-              types.find_worker(ref_datum.hot_key, types.pointer_key)
+          MintTokens ->
             list.and(
               [
                 // hot key must sign
@@ -60,12 +60,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   pointer_tkn,
                   1,
                 ),
-                // helpers.correct_mint(mint, own_currency_symbol, pointer_tkn, 1),
                 // data reference must be holding correct token
                 ref_value_check,
               ],
             )
-          }
           BurnTokens { burn_amt } ->
             list.and(
               [
