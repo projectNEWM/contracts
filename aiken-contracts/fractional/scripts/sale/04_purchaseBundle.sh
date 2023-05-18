@@ -92,6 +92,10 @@ TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}"
 sale_tx_in=$TXIN
 echo SALE UTXO ${sale_tx_in}
 
+pointer_pid=$(cat ../../hashes/pointer_policy.hash)
+pointer_tkn=$(cat ../tmp/pointer.token)
+pointer_asset="1 ${pointer_pid}.${pointer_tkn}"
+
 default_asset="${total_amt} ${pid}.${tkn}"
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/sale_script_utxo.json)
 echo REMAINING: $CURRENT_VALUE ${pid}.${tkn}
@@ -142,22 +146,22 @@ if [ -z "$cost_value" ]; then
 
     if [[ retAmt -le 0 ]] ; then
         # echo "THIS CLEANS THE SALE OUT"
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${pointer_asset}"
         queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
         # echo $sale_script_address_out
         # exit
     else
         # echo "somethig to continue" ${returning_asset}
         queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${pointer_asset}"
     fi
 else
     echo "cost value isnt empty"
     queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
     if [[ retAmt -le 0 ]] ; then
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${cost_value}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${cost_value} + ${pointer_asset}"
     else
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${cost_value}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${cost_value} + ${pointer_asset}"
     fi
 fi
 
@@ -201,46 +205,8 @@ queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
 
 # Add metadata to this build function for nfts with data
 echo -e "\033[0;36m Building Tx \033[0m"
-change_value=$((${queue_ada_return} - 375629))
-queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
-
-
-# queue_script_address_out="${buyer_address} + 4051560 + 20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379 + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
-# sale_script_address_out="${artist_address} + 2004150 + 100000000 1fc326a6af663acec10a9fbffa2b86dbd1f7fb5aa32c5ae7bb3c1a5c.283434342902eb58cc34b594e9d4cbda391297f95dfb105bda4ad727ffde3f48"
-
-
-
-# FEE=$(${cli} transaction build \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --out-file ../tmp/tx.draft \
-#     --change-address ${batcher_address} \
-#     --tx-in-collateral="${collat_utxo}" \
-#     --tx-in ${batcher_tx_in} \
-#     --tx-in ${sale_tx_in} \
-#     --spending-tx-in-reference="${script_ref_utxo}#1" \
-#     --spending-plutus-script-v2 \
-#     --spending-reference-tx-in-inline-datum-present \
-#     --spending-reference-tx-in-redeemer-file ../data/sale/purchase-redeemer.json \
-#     --tx-in ${queue_tx_in} \
-#     --spending-tx-in-reference="${queue_ref_utxo}#1" \
-#     --spending-plutus-script-v2 \
-#     --spending-reference-tx-in-inline-datum-present \
-#     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
-#     --tx-out="${batcher_address_out}" \
-#     --tx-out="${sale_script_address_out}" \
-#     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
-#     --tx-out="${queue_script_address_out}" \
-#     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
-#     --read-only-tx-in-reference="${data_ref_utxo}#0" \
-#     --required-signer-hash ${newm_pkh} \
-#     --required-signer-hash ${artist_pkh} \
-#     --required-signer-hash ${buyer_pkh} \
-#     --required-signer-hash ${collat_pkh} \
-#     --required-signer-hash ${batcher_pkh} \
-#     --testnet-magic ${testnet_magic})
-
-# exit
+# change_value=$((${queue_ada_return} - 375629))
+# queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \

@@ -95,7 +95,6 @@ jq \
 # compute the correct start redeemer 
 
 script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + ${pointer_asset}"
-echo "Return OUTPUT: "${script_address_out}
 #
 # exit
 #
@@ -179,6 +178,7 @@ total_fee=$((${fee} + ${sale_computation_fee_int} + ${pointer_computation_fee_in
 echo Tx Fee: $total_fee
 change_value=$((${LOVELACE_VALUE} - ${total_fee}))
 script_address_out="${script_address} + ${change_value} + ${returning_asset} + ${pointer_asset}"
+echo "Return OUTPUT: "${script_address_out}
 
 ${cli} transaction build-raw \
     --babbage-era \

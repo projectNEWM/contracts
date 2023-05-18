@@ -65,7 +65,7 @@ pub fn refund_validation(
     value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
   // the total cost value for the bundle
   let cost_value =
-    values.multiply(sale_datum.cost, datum.amt)
+    values.multiply(sale_datum.cost, datum.bundle_amt)
   let quantity_of_pointer =
     value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
   // the input being validated
@@ -180,10 +180,10 @@ pub fn purchase_validation(
     }
   // allows for a partial bundle to be fulfilled
   let number_of_bundles =
-    if quantity_of_pointer / sale_datum.bundle.amt < datum.amt {
+    if quantity_of_pointer / sale_datum.bundle.amt < datum.bundle_amt {
       quantity_of_pointer / sale_datum.bundle.amt
     } else {
-      datum.amt
+      datum.bundle_amt
     }
   // this value we are currently spending
   let validating_input =

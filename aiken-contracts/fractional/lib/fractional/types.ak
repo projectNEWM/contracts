@@ -218,7 +218,7 @@ pub type BundleInfo {
 pub type QueueDatum {
   owner: OwnerInfo,
   pointer: BundleInfo,
-  amt: Int,
+  bundle_amt: Int,
   incentive: TokenInfo,
   pointer_tkn: ByteArray,
 }

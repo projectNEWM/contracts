@@ -48,11 +48,20 @@ echo $script_tx_in
 # fi
 
 # this needs to be dynamic
-utxo_value=3498521
-tokens="100000000 1fc326a6af663acec10a9fbffa2b86dbd1f7fb5aa32c5ae7bb3c1a5c.283434342902eb58cc34b594e9d4cbda391297f95dfb105bda4ad727ffde3f48"
+pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+total_amt=100000000
+tokens="${CURRENT_VALUE} ${pid}.${tkn}"
+echo REMAINING: ${tokens}
+
+LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
+utxo_value=$LOVELACE_VALUE
+
+# utxo_value=3640661
+# tokens="100000000 989b0b633446d55c994ce997634fd5f94bd4e530bfa041448ea75c9c.28343434290198e10f93b990f9eab9fd6d05b2d2a0a08c359f36f123a925c36d"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
