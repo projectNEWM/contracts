@@ -10,5 +10,6 @@
   "hotKey": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd",
   "__comment5__": "The tx fee upper bounds for purchases and refunds",
   "purchase_upper_bound": 1000000,
-  "refund_upper_bound": 1000000
+  "refund_upper_bound": 1000000,
+  "start_upper_bound": 1000000
 }

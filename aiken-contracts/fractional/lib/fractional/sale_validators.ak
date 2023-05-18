@@ -75,6 +75,8 @@ pub fn start_validation(
     find.output_datum_by_addr(tx.outputs, script_addr)
   list.and(
     [
+      // The transaction fee can not exceed an upperbound
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_upper_bound),
       // prove pointer has pointer token
       values.prove_nft(ref_datum.pointer_pid, pointer),
       // prove validating value doesn't have pointer token

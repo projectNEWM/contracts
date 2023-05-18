@@ -140,6 +140,7 @@ pub type ContractHashData {
 pub type FeeInfoData {
   purchase_upper_bound: Int,
   refund_upper_bound: Int,
+  start_upper_bound: Int,
 }
 
 // data to be used inside other contracts
