@@ -67,15 +67,14 @@ pub fn start_validation(
     validating_input.output.address
   let validating_value =
     validating_input.output.value
+  // the sale utxo assumes self start
   let cont_value =
-    value.add(validating_value, pointer)
+    value.add(validating_value, pointer) |> value.add(value.negate(tx.fee))
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   list.and(
     [
-      // the owner must sign it
-      signing.verify_sig(tx, datum.owner.pkh),
       // prove pointer has pointer token
       values.prove_nft(ref_datum.pointer_pid, pointer),
       // prove validating value doesn't have pointer token
