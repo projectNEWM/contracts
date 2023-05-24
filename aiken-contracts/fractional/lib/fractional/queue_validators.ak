@@ -32,9 +32,9 @@ pub fn cancel_validation(
       // owner must get the utxo back
       payout.exact(seller_addr, validating_value, tx.outputs)?,
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs
-      count.script_outputs(tx.outputs, script_addr, 0),
+      count.outputs_by_addr(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -134,9 +134,9 @@ pub fn refund_validation(
       // owner must get the utxo back
       payout.exact(seller_addr, outbound_value, tx.outputs),
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs
-      count.script_outputs(tx.outputs, script_addr, 0),
+      count.outputs_by_addr(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -247,9 +247,9 @@ pub fn purchase_validation(
       // sale gets the cost
       payout.exact(sale_addr, return_sale_value, tx.outputs),
       // single sale script input
-      count.script_inputs(tx.inputs, sale_addr, 1),
+      count.inputs_by_addr(tx.inputs, sale_addr, 1),
       // one sale script output
-      count.script_outputs(tx.outputs, sale_addr, 1),
+      count.outputs_by_addr(tx.outputs, sale_addr, 1),
     ],
   )
 }

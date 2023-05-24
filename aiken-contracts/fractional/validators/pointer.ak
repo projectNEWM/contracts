@@ -32,7 +32,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       find.first_input_index(tx.inputs)
     let first_tx_hash =
       find.first_input_txid(tx.inputs)
-    // use the ref prefix
+    // use the pointer prefix but its not official
     let pointer_tkn =
       values.unique_token_name(first_tx_hash, first_index, types.prefix_555)
     let mint =
@@ -72,6 +72,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 mint_validators.correct_burn(
                   mint,
                   own_currency_symbol,
+                  // non standard prefix
                   types.prefix_555,
                   -1,
                 ),

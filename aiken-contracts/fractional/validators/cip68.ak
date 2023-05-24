@@ -53,9 +53,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // owner must sign it
                 signing.verify_sig(tx, signer),
                 // single script input
-                count.script_inputs(tx.inputs, script_addr, 1),
+                count.inputs_by_addr(tx.inputs, script_addr, 1),
                 // no script output
-                count.script_outputs(tx.outputs, script_addr, 0),
+                count.outputs_by_addr(tx.outputs, script_addr, 0),
               ],
             )
           // updates the metadata and change min ada
@@ -81,9 +81,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // owner must sign it
                 signing.verify_sig(tx, signer),
                 // single script input
-                count.script_inputs(tx.inputs, script_addr, 1),
+                count.inputs_by_addr(tx.inputs, script_addr, 1),
                 // single script output
-                count.script_outputs(tx.outputs, script_addr, 1),
+                count.outputs_by_addr(tx.outputs, script_addr, 1),
                 // make sure value is continuing
                 payout.exact(script_addr, cont_value, tx.outputs),
               ],

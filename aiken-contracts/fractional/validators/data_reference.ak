@@ -115,9 +115,9 @@ validator {
             // send back to script but allow lovelace increase
             payout.at_least(script_addr, validating_value, tx.outputs),
             // single script input
-            count.script_inputs(tx.inputs, script_addr, 1),
+            count.inputs_by_addr(tx.inputs, script_addr, 1),
             // single script output
-            count.script_outputs(tx.outputs, script_addr, 1),
+            count.outputs_by_addr(tx.outputs, script_addr, 1),
             // only keepers can update the data
             signing.verify_multisig(
               tx,

@@ -383,7 +383,7 @@
               "$ref": "#/definitions/fractional~1types~1BundleInfo"
             },
             {
-              "title": "amt",
+              "title": "bundle_amt",
               "$ref": "#/definitions/Int"
             },
             {

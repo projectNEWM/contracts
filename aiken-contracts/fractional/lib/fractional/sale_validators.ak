@@ -43,9 +43,9 @@ pub fn purchase_validation(
   list.and(
     [
       // single script input
-      count.script_inputs(tx.inputs, queue_addr, 1),
+      count.inputs_by_addr(tx.inputs, queue_addr, 1),
       // single script output
-      count.script_outputs(tx.outputs, queue_addr, 1),
+      count.outputs_by_addr(tx.outputs, queue_addr, 1),
       // input datum and output datum must equal
       datum == outbound_datum,
     ],
@@ -86,9 +86,9 @@ pub fn start_validation(
       // the datum can not change
       datum == outbound_datum,
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // single script output
-      count.script_outputs(tx.outputs, script_addr, 1),
+      count.outputs_by_addr(tx.outputs, script_addr, 1),
     ],
   )
 }
@@ -126,9 +126,9 @@ pub fn extract_validation(
       // the datum can not change
       datum == outbound_datum,
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // single script output
-      count.script_outputs(tx.outputs, script_addr, 1),
+      count.outputs_by_addr(tx.outputs, script_addr, 1),
     ],
   )
 }
@@ -180,9 +180,9 @@ pub fn remove_validation(
       // owner must get the utxo back
       payout.exact(seller_addr, outbound_value, tx.outputs),
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs
-      count.script_outputs(tx.outputs, script_addr, 0),
+      count.outputs_by_addr(tx.outputs, script_addr, 0),
     ],
   )
 }
