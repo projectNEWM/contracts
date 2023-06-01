@@ -64,6 +64,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               ],
             )
           QueueCancel ->
+            // this is available at all times for queue items
             queue_validators.cancel_validation(datum, tx, output_reference)
         }
       _ ->
