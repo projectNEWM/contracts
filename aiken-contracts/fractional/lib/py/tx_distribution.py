@@ -4,6 +4,10 @@ import json
 import sqlite3
 from datetime import date
 
+###############################################################################
+#
+# the list of addresses to watch
+#
 list_of_address = [
     "addr1v976vnc7fsvgw0g8zn3ae5euu9er923t46a7zcz6arpntuqx009fd",
 ]
@@ -50,7 +54,7 @@ def get(endpoint:str) -> dict:
         response = {}
     return response
 
-
+# Update the tx db
 def update_tx_db(asset:str):
     page = 1
     while True:
@@ -118,7 +122,6 @@ def update_tx_db(asset:str):
                                     token_wallets[utxo['address']] = amt['quantity']
             for address in token_wallets:
                 amount = token_wallets[address]
-                # print(address, amount)
                 cur.execute('INSERT INTO trxs (tx_hash, tx_index, block_time, address, amount) VALUES (?, ?, ?, ?, ?)', (tx_hash, tx_index, block_time, address, amount))
                 con.commit()
         page += 1
@@ -127,17 +130,8 @@ def update_tx_db(asset:str):
 
 if __name__ == '__main__':
     policy_id = "46e607b3046a34c95e7c29e47047618dbf5e10de777ba56c590cfd5c"
-    token_name = "NEWM_0"
+    token_name = "NEWM_1"
     asset = policy_id + token_name.encode('utf-8').hex()
-
-    # start_time = 1640890569
-    # end_time   = 1641330000
-    # print((end_time - start_time)/60/60/24)
-
-    # cur.execute("SELECT * FROM trxs WHERE block_time >= {} AND block_time <= {};".format(start_time, end_time))
-    # everything = cur.fetchall()
-    # total = sum([int(val[4]) for val in everything])
-    # print(total / pow(10, 6))
 
     outcome = update_tx_db(asset)
     print(outcome)
