@@ -4,13 +4,10 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use assist/data
 use assist/find
-use fractional/mint_validators
-// use fractional/data
-// use fractional/helpers
 use fractional/sale_validators
 use fractional/types.{
-  Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer, UpdateSale,
-  ValidatorHash,
+  ExtractSale, Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer,
+  StartSale, ValidatorHash,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -54,32 +51,53 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ),
               ],
             )
-
-          // Owner can update their UTxO
-          UpdateSale ->
-            sale_validators.update_validation(datum, tx, output_reference)
-          // Owner can remove their UTxO by burning the pointer
-          RemoveSale -> {
-            let mint =
-              tx.mint
-                |> value.without_lovelace()
-                |> value.flatten()
+          StartSale { pointer } ->
             list.and(
               [
                 // must be the correct reference data
                 ref_value_check,
-                // must burn 1 pointer token
-                mint_validators.correct_burn(
-                  mint,
-                  ref_datum.pointer_pid,
-                  types.prefix_555,
-                  -1,
-                ),
-                // remove validation logic
-                sale_validators.remove_validation(datum, tx, output_reference),
+                // start the sale off
+                sale_validators.start_validation(
+                  datum,
+                  tx,
+                  output_reference,
+                  pointer,
+                  ref_datum,
+                )?,
               ],
             )
-          }
+          // Extract profit back to wallet
+          ExtractSale { profit } ->
+            list.and(
+              [
+                // must be the correct reference data
+                ref_value_check,
+                // extract profit from sale
+                sale_validators.extract_validation(
+                  datum,
+                  tx,
+                  output_reference,
+                  profit,
+                  ref_datum,
+                ),
+              ],
+            )
+          // sale_validators.update_validation(datum, tx, output_reference)
+          // Owner can remove their UTxO by burning the pointer
+          RemoveSale ->
+            list.and(
+              [
+                // must be the correct reference data
+                ref_value_check,
+                // remove validation logic
+                sale_validators.remove_validation(
+                  datum,
+                  tx,
+                  output_reference,
+                  ref_datum,
+                ),
+              ],
+            )
         }
       // spending only
       _ ->

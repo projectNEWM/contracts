@@ -10,11 +10,11 @@ if [[ $# -eq 0 ]] ; then
     exit
 fi
 if [[ ${1} -eq 0 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Greater Than Zero \033[0m \n";
+    echo -e "\n \033[0;31m Burn Amount Must Be Greater Than Zero \033[0m \n";
     exit
 fi
 if [[ ${1} -gt 100000000 ]] ; then
-    echo -e "\n \033[0;31m Bundle Size Must Be Less Than Or Equal To 100 M \033[0m \n";
+    echo -e "\n \033[0;31m Burn Amount Must Be Less Than Or Equal To 100 M \033[0m \n";
     exit
 fi
 
@@ -115,9 +115,8 @@ data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
-    --change-address ${newm_address} \
+    --change-address ${artist_address} \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${artist_tx_in} \

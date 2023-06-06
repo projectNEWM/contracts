@@ -30,6 +30,9 @@ ${cli} query tip --testnet-magic ${testnet_magic} | jq
 echo -e "\033[1;35m Reference Script Address: \033[0m"
 echo -e "\n \033[1;35m ${ref_script_address} \033[0m \n";
 ${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magic}
+# update the data folder with the current reference datum
+${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_reference_utxo.json
+jq -r 'to_entries[] | .value.inlineDatum' tmp/current_reference_utxo.json > data/reference/current-reference-datum.json
 #
 echo -e "\033[1;35m CIP68 Script Address: \033[0m" 
 echo -e "\n \033[1;35m ${cip68_script_address} \033[0m \n";

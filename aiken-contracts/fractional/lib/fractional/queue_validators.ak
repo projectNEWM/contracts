@@ -32,9 +32,9 @@ pub fn cancel_validation(
       // owner must get the utxo back
       payout.exact(seller_addr, validating_value, tx.outputs)?,
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs
-      count.script_outputs(tx.outputs, script_addr, 0),
+      count.outputs_by_addr(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -65,7 +65,7 @@ pub fn refund_validation(
     value.quantity_of(sale_value, ref_datum.pointer_pid, datum.pointer_tkn) == 1
   // the total cost value for the bundle
   let cost_value =
-    values.multiply(sale_datum.cost, datum.amt)
+    values.multiply(sale_datum.cost, datum.bundle_amt)
   let quantity_of_pointer =
     value.quantity_of(sale_value, datum.pointer.pid, datum.pointer.tkn)
   // the input being validated
@@ -134,9 +134,9 @@ pub fn refund_validation(
       // owner must get the utxo back
       payout.exact(seller_addr, outbound_value, tx.outputs),
       // single script input
-      count.script_inputs(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs
-      count.script_outputs(tx.outputs, script_addr, 0),
+      count.outputs_by_addr(tx.outputs, script_addr, 0),
     ],
   )
 }
@@ -180,10 +180,10 @@ pub fn purchase_validation(
     }
   // allows for a partial bundle to be fulfilled
   let number_of_bundles =
-    if quantity_of_pointer / sale_datum.bundle.amt < datum.amt {
+    if quantity_of_pointer / sale_datum.bundle.amt < datum.bundle_amt {
       quantity_of_pointer / sale_datum.bundle.amt
     } else {
-      datum.amt
+      datum.bundle_amt
     }
   // this value we are currently spending
   let validating_input =
@@ -247,9 +247,9 @@ pub fn purchase_validation(
       // sale gets the cost
       payout.exact(sale_addr, return_sale_value, tx.outputs),
       // single sale script input
-      count.script_inputs(tx.inputs, sale_addr, 1),
+      count.inputs_by_addr(tx.inputs, sale_addr, 1),
       // one sale script output
-      count.script_outputs(tx.outputs, sale_addr, 1),
+      count.outputs_by_addr(tx.outputs, sale_addr, 1),
     ],
   )
 }

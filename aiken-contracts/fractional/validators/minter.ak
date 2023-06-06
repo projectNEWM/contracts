@@ -4,6 +4,7 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use assist/data
 use assist/find
+use assist/prefixes
 use assist/signing
 use assist/values
 use fractional/mint_validators
@@ -34,10 +35,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       find.first_input_txid(tx.inputs)
     // use the ref prefix
     let reference_tkn =
-      values.unique_token_name(first_tx_hash, first_index, values.prefix_100)
+      values.unique_token_name(first_tx_hash, first_index, prefixes.prefix_100)
     // use the sft prefix
     let fractions_tkn =
-      values.unique_token_name(first_tx_hash, first_index, values.prefix_444)
+      values.unique_token_name(first_tx_hash, first_index, prefixes.prefix_444)
     let mint =
       tx.mint
         |> value.without_lovelace()
@@ -90,14 +91,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                     mint_validators.correct_burn(
                       mint,
                       own_currency_symbol,
-                      values.prefix_100,
+                      prefixes.prefix_100,
                       -1,
                     ),
                     // burn any amount of the fractions
                     mint_validators.correct_burn(
                       mint,
                       own_currency_symbol,
-                      values.prefix_444,
+                      prefixes.prefix_444,
                       -1 * burn_amt,
                     ),
                   ],

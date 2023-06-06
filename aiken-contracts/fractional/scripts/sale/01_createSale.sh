@@ -16,19 +16,24 @@ script_address=$(${cli} address build --payment-script-file ${sale_script_path} 
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 
 #
+pointer_pid=$(cat ../../hashes/pointer_policy.hash)
+
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
+pointer_asset="${total_amt} ${pointer_pid}.${tkn}"
 
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${default_asset} + ${pointer_asset}" | tr -dc '0-9')
+self_start_fee=1000000
+min_ada=$((${utxo_value} + ${self_start_fee}))
 
-script_address_out="${script_address} + ${utxo_value} + ${default_asset}"
+script_address_out="${script_address} + ${min_ada} + ${default_asset}"
 echo "Artist OUTPUT: "${script_address_out}
 #
 # exit
@@ -51,7 +56,6 @@ artist_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${artist_address} \
     --tx-in ${artist_tx_in} \

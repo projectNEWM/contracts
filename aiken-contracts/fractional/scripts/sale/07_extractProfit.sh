@@ -30,9 +30,12 @@ echo $tkn
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
-LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
-utxo_value=$LOVELACE_VALUE
-echo LOVELACE: $LOVELACE_VALUE
+# utxo_value=$(${cli} transaction calculate-min-required-utxo \
+#     --babbage-era \
+#     --protocol-params-file ../tmp/protocol.json \
+#     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
+#     --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
+
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
@@ -49,25 +52,38 @@ script_tx_in=${TXIN::-8}
 echo $script_tx_in
 
 # exit
+LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
+utxo_value=$LOVELACE_VALUE
+echo LOVELACE: $LOVELACE_VALUE
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+pointer_asset="-${POINTER_VALUE} ${pointer_pid}.${pointer_tkn}"
 
-if [ ! -z "$POINTER_VALUE" ]; then
-    echo "The pointer is on the utxo."
+if [ -z "$POINTER_VALUE" ]; then
+    echo "No pointer found."
     exit 1
 fi
 
+
 if [[ CURRENT_VALUE -le 0 ]] ; then
+    utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+
     artist_address_out="${artist_address} + ${utxo_value}"
 else
     artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 fi
 
+# this needs to be dynamic
+# utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
+# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+
+# artist_address_out="${artist_address} + ${utxo_value}"
+# artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 echo "Return OUTPUT: "${artist_address_out}
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -97,6 +113,8 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
+pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
+
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -113,6 +131,11 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/sale/remove-redeemer.json \
     --tx-out="${artist_address_out}" \
+    --mint="${pointer_asset}" \
+    --mint-tx-in-reference="${pointer_ref_utxo}#1" \
+    --mint-plutus-script-v2 \
+    --policy-id="${pointer_pid}" \
+    --mint-reference-tx-in-redeemer-file ../data/mint/burn-redeemer.json \
     --required-signer-hash ${artist_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})

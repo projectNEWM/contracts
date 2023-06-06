@@ -3,22 +3,22 @@
 
 [[requirements]]
 name = "aiken-lang/stdlib"
-version = "main"
+version = "1.0.0"
 source = "github"
 
 [[requirements]]
 name = "logicalmechanism/assist"
-version = "main"
+version = "v0.1.5"
 source = "github"
 
 [[packages]]
 name = "aiken-lang/stdlib"
-version = "main"
+version = "1.0.0"
 requirements = []
 source = "github"
 
 [[packages]]
 name = "logicalmechanism/assist"
-version = "main"
+version = "v0.1.5"
 requirements = []
 source = "github"

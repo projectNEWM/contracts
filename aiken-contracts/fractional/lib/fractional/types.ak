@@ -62,7 +62,8 @@ pub type RemoveSale =
 
 pub type SaleRedeemer {
   Purchase
-  UpdateSale
+  StartSale { pointer: Value }
+  ExtractSale { profit: Value }
   RemoveSale
 }
 
@@ -139,6 +140,7 @@ pub type ContractHashData {
 pub type FeeInfoData {
   purchase_upper_bound: Int,
   refund_upper_bound: Int,
+  start_upper_bound: Int,
 }
 
 // data to be used inside other contracts
@@ -216,7 +218,7 @@ pub type BundleInfo {
 pub type QueueDatum {
   owner: OwnerInfo,
   pointer: BundleInfo,
-  amt: Int,
+  bundle_amt: Int,
   incentive: TokenInfo,
   pointer_tkn: ByteArray,
 }

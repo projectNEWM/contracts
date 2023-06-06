@@ -127,6 +127,8 @@ pointerHash=$(cat hashes/pointer_policy.hash)
 pub=$(jq -r '.purchase_upper_bound' start_info.json)
 # the refund upper bound
 rub=$(jq -r '.refund_upper_bound' start_info.json)
+# the start upper bound
+sub=$(jq -r '.start_upper_bound' start_info.json)
 
 
 # this needs to be placed or auto generated somewhere
@@ -147,6 +149,7 @@ jq \
 --arg stakeHash "$stakeHash" \
 --argjson pub "$pub" \
 --argjson rub "$rub" \
+--argjson sub "$sub" \
 --arg pointerHash "$pointerHash" \
 '.fields[0]=$signer_map | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
@@ -160,6 +163,7 @@ jq \
 .fields[3].fields[3].bytes=$stakeHash |
 .fields[4].fields[0].int=$pub |
 .fields[4].fields[1].int=$rub |
+.fields[4].fields[2].int=$sub |
 .fields[5].bytes=$pointerHash
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json

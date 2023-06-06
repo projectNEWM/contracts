@@ -10,10 +10,10 @@ platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
-version = "main"
+version = "1.0.0"
 source = "github"
 
 [[dependencies]]
 name = "logicalmechanism/assist"
-version = "main"
+version = "v0.1.5"
 source = "github"

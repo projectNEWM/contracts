@@ -32,21 +32,21 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       find.first_input_index(tx.inputs)
     let first_tx_hash =
       find.first_input_txid(tx.inputs)
-    // use the ref prefix
+    // use the pointer prefix but its not official
     let pointer_tkn =
       values.unique_token_name(first_tx_hash, first_index, types.prefix_555)
     let mint =
       tx.mint
         |> value.without_lovelace()
         |> value.flatten()
+    // the job that signs this, 
+    let signer =
+      types.find_worker(ref_datum.hot_key, types.pointer_key)
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
-          MintTokens -> {
-            // the job that signs this, 
-            let signer =
-              types.find_worker(ref_datum.hot_key, types.pointer_key)
+          MintTokens ->
             list.and(
               [
                 // hot key must sign
@@ -60,12 +60,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   pointer_tkn,
                   1,
                 ),
-                // helpers.correct_mint(mint, own_currency_symbol, pointer_tkn, 1),
                 // data reference must be holding correct token
                 ref_value_check,
               ],
             )
-          }
           BurnTokens { burn_amt } ->
             list.and(
               [
@@ -74,6 +72,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 mint_validators.correct_burn(
                   mint,
                   own_currency_symbol,
+                  // non standard prefix
                   types.prefix_555,
                   -1,
                 ),
