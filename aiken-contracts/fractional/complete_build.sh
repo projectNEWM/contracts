@@ -22,6 +22,7 @@ rm certs/* || true
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
+# aiken build
 aiken build --keep-traces
 
 echo -e "\033[1;33m Convert Reference Contract \033[0m"

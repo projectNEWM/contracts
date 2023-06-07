@@ -53,19 +53,6 @@ artist_tx_in=${TXIN::-8}
 
 BURN_ASSET="-1 ${policy_id}.${token_name}"
 
-# echo $BURN_ASSET
-
-
-RETURN_ASSET="${retAmt} ${policy_id}.${token_name}"
-
-UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out="${artist_address} + 5000000" | tr -dc '0-9')
-
-artist_address_out="${artist_address} + ${UTXO_VALUE}"
-
-echo "Artist Return OUTPUT:" ${artist_address_out}
 #
 # exit
 #
@@ -93,7 +80,6 @@ FEE=$(${cli} transaction build \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${artist_tx_in} \
-    --tx-out="${artist_address_out}" \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${keeper1_pkh} \
     --required-signer-hash ${keeper2_pkh} \
