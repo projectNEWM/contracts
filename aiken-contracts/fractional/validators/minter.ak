@@ -13,26 +13,19 @@ use fractional/types.{BurnTokens, MintRedeemer, MintTokens, ReferenceDatum}
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
   fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
-    let tx =
-      context.transaction
+    let tx = context.transaction
     // data reference stuff
-    expect ref_hash: ByteArray =
-      ref_hash_data
-    let ref_addr =
-      credential.from_script(ref_hash)
-    let ref_input =
-      find.input_by_addr(tx.reference_inputs, ref_addr)
+    expect ref_hash: ByteArray = ref_hash_data
+    let ref_addr = credential.from_script(ref_hash)
+    let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
     let ref_value_check =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     // Get the reference datum
-    expect ref_datum: ReferenceDatum =
-      data.input_datum(ref_input)
+    expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // get tx info
-    let first_index =
-      find.first_input_index(tx.inputs)
-    let first_tx_hash =
-      find.first_input_txid(tx.inputs)
+    let first_index = find.first_input_index(tx.inputs)
+    let first_tx_hash = find.first_input_txid(tx.inputs)
     // use the ref prefix
     let reference_tkn =
       values.unique_token_name(first_tx_hash, first_index, prefixes.prefix_100)
@@ -41,11 +34,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       values.unique_token_name(first_tx_hash, first_index, prefixes.prefix_444)
     let mint =
       tx.mint
-        |> value.without_lovelace()
+        |> value.from_minted_value()
         |> value.flatten()
     // the job that signs this, 
-    let signer =
-      types.find_worker(ref_datum.hot_key, types.minter_key)
+    let signer = types.find_worker(ref_datum.hot_key, types.minter_key)
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
@@ -54,7 +46,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // hot key must sign
-                signing.verify_sig(tx, signer),
+                signing.verify_sig(tx.extra_signatories, signer),
                 // prevent roll over double nft attack
                 first_index < 256,
                 // must mint 1 reference token
@@ -80,7 +72,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               [
                 // has to be a multisig action
                 signing.verify_multisig(
-                  tx,
+                  tx.extra_signatories,
                   ref_datum.keepers.pkhs,
                   ref_datum.keepers.threshold,
                 ),
@@ -109,8 +101,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             )
         }
       // Minting Only
-      _ ->
-        False
+      _ -> False
     }
   }
 }

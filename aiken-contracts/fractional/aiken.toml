@@ -1,7 +1,7 @@
 name = "aiken-lang/fractional-minter"
-version = "0.0.0"
+version = "1.0.0"
 license = "Apache-2.0"
-description = "Aiken contracts for project 'aiken-lang/fractional-minter'"
+description = "Aiken contracts for Project Newm"
 
 [repository]
 user = "aiken-lang"
@@ -10,10 +10,10 @@ platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
-version = "1.0.0"
+version = "main"
 source = "github"
 
 [[dependencies]]
 name = "logicalmechanism/assist"
-version = "v0.1.5"
+version = "main"
 source = "github"

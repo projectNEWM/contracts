@@ -18,8 +18,7 @@ pub fn purchase_validation(
   output_reference: OutputReference,
 ) -> Bool {
   // the thing being spent
-  let validating_input =
-    find.input_by_ref(tx.inputs, output_reference)
+  let validating_input = find.input_by_ref(tx.inputs, output_reference)
   // the thing in the queue
   let queue_addr =
     addresses.create_script_address(
@@ -27,18 +26,14 @@ pub fn purchase_validation(
       ref_datum.contracts.stake,
     )
   // find the first sale input input
-  let queue_input =
-    find.input_by_addr(tx.inputs, queue_addr)
-  let queue_out_ref =
-    queue_input.output_reference
+  let queue_input = find.input_by_addr(tx.inputs, queue_addr)
+  let queue_out_ref = queue_input.output_reference
   // the datum going back to the contract
-  let script_addr =
-    validating_input.output.address
+  let script_addr = validating_input.output.address
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data
-  expect _: QueuePurchase =
-    find.redeemer_by_ref(tx.redeemers, queue_out_ref)
+  expect _: QueuePurchase = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
   // purchasing requires a constant datum and 1 thing being spent from the queue
   list.and(
     [
@@ -61,15 +56,12 @@ pub fn start_validation(
   ref_datum: ReferenceDatum,
 ) -> Bool {
   // the thing getting spent
-  let validating_input =
-    find.input_by_ref(tx.inputs, output_reference)
-  let script_addr =
-    validating_input.output.address
-  let validating_value =
-    validating_input.output.value
+  let validating_input = find.input_by_ref(tx.inputs, output_reference)
+  let script_addr = validating_input.output.address
+  let validating_value = validating_input.output.value
   // the sale utxo assumes self start
   let cont_value =
-    value.add(validating_value, pointer) |> value.add(value.negate(tx.fee))
+    value.merge(validating_value, pointer) |> value.merge(value.negate(tx.fee))
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
@@ -102,21 +94,17 @@ pub fn extract_validation(
   ref_datum: ReferenceDatum,
 ) -> Bool {
   // the thing getting spent
-  let validating_input =
-    find.input_by_ref(tx.inputs, output_reference)
-  let script_addr =
-    validating_input.output.address
-  let validating_value =
-    validating_input.output.value
-  let cont_value =
-    value.add(validating_value, value.negate(profit))
+  let validating_input = find.input_by_ref(tx.inputs, output_reference)
+  let script_addr = validating_input.output.address
+  let validating_value = validating_input.output.value
+  let cont_value = value.merge(validating_value, value.negate(profit))
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   list.and(
     [
       // the owner must sign it
-      signing.verify_sig(tx, datum.owner.pkh),
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
       // prove profit does not have pointer token
       !values.prove_nft(ref_datum.pointer_pid, profit),
       // prove cont value has pointer token
@@ -141,23 +129,13 @@ pub fn remove_validation(
   ref_datum: ReferenceDatum,
 ) -> Bool {
   // the input being validated
-  let validating_input =
-    find.input_by_ref(tx.inputs, output_reference)
-  let validating_value =
-    validating_input.output.value
-  let burned_value =
-    tx.mint
-      |> value.without_lovelace()
-  let outbound_value =
-    value.add(validating_value, burned_value)
-  let script_addr =
-    validating_input.output.address
-  let seller_addr =
-    addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  let mint =
-    tx.mint
-      |> value.without_lovelace()
-      |> value.flatten()
+  let validating_input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value = validating_input.output.value
+  let burned_value = tx.mint |> value.from_minted_value()
+  let outbound_value = value.merge(validating_value, burned_value)
+  let script_addr = validating_input.output.address
+  let seller_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
+  let mint = tx.mint |> value.from_minted_value() |> value.flatten()
   let remove_or_burn =
     if values.prove_nft(ref_datum.pointer_pid, validating_value) == True {
       // must burn 1 pointer token
@@ -176,7 +154,7 @@ pub fn remove_validation(
       // if have pointer burn else remove
       remove_or_burn,
       // owner must sign it
-      signing.verify_sig(tx, datum.owner.pkh),
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
       // owner must get the utxo back
       payout.exact(seller_addr, outbound_value, tx.outputs),
       // single script input
