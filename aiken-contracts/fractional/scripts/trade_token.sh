@@ -7,7 +7,7 @@ cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/artist-wallet/"
+sender_path="wallets/buyer-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
 receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
@@ -24,10 +24,10 @@ if [ -z "$assets" ]; then  # check if the result is an empty string
     # exit 1  # exit the script with an error code
 fi
 
-# min_utxo=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file tmp/protocol.json \
-#     --tx-out="${receiver_address} + 5000000 + ${assets}" | tr -dc '0-9')
+min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file tmp/protocol.json \
+    --tx-out="${receiver_address} + 5000000 + ${assets}" | tr -dc '0-9')
 
 tokens_to_be_traded="${receiver_address} + ${min_utxo} + ${assets}"
 
@@ -56,9 +56,9 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${sender_address} \
     --tx-in ${seller_tx_in} \
+    --tx-out="${tokens_to_be_traded}" \
     --testnet-magic ${testnet_magic})
 
-    # --tx-out="${tokens_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
@@ -73,7 +73,7 @@ ${cli} transaction sign \
     --out-file tmp/tx.signed \
     --testnet-magic ${testnet_magic}
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \

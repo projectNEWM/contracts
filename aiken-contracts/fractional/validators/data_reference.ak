@@ -18,14 +18,10 @@ validator {
     when context.purpose is {
       Spend(output_reference) -> {
         // tx being validated
-        let tx =
-          context.transaction
-        let validating_input =
-          find.input_by_ref(tx.inputs, output_reference)
-        let validating_value =
-          validating_input.output.value
-        let script_addr =
-          validating_input.output.address
+        let tx = context.transaction
+        let validating_input = find.input_by_ref(tx.inputs, output_reference)
+        let validating_value = validating_input.output.value
+        let script_addr = validating_input.output.address
         // the datum cont
         expect cont_datum: ReferenceDatum =
           find.output_datum_by_addr(tx.outputs, script_addr)
@@ -45,10 +41,8 @@ validator {
               )
             // Update the multisig info
             UpdateKeepers -> {
-              let l =
-                list.length(cont_datum.keepers.pkhs)
-              let t =
-                cont_datum.keepers.threshold
+              let l = list.length(cont_datum.keepers.pkhs)
+              let t = cont_datum.keepers.threshold
               list.and(
                 [
                   datum.hot_key == cont_datum.hot_key,
@@ -120,7 +114,7 @@ validator {
             count.outputs_by_addr(tx.outputs, script_addr, 1),
             // only keepers can update the data
             signing.verify_multisig(
-              tx,
+              tx.extra_signatories,
               datum.keepers.pkhs,
               datum.keepers.threshold,
             ),
@@ -130,8 +124,7 @@ validator {
         )
       }
       // anything else fails
-      _ ->
-        False
+      _ -> False
     }
   }
 }
