@@ -13,8 +13,8 @@ queue_script_path="../../contracts/queue_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, buyer, reference
-buyer_address=$(cat ../wallets/buyer-wallet/payment.addr)
-buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer-wallet/payment.vkey)
+buyer_address=$(cat ../wallets/buyer1-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
 
 #
 newm_address=$(cat ../wallets/newm-wallet/payment.addr)

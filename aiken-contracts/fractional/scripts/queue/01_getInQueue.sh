@@ -13,7 +13,9 @@ queue_script_path="../../contracts/queue_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, buyer, reference
-buyer_address=$(cat ../wallets/buyer-wallet/payment.addr)
+buyer_path="buyer1-wallet"
+buyer_address=$(cat ../wallets/${buyer_path}/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer_path}/payment.vkey)
 
 max_bundle_size=$(jq -r '.fields[3].int' ../data/sale/sale-datum.json)
 if [[ $# -eq 0 ]] ; then
@@ -29,6 +31,11 @@ if [[ ${1} -gt ${max_bundle_size} ]] ; then
     exit
 fi
 
+
+variable=${buyer_pkh}; jq --arg variable "$variable" '.fields[0].fields[0].bytes=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
+mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
+
+
 bundleSize=${1}
 # update bundle size
 variable=${bundleSize}; jq --argjson variable "$variable" '.fields[2].int=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
@@ -40,6 +47,11 @@ variable=${bundle_pid}; jq --arg variable "$variable" '.fields[1].fields[0].byte
 mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
 variable=${bundle_tkn}; jq --arg variable "$variable" '.fields[1].fields[1].bytes=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
 mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
+# point to a sale
+pointer_tkn=$(cat ../tmp/pointer.token)
+variable=${pointer_tkn}; jq --arg variable "$variable" '.fields[4].bytes=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
+mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
+
 
 #
 buyer_assets=$(python3 -c "import sys; sys.path.append('../py/'); from convertMapToOutput import get_map; get_map($(jq -r '.fields[2].map' ../data/sale/sale-datum.json), ${bundleSize})")
@@ -119,7 +131,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file ../wallets/buyer-wallet/payment.skey \
+    --signing-key-file ../wallets/${buyer_path}/payment.skey \
     --tx-body-file ../tmp/tx.draft \
     --out-file ../tmp/tx.signed \
     --testnet-magic ${testnet_magic}
