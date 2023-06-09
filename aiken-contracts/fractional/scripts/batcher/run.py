@@ -20,7 +20,7 @@ def run():
     # pointer pid
     pointer_pid = orders.cat(pointer_pid_path)
     
-    sale_address = "addr_test1xr4udppuj0wqwt224qe4hcegfqfzs4tlmg4p72vun2nmhlynp7y0mz2xgxfld6ettk7q2nas9hu7u32jchmjnp5spwvq0nezhj"
+    sale_address = "addr_test1xrldelw9u8n4depw52lkhnlg34erapvptgcwxaz7tgl856unp7y0mz2xgxfld6ettk7q2nas9hu7u32jchmjnp5spwvqcgsykt"
     queue_address = "addr_test1xqy4383gufhcc3y0g660mtdkyx3x7ayvtavj53m053434synp7y0mz2xgxfld6ettk7q2nas9hu7u32jchmjnp5spwvqvhlqg0"
     batcher_address = "addr_test1vrs4fk7ea6rg2fvd00sa8um5unp0rt474kngwpc38v2z9vqujprdk"
     
@@ -55,9 +55,13 @@ def run():
         
         # current orders wrt the tip
         order_book = orders.get_orders(order_book, sale_utxo_path, queue_utxo_path, pointer_pid_path)
+        
+        # remove any processed orders
+        spent_order_book = orders.update_orders(order_book, spent_order_book)
+        
         # fifo
         sorted_order_book = orders.sort_orders(order_book)
-        
+        print(f"There Are Potentially {len(sorted_order_book)} Orders")
         # loop all sorted orders
         for o in sorted_order_book:
             queue_utxo = o
@@ -221,7 +225,16 @@ def run():
             
             
             # get the price data from the sale
-            price = sale_data[sale_utxo]['inlineDatum']['fields'][2]
+            for key in sale_data:
+                try:
+                    # find the sale with that token
+                    if sale_data[key]['value'][pointer_pid][queue_pointer_tkn] == 1:
+                        price = sale_data[sale_utxo]['inlineDatum']['fields'][2]
+                except KeyError:
+                    print("Can't Find Bundle Information")
+                    continue
+            
+            # price = sale_data[sale_utxo]['inlineDatum']['fields'][2]
             # print(number_of_bundles)
             price_value = map_to_value(price, number_of_bundles)
             # print(price_value)
@@ -250,14 +263,16 @@ def run():
             # add the profit to the sale outout
             sale_out = process_output(sale_address, s_out_val)
             
+            # print(batcher_out)
+            # print(queue_out)
+            # print(sale_out)
             
             # build the purchase; THIS CHANGES THE TXID: sale and queue
             print("Auto Purchase")
             build_sale(batcher_tx_in, sale_utxo, queue_utxo, batcher_out, sale_out, queue_out)
             sign([batcher_skey, collat_skey], network)
             submit(network,socket) 
-            # if submit(network) is None:
-            #     exit()
+      
             id = txid()
             next_sale_txid = id + "#1"
             sale_status[queue_pointer_tkn]['txid'] = next_sale_txid
@@ -273,29 +288,15 @@ def run():
             build_refund(intermediate_queue_utxo, next_sale_txid, buyer_out)
             sign([batcher_skey, collat_skey], network)
             submit(network,socket)
-            # if submit(network) is None:
-            #     exit()
-            
-            
-            
-            # build the refund; THIS CHANGES THE TXID: queue
-            
-            # sign
-            
-            # submit
-            
-            # if successful then update sale_status
             
             # add utxo to the spent dict
             spent_order_book[queue_utxo] = order_book[queue_utxo]
-        
-        # remove any processed orders
-        spent_order_book = orders.update_orders(order_book, spent_order_book)
+            spent_order_book[intermediate_queue_utxo] = {}
         
         
-        
-        # current state of chain
-        # assume state of the chain
+        #
+        # go to next order
+        #
 
 if __name__ == "__main__":
     

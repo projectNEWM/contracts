@@ -72,9 +72,9 @@ def build_sale(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, qu
     """
     Build a transaction and save the fileName into the tmp folder.
     """
-    data_ref_utxo = "32ce77ab64058daaaec47cb2e366a4844826098f3345128215f6dfddbbc229e8#0"
-    sale_ref_utxo = "a0587d41837477e32539b4cf601aa453037b0646582e7254901957f07fa2ea8d#1"
-    queue_ref_utxo = "c6a823305506fef2a6ef43a19e6ab03baef6d3606e29ce900a04434f6a7c27af#1"
+    data_ref_utxo = "99c9d621dd5418aa5800fc55642e0b3e563a9592b2aa035d069bda4a8b7f175c#0"
+    sale_ref_utxo = "ee76be01865f14359b089b04c94e78852503e3a04812f0de6d3834db8078276a#1"
+    queue_ref_utxo = "26dcccde9a976883de9fff762bc4592d70f0eaafc65ce805d7a5abdb6a7ec6c6#1"
     collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
     
     collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
@@ -128,8 +128,8 @@ def build_sale(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, qu
     return result.stdout.strip()
 
 def build_refund(script_tx_in, last_sale_utxo, buyer_out):
-    data_ref_utxo = "32ce77ab64058daaaec47cb2e366a4844826098f3345128215f6dfddbbc229e8#0"
-    queue_ref_utxo = "c6a823305506fef2a6ef43a19e6ab03baef6d3606e29ce900a04434f6a7c27af#1"
+    data_ref_utxo = "99c9d621dd5418aa5800fc55642e0b3e563a9592b2aa035d069bda4a8b7f175c#0"
+    queue_ref_utxo = "26dcccde9a976883de9fff762bc4592d70f0eaafc65ce805d7a5abdb6a7ec6c6#1"
     collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
     
     collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
