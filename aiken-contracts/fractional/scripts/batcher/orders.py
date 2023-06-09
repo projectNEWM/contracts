@@ -11,7 +11,7 @@ def cat(file_path: str) -> str:
     with open(file_path, 'r') as file:
         return file.read().strip()
 
-def get_orders(sale_utxo_path, queue_utxo_path, pointer_pid_path):
+def get_orders(orders, sale_utxo_path, queue_utxo_path, pointer_pid_path):
     # utxo data
     sale_data = open_file(sale_utxo_path)
     queue_data = open_file(queue_utxo_path)
@@ -19,11 +19,19 @@ def get_orders(sale_utxo_path, queue_utxo_path, pointer_pid_path):
     # pointer pid
     pid = cat(pointer_pid_path)
     
-    # order dict
-    orders = {}
+    # check for cancels
+    keys_to_delete = []
+    for o in orders:
+        if o not in queue_data:
+            keys_to_delete.append(o)
+
+    for key in keys_to_delete:
+        del orders[key]
     
     # loop all the queue items
     for q in queue_data:
+        if q in orders:
+            continue
 
         # pointer tkn
         tkn = queue_data[q]['inlineDatum']['fields'][4]['bytes']
@@ -43,6 +51,19 @@ def get_orders(sale_utxo_path, queue_utxo_path, pointer_pid_path):
                 # wrong pointer order, skip
                 pass
     return orders
+
+def update_orders(real, assumed):
+    # check for cancels
+    keys_to_delete = []
+    for o in assumed:
+        if o not in real:
+            keys_to_delete.append(o)
+
+    if len(keys_to_delete) != 0:
+        print("Orders Have Been Removed")
+    for key in keys_to_delete:
+        del assumed[key]
+    return assumed
 
 def sort_orders(orders):
     return sorted(orders, key=lambda k: max(orders[k].values()))

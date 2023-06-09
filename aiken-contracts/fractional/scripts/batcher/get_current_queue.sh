@@ -29,7 +29,7 @@ ${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_ma
 
 pointer_pid_path="../../hashes/pointer_policy.hash"
 
-python3 -c "from run import batcher; batcher('${sale_utxo_path}', '${queue_utxo_path}', '${pointer_pid_path}')"
+python3 -c "from run import run; run('${sale_utxo_path}', '${queue_utxo_path}', '${pointer_pid_path}')"
 
 
 # a dictionary of queue items to sale items

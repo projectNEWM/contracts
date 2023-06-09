@@ -10,7 +10,7 @@ batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 
 if [[ $# -eq 0 ]] ; then
     echo -e "\n \033[0;31m Requries Args \033[0m \n";
-    exit
+    # exit
 fi
 
 # inputs
@@ -42,6 +42,11 @@ queue_execution_unts="(${cpu_steps}, ${mem_steps})"
 queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
 
+echo $sale_execution_unts
+echo $queue_execution_unts
+# echo $queue_computation_fee_int
+# echo $(($sale_computation_fee_int + $queue_computation_fee_int))
+exit 
 # Add metadata to this build function for nfts with data
 echo -e "\033[0;36m Building Tx \033[0m"
 
@@ -84,7 +89,7 @@ change_value=$((${queue_ada_return} - ${total_fee}))
 queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
 echo "Without Fee: Queue Script OUTPUT: "${queue_script_address_out}
 
-# exit
+exit
 
 ${cli} transaction build-raw \
     --babbage-era \
