@@ -26,6 +26,8 @@ ref_script_address=$(${cli} address build --payment-script-file ${ref_script_pat
 
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ./tmp/protocol.json
 ${cli} query tip --testnet-magic ${testnet_magic} | jq
+${cli} query tx-mempool info --testnet-magic ${testnet_magic} | jq
+
 #
 echo -e "\033[1;35m\nReference Script Address: \033[0m"
 echo -e "\n \033[1;32m ${ref_script_address} \033[0m \n";

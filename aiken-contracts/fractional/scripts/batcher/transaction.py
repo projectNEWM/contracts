@@ -6,16 +6,18 @@ import subprocess
 import json
 import os
 
-def txid(cli, tx_file_path):
+
+
+def txid():
     """
     Get the tx id of a signed transactions.
     """
     func = [
-        cli,
+        'cardano-cli',
         'transaction',
         'txid',
         '--tx-file',
-        tx_file_path
+        '../tmp/tx.signed'
     ]
 
     p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
@@ -66,89 +68,143 @@ def signing_keys(signer_keys):
         output.append(sk)
     return output
 
-def build(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, queue_out):
+def build_sale(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, queue_out):
     """
     Build a transaction and save the fileName into the tmp folder.
     """
-    data_ref_utxo = "673532a53fcb4ea99cdb18a745bc67bd611737b11c8736f3c7b8baa41af55416#0"
-    script_ref_utxo = "a83a944b8233e826be585816ae69a735d57e41ba503668b7ef6cd629570ab617#1"
-    queue_ref_utxo = "7033cff13fb40682f5d5a4073f109682a4ac01c4d55d202e52d323e664fc0536#1"
+    data_ref_utxo = "32ce77ab64058daaaec47cb2e366a4844826098f3345128215f6dfddbbc229e8#0"
+    sale_ref_utxo = "a0587d41837477e32539b4cf601aa453037b0646582e7254901957f07fa2ea8d#1"
+    queue_ref_utxo = "c6a823305506fef2a6ef43a19e6ab03baef6d3606e29ce900a04434f6a7c27af#1"
     collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
     
     collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
     batcher_pkh = "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0"
     
-    sale_execution_unts = "(300000000, 1000000)"
-    queue_execution_unts = "(1000000000, 3000000)"
+    sale_execution_units = "(300000000, 1000000)"
+    queue_execution_units = "(1100000000, 3000000)"
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(script_dir)
+
+    protocol_file_path = os.path.join(parent_dir, "tmp/protocol.json")
+    out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
+    sale_redeemer_file_path = os.path.join(parent_dir, "data/sale/purchase-redeemer.json")
+    sale_datum_file_path = os.path.join(parent_dir, "data/sale/sale-datum.json")
+    queue_redeemer_file_path = os.path.join(parent_dir, "data/queue/purchase-redeemer.json")
+    queue_datum_file_path = os.path.join(parent_dir, "data/queue/queue-datum.json")
+
     func = [
-    "cardano-cli", "transaction", "build-raw",
-    "--babbage-era",
-    "--protocol-params-file", "../tmp/protocol.json",
-    "--out-file", "../tmp/tx.draft",
-    "--tx-in-collateral", collat_utxo,
-    "--read-only-tx-in-reference", data_ref_utxo,
-    "--tx-in", batcher_tx_in,
-    "--tx-in", sale_tx_in,
-    "--spending-tx-in-reference", script_ref_utxo,
-    "--spending-plutus-script-v2",
-    "--spending-reference-tx-in-inline-datum-present",
-    "--spending-reference-tx-in-execution-units", sale_execution_unts,
-    "--spending-reference-tx-in-redeemer-file", "../data/sale/purchase-redeemer.json",
-    "--tx-in", queue_tx_in,
-    "--spending-tx-in-reference=" + queue_ref_utxo,
-    "--spending-plutus-script-v2",
-    "--spending-reference-tx-in-inline-datum-present",
-    "--spending-reference-tx-in-execution-units", queue_execution_unts,
-    "--spending-reference-tx-in-redeemer-file", "../data/queue/purchase-redeemer.json",
-    "--tx-out=" + batcher_out,
-    "--tx-out=" + sale_out,
-    "--tx-out-inline-datum-file", "../data/sale/sale-datum.json",
-    "--tx-out=" + queue_out,
-    "--tx-out-inline-datum-file", "../data/queue/queue-datum.json",
-    "--required-signer-hash", batcher_pkh,
-    "--required-signer-hash", collat_pkh,
-    "--fee", '500000'
+        "cardano-cli", "transaction", "build-raw",
+        "--babbage-era",
+        "--protocol-params-file", protocol_file_path,
+        "--out-file", out_file_path,
+        "--tx-in-collateral", collat_utxo,
+        "--read-only-tx-in-reference", data_ref_utxo,
+        "--tx-in", batcher_tx_in,
+        "--tx-in", sale_tx_in,
+        "--spending-tx-in-reference", sale_ref_utxo,
+        "--spending-plutus-script-v2",
+        "--spending-reference-tx-in-inline-datum-present",
+        "--spending-reference-tx-in-execution-units", sale_execution_units,
+        "--spending-reference-tx-in-redeemer-file", sale_redeemer_file_path,
+        "--tx-in", queue_tx_in,
+        "--spending-tx-in-reference", queue_ref_utxo,
+        "--spending-plutus-script-v2",
+        "--spending-reference-tx-in-inline-datum-present",
+        "--spending-reference-tx-in-execution-units", queue_execution_units,
+        "--spending-reference-tx-in-redeemer-file", queue_redeemer_file_path,
+        "--tx-out", batcher_out,
+        "--tx-out", sale_out,
+        "--tx-out-inline-datum-file", sale_datum_file_path,
+        "--tx-out", queue_out,
+        "--tx-out-inline-datum-file", queue_datum_file_path,
+        "--required-signer-hash", batcher_pkh,
+        "--required-signer-hash", collat_pkh,
+        "--fee", "600000"
     ]
     
-    print(func)
-    
-    result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    return result.stdout.strip()
-    
+    result = subprocess.run(func, capture_output=True, text=True, check=True)
 
-def sign(cli, network, tmp, signing_key_files):
+    return result.stdout.strip()
+
+def build_refund(script_tx_in, last_sale_utxo, buyer_out):
+    data_ref_utxo = "32ce77ab64058daaaec47cb2e366a4844826098f3345128215f6dfddbbc229e8#0"
+    queue_ref_utxo = "c6a823305506fef2a6ef43a19e6ab03baef6d3606e29ce900a04434f6a7c27af#1"
+    collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
+    
+    collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
+    batcher_pkh = "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0"
+    
+    execution_units = '(600000000, 2000000)'
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(script_dir)
+
+    protocol_file_path = os.path.join(parent_dir, "tmp/protocol.json")
+    out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
+    queue_redeemer_file_path = os.path.join(parent_dir, "data/queue/refund-redeemer.json")
+    
+    func = [
+        'cardano-cli', 'transaction', 'build-raw',
+        '--babbage-era',
+        '--protocol-params-file', protocol_file_path,
+        '--out-file', out_file_path,
+        '--tx-in-collateral', collat_utxo,
+        '--read-only-tx-in-reference', data_ref_utxo,
+        '--read-only-tx-in-reference', last_sale_utxo,
+        '--tx-in', script_tx_in,
+        '--spending-tx-in-reference', queue_ref_utxo,
+        '--spending-plutus-script-v2',
+        '--spending-reference-tx-in-inline-datum-present', 
+        '--spending-reference-tx-in-execution-units', execution_units,
+        '--spending-reference-tx-in-redeemer-file', queue_redeemer_file_path, 
+        '--tx-out', buyer_out, 
+        '--required-signer-hash', batcher_pkh,
+        '--required-signer-hash', collat_pkh, 
+        '--fee', '600000'
+    ]
+    
+    result = subprocess.run(func, capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+
+  
+
+def sign(signing_key_files, network):
     """
     Sign a transaction with a list of payment keys.
     """
     func = [
-        cli,
+        'cardano-cli',
         'transaction',
         'sign',
         '--tx-body-file',
-        tmp+'tx.draft',
+        '../tmp/tx.draft',
         '--tx-file',
-        tmp+'tx.signed'
+        '../tmp/tx.signed'
     ]
     func += signing_keys(signing_key_files)
     func += network.split(" ")
     
-    p = subprocess.Popen(func)
-    p.communicate()
+    subprocess.run(func, capture_output=True, text=True, check=True)
 
 
-def submit(cli, tmp, network):
+def submit(network, socket_path):
     """
     Submit the transaction to the blockchain.
     """
     func = [
-        cli,
+        'cardano-cli',
         'transaction',
         'submit',
+        '--socket-path', socket_path,
         '--tx-file',
-        tmp+'tx.signed'
+        '../tmp/tx.signed'
     ]
     func += network.split(" ")
 
-    # this should print a message that I want to catch
-    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
-    return p
+    # print(func)
+    # result = subprocess.run(func, capture_output=True, text=True, check=False)
+    result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.stderr != "":
+        print(result.stderr)
+    return result.stdout.strip()

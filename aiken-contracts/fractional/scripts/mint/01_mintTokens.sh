@@ -69,7 +69,7 @@ echo -n $frac_name > ../tmp/fraction.token
 value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
 
 # update bundle sale datum with frac token name
-bundle_size=10000000
+bundle_size=1000000
 max_bundle_size=10
 jq \
 --arg pkh "$receiver_pkh" \

@@ -28,7 +28,7 @@ def process_output(address, value_dict):
 
 
 def worst_case_asset(address):
-    return address + " + 18446744073709551615 + 1 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
+    return address + " + 18446744073709551615 + 18446744073709551615 b0818471a0e9633ae337cc1dcc7526ebe42286b4ceb3d836ad3a9e73.74686973697361766572796c6f6e67737472696e67666f7274657374696e6773"
 
 def read_json_file(fileName):
     """
@@ -191,7 +191,6 @@ def map_to_value(map_obj, scale):
     for value in map_obj['map']:
         pid = value['k']['bytes']
         asset = value['v']['map']
-        print(asset)
         for token in asset:
             tkn = token['k']['bytes']
             amt = token['v']['int']
@@ -201,4 +200,15 @@ def map_to_value(map_obj, scale):
                 val_obj[pid][tkn] += scale*amt
             else:
                 val_obj[pid] = {tkn: scale*amt}
-    return val_obj        
+    return val_obj
+
+def value_exist_in_value(target, total):
+    for target_pid in target:
+        for target_tkn in target[target_pid]:
+            target_amt = target[target_pid][target_tkn]
+            try:
+                if total[target_pid][target_tkn] < target_amt:
+                    return False
+            except KeyError:
+                return False
+    return True
