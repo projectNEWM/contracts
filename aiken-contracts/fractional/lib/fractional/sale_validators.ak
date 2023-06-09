@@ -152,11 +152,11 @@ pub fn remove_validation(
   list.and(
     [
       // if have pointer burn else remove
-      remove_or_burn,
+      remove_or_burn?,
       // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
       // owner must get the utxo back
-      payout.exact(seller_addr, outbound_value, tx.outputs),
+      payout.exact(seller_addr, outbound_value, tx.outputs)?,
       // single script input
       count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs

@@ -119,9 +119,12 @@ def run():
             # check if anyone has pointed at this sale yet
             if queue_pointer_tkn in sale_status:
                 # get the assumed status
+                print("Sale Already Exists")
                 sale_utxo = sale_status[queue_pointer_tkn]['txid']
                 sale_value = sale_status[queue_pointer_tkn]['value']
             else:
+                print("Creating Sale Data")
+                
                 # default found to not found
                 found = False
                 
@@ -258,8 +261,9 @@ def run():
             id = txid()
             next_sale_txid = id + "#1"
             sale_status[queue_pointer_tkn]['txid'] = next_sale_txid
-            sale_status[queue_pointer_tkn]['value'] = sale_value
+            sale_status[queue_pointer_tkn]['value'] = s_out_val
             intermediate_queue_utxo = id + "#2"
+            batcher_tx_in = id + "#0"
             
             # add the bundle to the queue output
             

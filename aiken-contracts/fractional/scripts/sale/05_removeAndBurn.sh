@@ -26,7 +26,7 @@ tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
 
-echo $tkn
+# echo $tkn
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
@@ -60,7 +60,7 @@ returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 pointer_asset="-${POINTER_VALUE} ${pointer_pid}.${pointer_tkn}"
-
+echo $pointer_asset
 if [ -z "$POINTER_VALUE" ]; then
     echo "No pointer found."
     exit 1

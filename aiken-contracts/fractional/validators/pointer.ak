@@ -67,9 +67,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   // non standard prefix
                   types.prefix_555,
                   -1,
-                ),
+                )?,
                 // data reference must be holding correct token
-                ref_value_check,
+                ref_value_check?,
               ],
             )
         }
