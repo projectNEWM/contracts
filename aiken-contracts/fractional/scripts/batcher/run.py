@@ -6,6 +6,9 @@ from parsing import compress_dicts, add_dicts, subtract_dicts, process_output, m
 from pycardano import Address, Network, VerificationKeyHash
 
 def run():
+    
+    DEBUG = False
+    
     root    = ".."
     cli     = "cardano-cli"
     network = "--testnet-magic 1"
@@ -62,6 +65,7 @@ def run():
         # fifo
         sorted_order_book = orders.sort_orders(order_book)
         print(f"There Are Potentially {len(sorted_order_book)} Orders")
+
         # loop all sorted orders
         for o in sorted_order_book:
             queue_utxo = o
@@ -113,10 +117,6 @@ def run():
                 potential_refund_flag = True
                 
             
-            # update the batcher value with the incentive value
-            b_out_val = add_dicts(batcher_value, incentive_value)
-            batcher_value = b_out_val
-            
             # get the current sale data
             sale_data = orders.open_file(sale_utxo_path)
             
@@ -133,6 +133,7 @@ def run():
                 found = False
                 
                 # loop all sales and find the sale
+                
                 for key in sale_data:
                     try:
                         # find the sale with that token
@@ -155,6 +156,7 @@ def run():
                     except KeyError:
                         continue
             print(f"Current Sale UTXO: {sale_utxo}")
+            print(f"Current Batcher UTXO: {batcher_tx_in}")
             # pointing at something that doesn't exist
             if found is False:
                 print("A Queue Item Is Pointing At A Non-Existent Sale")
@@ -166,22 +168,28 @@ def run():
                 q_out_val = subtract_dicts(queue_value, {"lovelace": 600000})
                 buyer_out = process_output(buyer_address, q_out_val)
                 build_refund(queue_utxo, sale_utxo, buyer_out)
-                sign([batcher_skey, collat_skey], network)
-                submit(network,socket)
+                sign([batcher_skey, collat_skey], network, '../tmp/tx-refund.signed')
+                if DEBUG is False: submit(network, socket, '../tmp/tx-refund.signed')
                 continue
             
             
             # assume that the sale data is constant
             # get the bundle data from the sale
             # loop all sales and find the sale
+            found_sale = False
             for key in sale_data:
                 try:
                     # find the sale with that token
                     if sale_data[key]['value'][pointer_pid][queue_pointer_tkn] == 1:
                         bundle_data = sale_data[key]['inlineDatum']['fields'][1]['fields']
+                        found_sale = True
+                        break
                 except KeyError:
-                    print("Can't Find Bundle Information")
+                    # print("Can't Find Bundle Information")
                     continue
+            if found_sale is False:
+                print("Can't Find Sale By Pointer Token")
+                continue
             bundle_pid = bundle_data[0]['bytes']
             bundle_tkn = bundle_data[1]['bytes']
             bundle_amt = bundle_data[2]['int']
@@ -208,8 +216,8 @@ def run():
                     q_out_val = subtract_dicts(queue_value, {"lovelace": 600000})
                     buyer_out = process_output(buyer_address, q_out_val)
                     build_refund(queue_utxo, sale_utxo, buyer_out)
-                    sign([batcher_skey, collat_skey], network)
-                    submit(network,socket)
+                    sign([batcher_skey, collat_skey], network, '../tmp/tx-refund.signed')
+                    if DEBUG is False: submit(network, socket, '../tmp/tx-refund.signed')
                     continue
             
             except KeyError:
@@ -219,20 +227,26 @@ def run():
                 q_out_val = subtract_dicts(queue_value, {"lovelace": 600000})
                 buyer_out = process_output(buyer_address, q_out_val)
                 build_refund(queue_utxo, sale_utxo, buyer_out)
-                sign([batcher_skey, collat_skey], network)
-                submit(network,socket)
+                sign([batcher_skey, collat_skey], network, '../tmp/tx-refund.signed')
+                if DEBUG is False: submit(network, socket, '../tmp/tx-refund.signed')
                 continue
             
             
             # get the price data from the sale
+            found_sale = False
             for key in sale_data:
                 try:
                     # find the sale with that token
                     if sale_data[key]['value'][pointer_pid][queue_pointer_tkn] == 1:
-                        price = sale_data[sale_utxo]['inlineDatum']['fields'][2]
+                        # print(f"A Price Has Been Found For {queue_utxo}")
+                        price = sale_data[key]['inlineDatum']['fields'][2]
+                        found_sale = True
+                        break
                 except KeyError:
-                    print("Can't Find Bundle Information")
                     continue
+            if found_sale is False:
+                print("Can't Find Sale By Pointer Token")
+                continue
             
             # price = sale_data[sale_utxo]['inlineDatum']['fields'][2]
             # print(number_of_bundles)
@@ -243,6 +257,15 @@ def run():
             if value_exist_in_value(price_value, queue_value) is False:
                 print("Queue Item Does Not Hold The Payment")
                 continue
+            
+            
+            print()
+            print(queue_value)
+            print(sale_value)
+            print(batcher_value)
+            
+            # update the batcher value with the incentive value
+            b_out_val = add_dicts(batcher_value, incentive_value)
             
             # queue out value
             q_out_val = add_dicts(subtract_dicts(subtract_dicts(queue_value, incentive_value), price_value), bundle_value)
@@ -263,31 +286,38 @@ def run():
             # add the profit to the sale outout
             sale_out = process_output(sale_address, s_out_val)
             
-            # print(batcher_out)
-            # print(queue_out)
-            # print(sale_out)
+            print()
+            print(batcher_out)
+            print(queue_out)
+            print(sale_out)
             
             # build the purchase; THIS CHANGES THE TXID: sale and queue
             print("Auto Purchase")
             build_sale(batcher_tx_in, sale_utxo, queue_utxo, batcher_out, sale_out, queue_out)
-            sign([batcher_skey, collat_skey], network)
-            submit(network,socket) 
-      
+            sign([batcher_skey, collat_skey], network, '../tmp/tx-purchase.signed')
+
+            print("Chaining Tx")
             id = txid()
             next_sale_txid = id + "#1"
             sale_status[queue_pointer_tkn]['txid'] = next_sale_txid
             sale_status[queue_pointer_tkn]['value'] = s_out_val
             intermediate_queue_utxo = id + "#2"
             batcher_tx_in = id + "#0"
+            batcher_value = b_out_val
             
             # add the bundle to the queue output
             
             print("Auto Refund")
+            print(f"Refunding {intermediate_queue_utxo}")
             q_out_val = subtract_dicts(q_out_val, {"lovelace": 600000})
             buyer_out = process_output(buyer_address, q_out_val)
             build_refund(intermediate_queue_utxo, next_sale_txid, buyer_out)
-            sign([batcher_skey, collat_skey], network)
-            submit(network,socket)
+            sign([batcher_skey, collat_skey], network, '../tmp/tx-refund.signed')
+            
+            # submit the tx
+            print("Submit Tx")
+            if DEBUG is False: submit(network,socket, '../tmp/tx-purchase.signed')
+            if DEBUG is False: submit(network,socket, '../tmp/tx-refund.signed')
             
             # add utxo to the spent dict
             spent_order_book[queue_utxo] = order_book[queue_utxo]

@@ -169,7 +169,7 @@ def build_refund(script_tx_in, last_sale_utxo, buyer_out):
 
   
 
-def sign(signing_key_files, network):
+def sign(signing_key_files, network, signed_file_path):
     """
     Sign a transaction with a list of payment keys.
     """
@@ -180,15 +180,19 @@ def sign(signing_key_files, network):
         '--tx-body-file',
         '../tmp/tx.draft',
         '--tx-file',
-        '../tmp/tx.signed'
+        signed_file_path
     ]
     func += signing_keys(signing_key_files)
     func += network.split(" ")
     
-    subprocess.run(func, capture_output=True, text=True, check=True)
+    # print(func)
+    result = subprocess.run(func, capture_output=True, text=True, check=True)
+    if result.stderr != "":
+        print(result.stderr)
+        exit(1)
 
 
-def submit(network, socket_path):
+def submit(network, socket_path, signed_file_path):
     """
     Submit the transaction to the blockchain.
     """
@@ -198,7 +202,7 @@ def submit(network, socket_path):
         'submit',
         '--socket-path', socket_path,
         '--tx-file',
-        '../tmp/tx.signed'
+        signed_file_path
     ]
     func += network.split(" ")
 
@@ -207,4 +211,7 @@ def submit(network, socket_path):
     result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.stderr != "":
         print(result.stderr)
+        exit(1)
+    else:
+        print(result.stdout.strip())
     return result.stdout.strip()

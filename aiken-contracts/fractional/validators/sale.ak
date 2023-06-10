@@ -43,7 +43,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   ref_datum,
                   tx,
                   output_reference,
-                ),
+                )?,
               ],
             )
           StartSale { pointer } ->
