@@ -75,7 +75,7 @@ echo -n $point_name > ../tmp/pointer.token
 value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
 
 # update bundle sale datum with frac token name
-bundle_size=10000000
+bundle_size=1000000
 max_bundle_size=10
 jq \
 --arg pkh "$receiver_pkh" \
@@ -115,6 +115,7 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET} + ${POINTER_ASSET} + ${ESTIMATE_ASSET}" | tr -dc '0-9')
+
 fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET} + ${POINTER_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}

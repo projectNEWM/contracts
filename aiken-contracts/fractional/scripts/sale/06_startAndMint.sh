@@ -29,7 +29,7 @@ tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
 
-echo $tkn
+# echo $tkn
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
@@ -95,6 +95,7 @@ jq \
 # compute the correct start redeemer 
 
 script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + ${pointer_asset}"
+echo $script_address_out
 #
 # exit
 #
@@ -143,9 +144,6 @@ pointer_execution_unts="(${cpu_steps}, ${mem_steps})"
 pointer_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 pointer_computation_fee_int=$(printf "%.0f" "$pointer_computation_fee")
 
-# change_value=$((${queue_ada_return} - 375629))
-
-# exit
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \
     --babbage-era \
@@ -203,7 +201,6 @@ ${cli} transaction build-raw \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}
-
 #
 # exit
 #
@@ -222,5 +219,5 @@ ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file ../tmp/tx.signed
 
-tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
+tx=$(${cli} transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx

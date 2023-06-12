@@ -132,10 +132,10 @@ pub fn remove_validation(
   let validating_input = find.input_by_ref(tx.inputs, output_reference)
   let validating_value = validating_input.output.value
   let burned_value = tx.mint |> value.from_minted_value()
-  let outbound_value = value.merge(validating_value, burned_value)
+  // let outbound_value = value.merge(validating_value, burned_value)
   let script_addr = validating_input.output.address
-  let seller_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  let mint = tx.mint |> value.from_minted_value() |> value.flatten()
+  // let seller_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
+  let mint = burned_value |> value.flatten()
   let remove_or_burn =
     if values.prove_nft(ref_datum.pointer_pid, validating_value) == True {
       // must burn 1 pointer token
@@ -152,11 +152,11 @@ pub fn remove_validation(
   list.and(
     [
       // if have pointer burn else remove
-      remove_or_burn,
+      remove_or_burn?,
       // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(seller_addr, outbound_value, tx.outputs),
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
+      // owner can send it anywhere
+      // payout.exact(seller_addr, outbound_value, tx.outputs)?,
       // single script input
       count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs

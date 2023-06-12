@@ -26,7 +26,7 @@ tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
 
-echo $tkn
+# echo $tkn
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
@@ -60,7 +60,7 @@ returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 pointer_asset="-${POINTER_VALUE} ${pointer_pid}.${pointer_tkn}"
-
+echo $pointer_asset
 if [ -z "$POINTER_VALUE" ]; then
     echo "No pointer found."
     exit 1
@@ -77,10 +77,13 @@ fi
 
 # this needs to be dynamic
 # utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+
+default_asset="${total_amt} ${pid}.${tkn}"
 
 # artist_address_out="${artist_address} + ${utxo_value}"
-# artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
+# artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
+artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 echo "Return OUTPUT: "${artist_address_out}
 #
 # exit

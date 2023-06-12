@@ -16,7 +16,7 @@ cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script
 sale_script_path="../contracts/sale_contract.plutus"
 sale_script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
-# bundle sale contract
+# queue contract
 queue_script_path="../contracts/queue_contract.plutus"
 queue_script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
@@ -26,24 +26,26 @@ ref_script_address=$(${cli} address build --payment-script-file ${ref_script_pat
 
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ./tmp/protocol.json
 ${cli} query tip --testnet-magic ${testnet_magic} | jq
+${cli} query tx-mempool info --testnet-magic ${testnet_magic} | jq
+
 #
-echo -e "\033[1;35m Reference Script Address: \033[0m"
-echo -e "\n \033[1;35m ${ref_script_address} \033[0m \n";
+echo -e "\033[1;35m\nReference Script Address: \033[0m"
+echo -e "\n \033[1;32m ${ref_script_address} \033[0m \n";
 ${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magic}
 # update the data folder with the current reference datum
 ${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_reference_utxo.json
 jq -r 'to_entries[] | .value.inlineDatum' tmp/current_reference_utxo.json > data/reference/current-reference-datum.json
 #
-echo -e "\033[1;35m CIP68 Script Address: \033[0m" 
-echo -e "\n \033[1;35m ${cip68_script_address} \033[0m \n";
+echo -e "\033[1;35m\nCIP68 Script Address: \033[0m" 
+echo -e "\n \033[1;32m ${cip68_script_address} \033[0m \n";
 ${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_magic}
 #
-echo -e "\033[1;35m Bundle Sale Script Address: \033[0m" 
-echo -e "\n \033[1;35m ${sale_script_address} \033[0m \n";
+echo -e "\033[1;35m\nBundle Sale Script Address: \033[0m" 
+echo -e "\n \033[1;32m ${sale_script_address} \033[0m \n";
 ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic}
 #
-echo -e "\033[1;35m Queue Script Address: \033[0m" 
-echo -e "\n \033[1;35m ${queue_script_address} \033[0m \n";
+echo -e "\033[1;35m\nQueue Script Address: \033[0m" 
+echo -e "\n \033[1;32m ${queue_script_address} \033[0m \n";
 ${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_magic}
 
 # Loop through each -wallet folder
@@ -52,11 +54,22 @@ for wallet_folder in wallets/*-wallet; do
     if [ -f "${wallet_folder}/payment.addr" ]; then
         addr=$(cat ${wallet_folder}/payment.addr)
         echo
-        echo -e "\033[1;34m $wallet_folder $addr \033[0m"
+        
+        echo -e "\033[1;37m --------------------------------------------------------------------------------\033[0m"
+        echo -e "\033[1;34m $wallet_folder\033[0m\n\n\033[1;32m $addr\033[0m"
+        
+
         echo -e "\033[1;33m"
         # Run the cardano-cli command with the reference address and testnet magic
         ${cli} query utxo --address ${addr} --testnet-magic ${testnet_magic}
         ${cli} query utxo --address ${addr} --testnet-magic ${testnet_magic} --out-file ./tmp/"${addr}.json"
+
+        baseLovelace=$(jq '[.. | objects | .lovelace] | add' ./tmp/"${addr}.json")
+        echo -e "\033[0m"
+
+        echo -e "\033[1;36m"
+        ada=$(echo "scale = 6;${baseLovelace} / 1000000" | bc -l)
+        echo -e "TOTAL ADA:" ${ada}
         echo -e "\033[0m"
     fi
 done
