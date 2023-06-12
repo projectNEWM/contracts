@@ -89,7 +89,7 @@ def run():
             queue_data = orders.open_file(queue_utxo_path)
             queue_value = compress_dicts(queue_data[queue_utxo]['value'], {})
 
-            print('\nStarting Queue Value', queue_value)
+            # print('\nStarting Queue Value', queue_value)
 
             # get the queue item return address
             queue_address_data = queue_data[queue_utxo]['inlineDatum']['fields'][0]
@@ -128,9 +128,9 @@ def run():
             incentive_amt = incentive_data[2]['int']
             incentive_value = {incentive_pid: {incentive_tkn: incentive_amt}}
 
-            print("\nIncentive Value", incentive_value)
-            print(f"Current Batcher UTXO: {batcher_tx_in}")
-            print("Current Batcher Value:", batcher_value)
+            # print("\nIncentive Value", incentive_value)
+            # print(f"Current Batcher UTXO: {batcher_tx_in}")
+            # print("Current Batcher Value:", batcher_value)
 
             # does the queue item hold the incentive?
             potential_refund_flag = False
@@ -182,8 +182,8 @@ def run():
                     except KeyError:
                         continue
 
-            print(f"Current Sale UTXO: {sale_utxo}")
-            print("Current Sale Value:", sale_value)
+            # print(f"Current Sale UTXO: {sale_utxo}")
+            # print("Current Sale Value:", sale_value)
 
             # pointing at something that doesn't exist
             if found is False:
@@ -267,7 +267,7 @@ def run():
                     submit(network, socket, '../tmp/tx-refund.signed')
                 continue
 
-            print("\nBundle Value", bundle_value)
+            # print("\nBundle Value", bundle_value)
 
             # get the price data from the sale
             found_sale = False
@@ -286,7 +286,7 @@ def run():
                 continue
 
             price_value = map_to_value(price, number_of_bundles)
-            print("\nPrice Value", price_value)
+            # print("\nPrice Value", price_value)
 
             # print(price_value)
             # print(queue_value)
@@ -309,9 +309,9 @@ def run():
                 sale_value, bundle_value), price_value)
             s_out_val = delete_zeros(s_out_val)
 
-            print('\nCurrent Queue Value', q_out_val)
-            print('Next Sale Value', s_out_val)
-            print('Next Batcher Value', b_out_val)
+            # print('\nCurrent Queue Value', q_out_val)
+            # print('Next Sale Value', s_out_val)
+            # print('Next Batcher Value', b_out_val)
 
             # compute the tx outs
             # add incentive_value to the batcher output
@@ -323,9 +323,9 @@ def run():
             # add the profit to the sale outout
             sale_out = process_output(sale_address, s_out_val)
 
-            print("\nQueue Tx Out: ", queue_out)
-            print("Sale Tx Out: ", sale_out)
-            print("Batcher Tx Out: ", batcher_out)
+            # print("\nQueue Tx Out: ", queue_out)
+            # print("Sale Tx Out: ", sale_out)
+            # print("Batcher Tx Out: ", batcher_out)
 
             # build the purchase; THIS CHANGES THE TXID: sale and queue
             print("Purchasing")
@@ -343,7 +343,7 @@ def run():
             batcher_tx_in = id + "#0"
             batcher_value = b_out_val
 
-            print(f"Refunding {intermediate_queue_utxo}")
+            print(f"Refunding")
             q_out_val = subtract_dicts(q_out_val, {"lovelace": 600000})
             buyer_out = process_output(buyer_address, q_out_val)
             build_refund(intermediate_queue_utxo, next_sale_txid, buyer_out)
