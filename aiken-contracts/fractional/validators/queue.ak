@@ -34,7 +34,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // check if correct reference data
-                ref_value_check?,
+                ref_value_check,
                 // purchase it
                 queue_validators.purchase_validation(
                   datum,
@@ -48,7 +48,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             list.and(
               [
                 // check if correct reference data
-                ref_value_check?,
+                ref_value_check,
                 // refund it
                 queue_validators.refund_validation(
                   datum,

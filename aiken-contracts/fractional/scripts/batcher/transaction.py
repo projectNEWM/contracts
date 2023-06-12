@@ -8,7 +8,7 @@ import os
 
 
 
-def txid():
+def txid(file_path):
     """
     Get the tx id of a signed transactions.
     """
@@ -17,7 +17,7 @@ def txid():
         'transaction',
         'txid',
         '--tx-file',
-        '../tmp/tx.signed'
+        file_path
     ]
 
     p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
@@ -72,11 +72,15 @@ def build_sale(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, qu
     """
     Build a transaction and save the fileName into the tmp folder.
     """
-    data_ref_utxo = "99c9d621dd5418aa5800fc55642e0b3e563a9592b2aa035d069bda4a8b7f175c#0"
-    sale_ref_utxo = "ee76be01865f14359b089b04c94e78852503e3a04812f0de6d3834db8078276a#1"
-    queue_ref_utxo = "26dcccde9a976883de9fff762bc4592d70f0eaafc65ce805d7a5abdb6a7ec6c6#1"
+    
+    data_ref_utxo = txid('../tmp/referenceable-tx.signed') + "#0"
+    sale_ref_utxo = txid('../tmp/sale-reference-utxo.signed') + "#1"
+    queue_ref_utxo = txid('../tmp/queue-reference-utxo.signed') + "#1"
+    
+    # hardcode this for now    
     collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
     
+    # hardcode this for now
     collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
     batcher_pkh = "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0"
     
@@ -128,8 +132,9 @@ def build_sale(batcher_tx_in, sale_tx_in, queue_tx_in, batcher_out, sale_out, qu
     return result.stdout.strip()
 
 def build_refund(script_tx_in, last_sale_utxo, buyer_out):
-    data_ref_utxo = "99c9d621dd5418aa5800fc55642e0b3e563a9592b2aa035d069bda4a8b7f175c#0"
-    queue_ref_utxo = "26dcccde9a976883de9fff762bc4592d70f0eaafc65ce805d7a5abdb6a7ec6c6#1"
+    data_ref_utxo = txid('../tmp/referenceable-tx.signed') + "#0"
+    queue_ref_utxo = txid('../tmp/queue-reference-utxo.signed') + "#1"
+    
     collat_utxo = "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
     
     collat_pkh = "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
