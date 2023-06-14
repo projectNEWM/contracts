@@ -16,8 +16,7 @@ pub fn correct_mint(
         correct_mint(rest, pid, tkn, amt)
       }
     // something wasn't found
-    [] ->
-      False
+    [] -> False
   }
 }
 
@@ -30,8 +29,7 @@ pub fn correct_burn(
   when mint is {
     [(policy, token_name, quantity), ..rest] -> {
       // all prefixes have the same length
-      let p =
-        bytearray.take(token_name, 5)
+      let p = bytearray.take(token_name, 4)
       if list.and([policy == pid, prefix == p, quantity == amt]) == True {
         True
       } else {
@@ -39,7 +37,6 @@ pub fn correct_burn(
       }
     }
     // something wasn't found
-    [] ->
-      False
+    [] -> False
   }
 }

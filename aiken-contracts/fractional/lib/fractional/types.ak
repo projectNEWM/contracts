@@ -5,20 +5,16 @@ use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
 // (555) pointer token prefix (NOT IMPLEMENTED IN CIP68)
-pub const prefix_555 =
-  #"2835353529"
+pub const prefix_555 = #"0022bfb0"
 
 // metadata
-pub const metadata_key =
-  #"6d65746164617461"
+pub const metadata_key = #"6d65746164617461"
 
 // minter
-pub const minter_key =
-  #"6d696e746572"
+pub const minter_key = #"6d696e746572"
 
 // pointer
-pub const pointer_key =
-  #"706f696e746572"
+pub const pointer_key = #"706f696e746572"
 
 // wallet hash
 pub type PublicKeyHash =
@@ -109,10 +105,8 @@ pub type Workers =
 // find a worker by job title inside the worker hot key dictionary.
 pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
   when dict.get(workers, job) is {
-    Some(one) ->
-      one
-    None ->
-      error @"worker not found"
+    Some(one) -> one
+    None -> error @"worker not found"
   }
 }
 
