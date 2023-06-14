@@ -8,5 +8,5 @@ test token_name() {
       0,
       prefixes.prefix_100,
     )
-  tkn == #"2831303029008fc36029569576a4a3c05596ce7cd1370da0ffc282e510062e8f"
+  tkn == #"000643b0008fc36029569576a4a3c05596ce7cd1370da0ffc282e510062e8f41"
 }

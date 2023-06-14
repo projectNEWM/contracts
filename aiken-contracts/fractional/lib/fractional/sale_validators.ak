@@ -155,8 +155,6 @@ pub fn remove_validation(
       remove_or_burn?,
       // owner must sign it
       signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
-      // owner can send it anywhere
-      // payout.exact(seller_addr, outbound_value, tx.outputs)?,
       // single script input
       count.inputs_by_addr(tx.inputs, script_addr, 1),
       // no script outputs

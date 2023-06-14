@@ -54,11 +54,9 @@ first_utxo=$(jq -r 'keys[0]' ../tmp/newm_utxo.json)
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
-prefix_100="2831303029"
-prefix_444="2834343429"
-prefix_555="2835353529"
-
-
+prefix_100="000643b0"
+prefix_444="001bc280"
+prefix_555="0022bfb0"
 
 # for testing
 prefix_bad="283329"

@@ -61,7 +61,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                   mint,
                   own_currency_symbol,
                   fractions_tkn,
-                  100000000,
+                  100_000_000,
                 ),
                 // data reference must be holding correct token
                 ref_value_check,
