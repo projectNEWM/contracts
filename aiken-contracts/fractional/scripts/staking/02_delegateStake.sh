@@ -52,7 +52,6 @@ data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${newm_address} \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \

@@ -53,11 +53,8 @@ first_utxo=$(jq -r 'keys[0]' ../tmp/newm_utxo.json)
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
-prefix_100="2831303029"
-prefix_444="2834343429"
-
-# for testing
-prefix_bad="283329"
+prefix_100="000643b0"
+prefix_444="001bc280"
 
 ref_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_100}')")
 frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_444}')")
@@ -69,7 +66,7 @@ echo -n $frac_name > ../tmp/fraction.token
 value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
 
 # update bundle sale datum with frac token name
-bundle_size=10000000
+bundle_size=1000000
 max_bundle_size=10
 jq \
 --arg pkh "$receiver_pkh" \
@@ -105,7 +102,9 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --tx-out="${sale_script_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
-fraction_address_out="${sale_script_address} + ${UTXO_VALUE} + ${FRACTION_ASSET}"
+self_start_fee=1000000
+min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
+fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}
@@ -131,7 +130,6 @@ data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${newm_address} \
     --tx-in-collateral="${collat_utxo}" \

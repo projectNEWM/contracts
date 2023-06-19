@@ -13,9 +13,9 @@ def token_name(txHash, index, prefix):
     print(txHash[0:64])
 
 if __name__ == "__main__":
-    prefix_100 = "2831303029"
+    prefix_100 = "000643b0"
     
-    prefix_333 = "2833333329"
+    prefix_333 = "0014df10"
     
     print('reference', token_name("1e637fd4b1a6a633261a1ba463577d65209dbbe0f7e8ec1fbfedb4c6b1bb926b", 1, prefix_100))
     

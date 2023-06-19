@@ -35,7 +35,6 @@ newm_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${newm_address} \
     --tx-in ${newm_tx_in} \

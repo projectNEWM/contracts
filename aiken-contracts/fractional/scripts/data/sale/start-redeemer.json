@@ -1,0 +1,26 @@
+{
+  "constructor": 1,
+  "fields": [
+    {
+      "map": [
+        {
+          "k": {
+            "bytes": "c8685997aff6ed945abd48c4a29604febb70cd454944b85c2e7adcde"
+          },
+          "v": {
+            "map": [
+              {
+                "k": {
+                  "bytes": "0022bfb00168b66003ab5283790f9fdba913de3316d9c1493c4d30d9034bb0f7"
+                },
+                "v": {
+                  "int": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

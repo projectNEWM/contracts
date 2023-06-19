@@ -1,15 +1,16 @@
 #!/usr/bin/bash
 set -e
 #
+rm tmp/tx.signed || True
 export CARDANO_NODE_SOCKET_PATH=$(cat ./data/path_to_socket.sh)
 cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/artist-wallet/"
+sender_path="wallets/buyer1-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
-receiver_address="addr_test1qppp0mcjel3kztftz36k0cc5j77qcz4vt0udvc3fzzz9djeq7v27xnzv5664myxhzfvgj5tlymus096u0y7xfrx9sazqpvjzrv"
+receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
 
 data="./tmp/${sender_address}.json"
 lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
@@ -20,7 +21,7 @@ assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllToken
 # echo $assets
 if [ -z "$assets" ]; then  # check if the result is an empty string
     echo "Result is empty. Exiting."
-    exit 1  # exit the script with an error code
+    # exit 1  # exit the script with an error code
 fi
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -52,7 +53,6 @@ seller_tx_in=${TXIN::-8}
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file tmp/protocol.json \
     --out-file tmp/tx.draft \
     --change-address ${sender_address} \
     --tx-in ${seller_tx_in} \

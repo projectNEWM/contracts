@@ -20,19 +20,13 @@ artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
+pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
 
-echo $tkn
-
 default_asset="${total_amt} ${pid}.${tkn}"
-
-utxo_value=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -45,12 +39,24 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .key' ../tmp/script_utxo.json)
-script_tx_in=$TXIN
+TXIN=$(jq -r --arg alltxin "" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[1].fields[1].bytes == $tkn) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+script_tx_in=${TXIN::-8}
+echo $script_tx_in
+
+LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
+utxo_value=$LOVELACE_VALUE
+echo LOVELACE: $LOVELACE_VALUE
 
 # exit
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
+
+POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+
+if [ ! -z "$POINTER_VALUE" ]; then
+    echo "The pointer is on the utxo."
+    exit 1
+fi
 
 if [[ CURRENT_VALUE -le 0 ]] ; then
     artist_address_out="${artist_address} + ${utxo_value}"
@@ -89,14 +95,15 @@ fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
+data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${artist_address} \
+    --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${artist_tx_in} \
     --tx-in ${script_tx_in} \

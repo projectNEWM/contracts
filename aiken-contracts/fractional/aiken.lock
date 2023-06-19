@@ -6,8 +6,19 @@ name = "aiken-lang/stdlib"
 version = "main"
 source = "github"
 
+[[requirements]]
+name = "logicalmechanism/assist"
+version = "main"
+source = "github"
+
 [[packages]]
 name = "aiken-lang/stdlib"
+version = "main"
+requirements = []
+source = "github"
+
+[[packages]]
+name = "logicalmechanism/assist"
 version = "main"
 requirements = []
 source = "github"

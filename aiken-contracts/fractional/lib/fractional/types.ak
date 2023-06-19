@@ -1,23 +1,20 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
+use aiken/list
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
-// (100) reference token prefix
-pub const prefix_100 =
-  #"2831303029"
+// (555) pointer token prefix (NOT IMPLEMENTED IN CIP68)
+pub const prefix_555 = #"0022bfb0"
 
-// (222) non-fungible token prefix
-pub const prefix_222 =
-  #"2832323229"
+// metadata
+pub const metadata_key = #"6d65746164617461"
 
-// (333) fungible token prefix
-pub const prefix_333 =
-  #"2833333329"
+// minter
+pub const minter_key = #"6d696e746572"
 
-// (444) semi-fungible token prefix
-pub const prefix_444 =
-  #"2834343429"
+// pointer
+pub const pointer_key = #"706f696e746572"
 
 // wallet hash
 pub type PublicKeyHash =
@@ -53,15 +50,16 @@ pub type BuyAmount {
   amt: Int,
 }
 
-pub type UpdateSale =
+pub type Purchase =
   Void
 
 pub type RemoveSale =
   Void
 
 pub type SaleRedeemer {
-  Purchase { buy: BuyAmount }
-  UpdateSale
+  Purchase
+  StartSale { pointer: Value }
+  ExtractSale { profit: Value }
   RemoveSale
 }
 
@@ -70,8 +68,8 @@ pub type SaleRedeemer {
 //   10
 
 // greater than zero and less than or equal to the max bundle size
-pub fn valid_bundle_size(buy: BuyAmount, max_bundle_size: Int) -> Bool {
-  buy.amt > 0 && buy.amt <= max_bundle_size
+pub fn valid_bundle_size(buy_amt: Int, max_bundle_size: Int) -> Bool {
+  buy_amt > 0 && buy_amt <= max_bundle_size
 }
 
 pub type OwnerInfo {
@@ -101,6 +99,17 @@ pub fn purchase_datum_check(
   inbound_datum == outbound_datum
 }
 
+pub type Workers =
+  Dict<ByteArray, PublicKeyHash>
+
+// find a worker by job title inside the worker hot key dictionary.
+pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
+  when dict.get(workers, job) is {
+    Some(one) -> one
+    None -> error @"worker not found"
+  }
+}
+
 // keepers are like admins
 pub type KeeperData {
   pkhs: List<PublicKeyHash>,
@@ -118,15 +127,29 @@ pub type StakePoolData {
 pub type ContractHashData {
   cip68: ValidatorHash,
   sale: ValidatorHash,
+  queue: ValidatorHash,
   stake: ValidatorHash,
+}
+
+pub type FeeInfoData {
+  purchase_upper_bound: Int,
+  refund_upper_bound: Int,
+  start_upper_bound: Int,
 }
 
 // data to be used inside other contracts
 pub type ReferenceDatum {
-  hot_key: PublicKeyHash,
+  hot_key: Workers,
   keepers: KeeperData,
   staking: StakePoolData,
   contracts: ContractHashData,
+  fee_info: FeeInfoData,
+  pointer_pid: ByteArray,
+}
+
+// The tx fee must be less than the upper bound
+pub fn valid_tx_fee(fee: Value, upper_bound: Int) -> Bool {
+  value.lovelace_of(fee) <= upper_bound
 }
 
 pub type UpdateHotKey =
@@ -138,8 +161,13 @@ pub type UpdateKeepers =
 pub type UpdateStaking =
   Void
 
-// this endpoint may not be needed
 pub type UpdateContracts =
+  Void
+
+pub type UpdateFeeInfo =
+  Void
+
+pub type UpdatePointer =
   Void
 
 pub type ReferenceRedeemer {
@@ -147,6 +175,8 @@ pub type ReferenceRedeemer {
   UpdateKeepers
   UpdateStaking
   UpdateContracts
+  UpdateFeeInfo
+  UpdatePointer
 }
 
 pub type StakeData {
@@ -161,4 +191,42 @@ pub type WithdrawRedeemer {
 pub type MintRedeemer {
   MintTokens
   BurnTokens { burn_amt: Int }
+}
+
+pub type QueuePurchase =
+  Void
+
+/// Queue things
+pub type QueueRedeemer {
+  QueuePurchase
+  QueueRefund
+  QueueCancel
+}
+
+pub type BundleInfo {
+  pid: ByteArray,
+  tkn: ByteArray,
+}
+
+// single token bundle and cost
+pub type QueueDatum {
+  owner: OwnerInfo,
+  pointer: BundleInfo,
+  bundle_amt: Int,
+  incentive: TokenInfo,
+  pointer_tkn: ByteArray,
+}
+
+pub fn prove_existence_of_incentive(
+  validating_value: Value,
+  the_incentive: TokenInfo,
+) -> Bool {
+  list.and(
+    [
+      // The incentive must exist
+      value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
+      // the amount cant be zero
+      the_incentive.amt != 0,
+    ],
+  )
 }

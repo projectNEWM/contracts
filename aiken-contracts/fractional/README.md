@@ -1,5 +1,13 @@
 # NEWM's Fraction Minting Contract
 
+## Updating Aiken
+
+This will install the lastest commit.
+
+```
+cargo install --git https://github.com/aiken-lang/aiken.git -f
+```
+
 ## Build
 
 Set up the `start_info.json` file with the correct starter token information and pool id. This will be used inside the `contract_build.sh` script to compile and apply the contract. The build script will auto generate the correct datum for the data reference contract and the staking contract.
@@ -96,3 +104,8 @@ pub type ReferenceDatum {
 }
 ```
 
+TODO
+
+- write about how the data update works
+- write about how the data is contained
+- any other general info here too
