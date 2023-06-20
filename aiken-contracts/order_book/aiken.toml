@@ -1,11 +1,11 @@
-name = "projectNEWM/fractional-minter"
-version = "2.0.0"
+name = "projectNEWM/order_book"
+version = "0.1.0"
 license = "GPLv3"
 description = "Aiken contracts for Project NEWM"
 
 [repository]
 user = "aiken-lang"
-project = "fractional-minter"
+project = "order_book"
 platform = "github"
 
 [[dependencies]]

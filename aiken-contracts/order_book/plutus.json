@@ -1,0 +1,41 @@
+{
+  "preamble": {
+    "title": "projectNEWM/order_book",
+    "description": "Aiken contracts for Project NEWM",
+    "version": "0.1.0",
+    "plutusVersion": "v2",
+    "license": "GPLv3"
+  },
+  "validators": [
+    {
+      "title": "order_book.params",
+      "datum": {
+        "title": "_datum",
+        "schema": {
+          "$ref": "#/definitions/Void"
+        }
+      },
+      "redeemer": {
+        "title": "_redeemer",
+        "schema": {
+          "$ref": "#/definitions/Void"
+        }
+      },
+      "compiledCode": "500100003222253330044a22930b2b9a01",
+      "hash": "90592520b329fe08f0e93946ecd405e49b7480795e27cb618f002d88"
+    }
+  ],
+  "definitions": {
+    "Void": {
+      "title": "Unit",
+      "description": "The nullary constructor.",
+      "anyOf": [
+        {
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        }
+      ]
+    }
+  }
+}
