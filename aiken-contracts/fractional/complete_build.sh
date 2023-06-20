@@ -100,6 +100,13 @@ aiken blueprint apply -o plutus.json -v pointer.params "${ref_cbor}" .
 aiken blueprint convert -v pointer.params > contracts/pointer_contract.plutus
 cardano-cli transaction policyid --script-file contracts/pointer_contract.plutus > hashes/pointer_policy.hash
 
+echo -e "\033[1;33m Convert Order Book Contract \033[0m"
+aiken blueprint apply -o plutus.json -v order_book.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v order_book.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v order_book.params "${ref_cbor}" .
+aiken blueprint convert -v order_book.params > contracts/order_book_contract.plutus
+cardano-cli transaction policyid --script-file contracts/order_book_contract.plutus > hashes/order_book.hash
+
 ###############################################################################
 ############## DATUM AND REDEEMER STUFF #######################################
 ###############################################################################
