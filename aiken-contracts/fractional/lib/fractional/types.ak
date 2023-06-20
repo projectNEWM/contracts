@@ -1,6 +1,9 @@
+/////////////////////
+
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/list
+use aiken/math/rational.{Rational}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
@@ -62,10 +65,6 @@ pub type SaleRedeemer {
   ExtractSale { profit: Value }
   RemoveSale
 }
-
-// hardcoded max bundle size
-// const max_bundle_size =
-//   10
 
 // greater than zero and less than or equal to the max bundle size
 pub fn valid_bundle_size(buy_amt: Int, max_bundle_size: Int) -> Bool {
@@ -229,4 +228,72 @@ pub fn prove_existence_of_incentive(
       the_incentive.amt != 0,
     ],
   )
+}
+
+pub type Ratio {
+  numerator: Int,
+  denominator: Int,
+}
+
+pub fn ratio_to_rational(self: Ratio) -> Rational {
+  expect Some(x) = rational.new(self.numerator, self.denominator)
+  x
+}
+
+pub type OrderBookPrice {
+  // pid and tkn of price
+  want: BundleInfo,
+  // price ratio
+  ratio: Ratio,
+  // plus or minus the slippage
+  slippage: Ratio,
+}
+
+pub type OrderBookDatum {
+  // who owns this utxo
+  owner: OwnerInfo,
+  // pid and tkn of what is being sold
+  have: BundleInfo,
+  // n haves for m wants
+  price: OrderBookPrice,
+  // the incentive for 1 tx
+  incentive: TokenInfo,
+}
+
+// this funciton needs to be ran both ways, a,b and b,a, do this over the tx
+pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
+  let a_price = ratio_to_rational(a.price.ratio)
+  let a_slip = ratio_to_rational(a.price.slippage)
+  let b_price = ratio_to_rational(b.price.ratio)
+  let a_low = rational.add(a_price, rational.negate(a_slip))
+  let a_high = rational.add(a_price, a_slip)
+  expect Some(b_inverse) = rational.reciprocal(b_price)
+  list.and(
+    [
+      // no self swaps
+      a.owner != b.owner,
+      // want I have is what you want
+      a.have == b.price.want,
+      // want I want is what your have
+      a.price.want == b.have,
+      // your price is is within my limits
+      rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse),
+      rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high),
+    ],
+  )
+}
+
+pub type RemoveOrder =
+  Void
+
+pub type RefundOrder =
+  Void
+
+pub type CompleteOrder =
+  Void
+
+pub type OrderBookRedeemer {
+  RemoveOrder
+  RefundOrder
+  CompleteOrder
 }

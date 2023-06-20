@@ -3,10 +3,16 @@ use aiken/transaction/credential
 use assist/data
 use assist/find
 use assist/values
-use fractional/types.{ReferenceDatum, ValidatorHash}
+use fractional/types.{
+  OrderBookDatum, OrderBookRedeemer, ReferenceDatum, ValidatorHash,
+}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
-  fn params(_datum: Void, _redeemer: Void, context: ScriptContext) -> Bool {
+  fn params(
+    datum: OrderBookDatum,
+    redeemer: OrderBookRedeemer,
+    context: ScriptContext,
+  ) -> Bool {
     // the transaction being validated
     let tx = context.transaction
     // data reference stuff
