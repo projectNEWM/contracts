@@ -1,7 +1,8 @@
 use aiken/list
 use aiken/math/rational
 use aiken/transaction.{InlineDatum, Output, OutputReference, Transaction}
-use aiken/transaction/value
+use aiken/transaction/credential.{Address}
+use aiken/transaction/value.{Value}
 use assist/addresses
 use assist/count
 use assist/data
@@ -116,19 +117,29 @@ pub fn update_validation(
 pub fn find_datum_by_not_owner(
   outputs: List<Output>,
   owner: OwnerInfo,
+  val: Value,
+  addr: Address,
 ) -> OrderBookDatum {
   when outputs is {
     [output, ..rest] ->
       when output.datum is {
         InlineDatum(outbound_datum) -> {
           expect datum: OrderBookDatum = outbound_datum
-          if datum.owner != owner {
+          if
+          list.and(
+            [
+              datum.owner != owner,
+              (output.value == val)?,
+              output.address == addr,
+            ],
+          ){
+          
             datum
           } else {
-            find_datum_by_not_owner(rest, owner)
+            find_datum_by_not_owner(rest, owner, val, addr)
           }
         }
-        _ -> find_datum_by_not_owner(rest, owner)
+        _ -> find_datum_by_not_owner(rest, owner, val, addr)
       }
     [] -> error @"No Datum Found"
   }
@@ -188,18 +199,25 @@ pub fn complete_validation(
   //     datum.incentive.tkn,
   //     datum.incentive.amt,
   //   )
+  // let that_cont_value = that_value
   let that_cont_value =
     value.merge(that_value, that_get_value)
       |> value.merge(value.negate(this_get_value))
   // |> value.merge(value.negate(the_incentive))
   // |> value.merge(types.split_fee_value(tx.fee))
-  let that_outbound_datum = find_datum_by_not_owner(tx.outputs, datum.owner)
+  let that_outbound_datum =
+    find_datum_by_not_owner(
+      tx.outputs,
+      datum.owner,
+      that_cont_value,
+      script_addr,
+    )
   list.and(
     [
       // check if a swap can happen
       types.is_ok_to_swap(datum, that_datum)?,
-      // That value is continue
-      payout.exact(script_addr, that_cont_value, tx.outputs)?,
+      // force the correct datum to be ont he correct utxos
+      (datum != that_outbound_datum)?,
       // that datum is correct
       (that_datum == that_outbound_datum)?,
       // cant reference yourself

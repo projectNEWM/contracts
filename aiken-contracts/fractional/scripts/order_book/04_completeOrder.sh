@@ -30,11 +30,18 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 
 
 # get the current value
-pid=$(jq -r '.fields[1].fields[0].bytes' ../data/order_book/order-book-datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/order_book/order-book-datum.json)
+pid1=$(jq -r '.fields[1].fields[0].bytes' ../data/order_book/order-book-datum1.json)
+tkn1=$(jq -r '.fields[1].fields[1].bytes' ../data/order_book/order-book-datum1.json)
 
-ipid=$(jq -r '.fields[3].fields[0].bytes' ../data/order_book/order-book-datum.json)
-itkn=$(jq -r '.fields[3].fields[1].bytes' ../data/order_book/order-book-datum.json)
+ipid1=$(jq -r '.fields[3].fields[0].bytes' ../data/order_book/order-book-datum1.json)
+itkn1=$(jq -r '.fields[3].fields[1].bytes' ../data/order_book/order-book-datum1.json)
+
+# get the current value
+pid2=$(jq -r '.fields[1].fields[0].bytes' ../data/order_book/order-book-datum2.json)
+tkn2=$(jq -r '.fields[1].fields[1].bytes' ../data/order_book/order-book-datum2.json)
+
+ipid2=$(jq -r '.fields[3].fields[0].bytes' ../data/order_book/order-book-datum2.json)
+itkn2=$(jq -r '.fields[3].fields[1].bytes' ../data/order_book/order-book-datum2.json)
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -72,41 +79,43 @@ jq -r \
 '.fields[0].fields[0].bytes=$id | .fields[0].fields[1].int=$idx' \
 ../data/order_book/complete-redeemer1.json | sponge ../data/order_book/complete-redeemer1.json
 
-lovelace_value=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
-echo Current Lovelace: $lovelace_value
-current_have_value=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-current_incentive_value=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${ipid}" --arg tkn "${itkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-if [[ $current_have_value -le 0 && $current_incentive_value -le 0 ]]; then
-    script_address_out1="${script_address} + ${lovelace_value}"
-elif [[ $current_have_value -le 0 && $current_incentive_value -gt 0 ]]; then
-    returning_asset="${current_incentive_value} ${ipid}.${itkn}"
-    script_address_out1="${script_address} + ${lovelace_value} + ${returning_asset}"
-elif [[ $current_have_value -gt 0 && $current_incentive_value -le 0 ]]; then
-    returning_asset="${current_have_value} ${pid}.${tkn}"
-    script_address_out1="${script_address} + ${lovelace_value} + ${returning_asset}"
-else
-    returning_asset="${current_have_value} ${pid}.${tkn} + ${current_incentive_value} ${ipid}.${itkn}"
-    script_address_out1="${script_address} + ${lovelace_value} + ${returning_asset}"
-fi
-echo "Complete OUTPUT: "${script_address_out1}
+lovelace_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid1}" --arg tkn "${tkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
+echo Current Lovelace: $lovelace_value1
+current_have_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid1}" --arg tkn "${tkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+current_incentive_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${ipid1}" --arg tkn "${itkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+
 # next 
-lovelace_value=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
-echo Current Lovelace: $lovelace_value
-current_have_value=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-current_incentive_value=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${ipid}" --arg tkn "${itkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-if [[ $current_have_value -le 0 && $current_incentive_value -le 0 ]]; then
-    script_address_out2="${script_address} + ${lovelace_value}"
-elif [[ $current_have_value -le 0 && $current_incentive_value -gt 0 ]]; then
-    returning_asset="${current_incentive_value} ${ipid}.${itkn}"
-    script_address_out2="${script_address} + ${lovelace_value} + ${returning_asset}"
-elif [[ $current_have_value -gt 0 && $current_incentive_value -le 0 ]]; then
-    returning_asset="${current_have_value} ${pid}.${tkn}"
-    script_address_out2="${script_address} + ${lovelace_value} + ${returning_asset}"
+lovelace_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid2}" --arg tkn "${tkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
+echo Current Lovelace: $lovelace_value2
+current_have_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid2}" --arg tkn "${tkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+current_incentive_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${ipid2}" --arg tkn "${itkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+
+
+if [[ $current_have_value1 -le 0 && $current_incentive_value1 -le 0 ]]; then
+    exit
+elif [[ $current_have_value1 -le 0 && $current_incentive_value1 -gt 0 ]]; then
+    exit
+elif [[ $current_have_value1 -gt 0 && $current_incentive_value1 -le 0 ]]; then
+    exit
 else
-    returning_asset="${current_have_value} ${pid}.${tkn} + ${current_incentive_value} ${ipid}.${itkn}"
-    script_address_out2="${script_address} + ${lovelace_value} + ${returning_asset}"
+    returning_asset="${current_have_value1} ${pid1}.${tkn1} + ${current_incentive_value1} ${ipid1}.${itkn1}"
+    script_address_out1="${script_address} + ${lovelace_value2} + ${returning_asset}"
 fi
-echo "Complete OUTPUT: "${script_address_out2}
+echo "Complete OUTPUT 1: "${script_address_out1}
+
+if [[ $current_have_value2 -le 0 && $current_incentive_value2 -le 0 ]]; then
+    exit
+elif [[ $current_have_value2 -le 0 && $current_incentive_value2 -gt 0 ]]; then
+    exit
+elif [[ $current_have_value2 -gt 0 && $current_incentive_value2 -le 0 ]]; then
+    exit
+else
+    returning_asset="${current_have_value2} ${pid2}.${tkn2} + ${current_incentive_value2} ${ipid2}.${itkn2}"
+    script_address_out2="${script_address} + ${lovelace_value1} + ${returning_asset}"
+fi
+echo "Complete OUTPUT 2: "${script_address_out2}
+
+
 #
 # exit
 #
@@ -139,17 +148,6 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/order-book-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-# HACK TO MAKE THIS WORK
-jq \
---arg pkh "$buyer1_pkh" \
-'.fields[0].fields[0].bytes=$pkh' \
-../data/order_book/order-book-datum.json | sponge ../data/order_book/order-book-datum1.json
-
-jq \
---arg pkh "$buyer2_pkh" \
-'.fields[0].fields[0].bytes=$pkh' \
-../data/order_book/order-book-datum.json | sponge ../data/order_book/order-book-datum2.json
-
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -164,15 +162,15 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer1.json \
-    --tx-out="${script_address_out1}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum1.json  \
     --tx-in ${script_tx_in2} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer2.json \
-    --tx-out="${script_address_out2}" \
+    --tx-out="${script_address_out1}" \
     --tx-out-inline-datum-file ../data/order_book/order-book-datum2.json  \
+    --tx-out="${script_address_out2}" \
+    --tx-out-inline-datum-file ../data/order_book/order-book-datum1.json  \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
 
