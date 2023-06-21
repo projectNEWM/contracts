@@ -1,10 +1,13 @@
+use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
 use assist/data
 use assist/find
 use assist/values
+use fractional/order_book_validators
 use fractional/types.{
-  OrderBookDatum, OrderBookRedeemer, ReferenceDatum, ValidatorHash,
+  CompleteOrder, OrderBookDatum, OrderBookRedeemer, ReferenceDatum, RefundOrder,
+  RemoveOrder, UpdateOrder, ValidatorHash,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -23,9 +26,29 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_value_check =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
-    expect _ref_datum: ReferenceDatum = data.input_datum(ref_input)
+    expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     when context.purpose is {
-      Spend(_output_reference) -> ref_value_check
+      Spend(output_reference) ->
+        when redeemer is {
+          RemoveOrder ->
+            order_book_validators.remove_validation(datum, tx, output_reference)
+          UpdateOrder ->
+            order_book_validators.update_validation(datum, tx, output_reference)
+          RefundOrder ->
+            list.and(
+              [
+                ref_value_check,
+                order_book_validators.refund_validation(
+                  datum,
+                  ref_datum,
+                  tx,
+                  output_reference,
+                ),
+              ],
+            )
+          CompleteOrder { that_utxo } -> list.and([])
+        }
+
       // spending only
       _ -> False
     }

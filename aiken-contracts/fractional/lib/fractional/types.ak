@@ -260,6 +260,10 @@ pub type OrderBookDatum {
   incentive: TokenInfo,
 }
 
+pub fn valid_order_update(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
+  list.and([a.owner == b.owner, a.have == b.have])
+}
+
 // this funciton needs to be ran both ways, a,b and b,a, do this over the tx
 pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
   let a_price = ratio_to_rational(a.price.ratio)
@@ -286,14 +290,20 @@ pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
 pub type RemoveOrder =
   Void
 
+pub type UpdateOrder =
+  Void
+
 pub type RefundOrder =
   Void
 
-pub type CompleteOrder =
-  Void
+pub type TxID {
+  txhash: ByteArray,
+  index: Int,
+}
 
 pub type OrderBookRedeemer {
   RemoveOrder
+  UpdateOrder
   RefundOrder
-  CompleteOrder
+  CompleteOrder { other_utxo: TxID }
 }
