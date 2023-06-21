@@ -1,15 +1,16 @@
 use aiken/list
-use aiken/transaction.{OutputReference, Transaction}
+use aiken/math/rational
+use aiken/transaction.{InlineDatum, Output, OutputReference, Transaction}
 use aiken/transaction/value
 use assist/addresses
 use assist/count
-// use assist/data
+use assist/data
 use assist/find
 use assist/payout
 use assist/signing
 use assist/std
 // use assist/values
-use fractional/types.{OrderBookDatum, ReferenceDatum, TxId}
+use fractional/types.{OrderBookDatum, OwnerInfo, ReferenceDatum, TxId}
 
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
@@ -92,38 +93,94 @@ pub fn update_validation(
   list.and(
     [
       // sign to update
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
       // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
+      count.inputs_by_addr(tx.inputs, script_addr, 1)?,
       // single script output
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
+      count.outputs_by_addr(tx.outputs, script_addr, 1)?,
       // make sure value is continuing
-      payout.exact(script_addr, validating_value, tx.outputs),
+      payout.exact(script_addr, validating_value, tx.outputs)?,
       // datum check
-      types.valid_order_update(datum, outbound_datum),
+      types.valid_order_update(datum, outbound_datum)?,
     ],
   )
 }
 
+/// Find the output with an inline datum that matches the owner and return the data.
+/// If nothing is found then error. This works great for tx with a
+/// single output and datum or where ordering is irrelevant.
+///
+/// ```aiken
+/// find.find_datum_by_owner(tx.outputs)
+/// ```
+pub fn find_datum_by_not_owner(
+  outputs: List<Output>,
+  owner: OwnerInfo,
+) -> OrderBookDatum {
+  when outputs is {
+    [output, ..rest] ->
+      when output.datum is {
+        InlineDatum(outbound_datum) -> {
+          expect datum: OrderBookDatum = outbound_datum
+          if datum.owner != owner {
+            datum
+          } else {
+            find_datum_by_not_owner(rest, owner)
+          }
+        }
+        _ -> find_datum_by_not_owner(rest, owner)
+      }
+    [] -> error @"No Datum Found"
+  }
+}
+
 /// perform the swap
-pub fn swap_validation(
-  _datum: OrderBookDatum,
+pub fn complete_validation(
+  datum: OrderBookDatum,
   _ref_datum: ReferenceDatum,
   tx: Transaction,
-  _this_reference: OutputReference,
+  this_reference: OutputReference,
   that_txid: TxId,
 ) -> Bool {
-  // let this_input = find.input_by_ref(tx.inputs, this_reference)
-  // let this_value = this_input.output.value
+  let this_input = find.input_by_ref(tx.inputs, this_reference)
+  let this_value = this_input.output.value
   // this script we are current spending from
-  // let script_addr = this_input.output.address
+  let script_addr = this_input.output.address
+  // we need to get that information fromt he other utxo
   let that_input =
     find.input_by_ref(tx.inputs, std.out_ref(that_txid.id, that_txid.idx))
-  // let that_value = that_input.output.value
-  // expect that_datum: OrderBookDatum = data.input_datum(that_input)
+  let that_value = that_input.output.value
+  expect that_datum: OrderBookDatum = data.input_datum(that_input)
   let that_out_ref = that_input.output_reference
-  // this should fail for bad data
+  // this should fail for bad redeemer data
   expect _: TxId = find.redeemer_by_ref(tx.redeemers, that_out_ref)
+  // get the price ratios
+  let this_price_ratio = types.ratio_to_rational(datum.price.ratio)
+  let that_price_ratio = types.ratio_to_rational(that_datum.price.ratio)
+
+  // this has units of this per that
+  expect Some(reciprocal_that_price_ratio) =
+    rational.reciprocal(that_price_ratio)
+  expect Some(one_half) = rational.reciprocal(rational.from_int(2))
+  let average_price =
+    rational.mul(
+      one_half,
+      rational.add(this_price_ratio, reciprocal_that_price_ratio),
+    )
+  expect Some(reciprocal_average_price) = rational.reciprocal(that_price_ratio)
+  // calc the amounts each will get
+  let this_amt_ratio = types.value_to_ratio(this_value, datum.have)
+  let that_amt_ratio = types.value_to_ratio(that_value, that_datum.have)
+  // that value changes
+  let that_get_amt =
+    types.find_best(that_amt_ratio, average_price, this_amt_ratio)
+  let that_get_value =
+    value.from_asset(datum.have.pid, datum.have.tkn, that_get_amt)
+  // this value changes
+  let this_get_amt =
+    types.find_best(this_amt_ratio, reciprocal_average_price, that_amt_ratio)
+  let this_get_value =
+    value.from_asset(that_datum.have.pid, that_datum.have.tkn, this_get_amt)
   // whats being paid to the batcher
   // let the_incentive =
   //   value.from_asset(
@@ -131,5 +188,26 @@ pub fn swap_validation(
   //     datum.incentive.tkn,
   //     datum.incentive.amt,
   //   )
-  True
+  let that_cont_value =
+    value.merge(that_value, that_get_value)
+      |> value.merge(value.negate(this_get_value))
+  // |> value.merge(value.negate(the_incentive))
+  // |> value.merge(types.split_fee_value(tx.fee))
+  let that_outbound_datum = find_datum_by_not_owner(tx.outputs, datum.owner)
+  list.and(
+    [
+      // check if a swap can happen
+      types.is_ok_to_swap(datum, that_datum)?,
+      // That value is continue
+      payout.exact(script_addr, that_cont_value, tx.outputs)?,
+      // that datum is correct
+      (that_datum == that_outbound_datum)?,
+      // cant reference yourself
+      (this_reference != that_out_ref)?,
+      // single script input
+      count.inputs_by_addr(tx.inputs, script_addr, 2),
+      // single script output
+      count.outputs_by_addr(tx.outputs, script_addr, 2),
+    ],
+  )
 }

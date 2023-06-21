@@ -29,11 +29,22 @@ test bad_purchase_datum() {
   types.purchase_datum_check(datum_a(), datum_c()) == False
 }
 
+fn order_datum_same(pkh: ByteArray) -> OrderBookDatum {
+  let owner: OwnerInfo = OwnerInfo { pkh, sc: #"" }
+  let have: BundleInfo = BundleInfo { pid: #"acab", tkn: #"beef" }
+  let want: BundleInfo = BundleInfo { pid: #"acab", tkn: #"beef" }
+  let p = Ratio { numerator: 1, denominator: 1 }
+  let s = Ratio { numerator: 1, denominator: 1 }
+  let price: OrderBookPrice = OrderBookPrice { want, ratio: p, slippage: s }
+  let incentive: TokenInfo = TokenInfo { pid: #"", tkn: #"", amt: 1 }
+  OrderBookDatum { owner, have, price, incentive }
+}
+
 fn order_datum_a() -> OrderBookDatum {
   let owner: OwnerInfo = OwnerInfo { pkh: #"acab", sc: #"" }
   let have: BundleInfo = BundleInfo { pid: #"acab", tkn: #"beef" }
   let want: BundleInfo = BundleInfo { pid: #"fade", tkn: #"face" }
-  let p = Ratio { numerator: 3, denominator: 4 }
+  let p = Ratio { numerator: 1, denominator: 15 }
   let s = Ratio { numerator: 1, denominator: 4 }
   let price: OrderBookPrice = OrderBookPrice { want, ratio: p, slippage: s }
   let incentive: TokenInfo = TokenInfo { pid: #"", tkn: #"", amt: 10 }
@@ -44,8 +55,8 @@ fn order_datum_b() -> OrderBookDatum {
   let owner: OwnerInfo = OwnerInfo { pkh: #"beef", sc: #"" }
   let have: BundleInfo = BundleInfo { pid: #"fade", tkn: #"face" }
   let want: BundleInfo = BundleInfo { pid: #"acab", tkn: #"beef" }
-  let p = Ratio { numerator: 4, denominator: 3 }
-  let s = Ratio { numerator: 1, denominator: 4 }
+  let p = Ratio { numerator: 14, denominator: 1 }
+  let s = Ratio { numerator: 1, denominator: 1 }
   let price: OrderBookPrice = OrderBookPrice { want, ratio: p, slippage: s }
   let incentive: TokenInfo = TokenInfo { pid: #"", tkn: #"", amt: 10 }
   OrderBookDatum { owner, have, price, incentive }
@@ -80,6 +91,17 @@ test bad_swap() {
     [
       !types.is_ok_to_swap(datum_a, datum_c),
       !types.is_ok_to_swap(datum_c, datum_a),
+    ],
+  )
+}
+
+test same_swap() {
+  let datum_a = order_datum_same(#"acab")
+  let datum_b = order_datum_same(#"beef")
+  list.and(
+    [
+      types.is_ok_to_swap(datum_a, datum_b),
+      types.is_ok_to_swap(datum_b, datum_a),
     ],
   )
 }

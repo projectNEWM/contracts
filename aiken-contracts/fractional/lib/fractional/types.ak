@@ -261,7 +261,7 @@ pub type OrderBookDatum {
 }
 
 pub fn valid_order_update(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
-  list.and([a.owner == b.owner, a.have == b.have])
+  list.and([(a.owner == b.owner)?, (a.have == b.have)?])
 }
 
 // this funciton needs to be ran both ways, a,b and b,a, do this over the tx
@@ -275,16 +275,51 @@ pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
   list.and(
     [
       // no self swaps
-      a.owner != b.owner,
+      (a.owner != b.owner)?,
       // want I have is what you want
-      a.have == b.price.want,
+      (a.have == b.price.want)?,
       // want I want is what your have
-      a.price.want == b.have,
+      (a.price.want == b.have)?,
       // your price is is within my limits
-      rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse),
-      rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high),
+      rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse)?,
+      rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high)?,
     ],
   )
+}
+
+pub fn find_best(
+  this_total: Rational,
+  price: Rational,
+  that_total: Rational,
+) -> Int {
+  let getting = rational.mul(this_total, price)
+  let returning = rational.sub(that_total, getting)
+  if
+  list.or(
+    [
+      rational.compare(returning, rational.zero()) == Greater,
+      rational.compare(returning, rational.zero()) == Equal,
+    ],
+  ){
+  
+    rational.floor(getting)
+  } else {
+    rational.floor(that_total)
+  }
+}
+
+pub fn value_to_ratio(self: Value, token: BundleInfo) -> Rational {
+  let amt = value.quantity_of(self, token.pid, token.tkn)
+  rational.from_int(amt)
+}
+
+pub fn split_fee_value(self: Value) -> Value {
+  let amt = value.quantity_of(self, value.ada_policy_id, value.ada_asset_name)
+  if amt % 2 != 0 {
+    error @"Even Fees Only"
+  } else {
+    value.from_lovelace(-amt / 2)
+  }
 }
 
 pub type RemoveOrder =

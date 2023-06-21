@@ -17,6 +17,7 @@ mint_script_path="../contracts/mint_contract.plutus"
 sale_script_path="../contracts/sale_contract.plutus"
 queue_script_path="../contracts/queue_contract.plutus"
 pointer_script_path="../contracts/pointer_contract.plutus"
+order_book_script_path="../contracts/order_book_contract.plutus"
 
 # Addresses
 reference_address=$(cat ./wallets/reference-wallet/payment.addr)
@@ -85,6 +86,15 @@ pointer_min_utxo=$(${cli} transaction calculate-min-required-utxo \
 pointer_value=$((${pointer_min_utxo}))
 pointer_script_reference_utxo="${script_reference_address} + ${pointer_value}"
 
+order_book_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+    --babbage-era \
+    --protocol-params-file ./tmp/protocol.json \
+    --tx-out-reference-script-file ${order_book_script_path} \
+    --tx-out="${script_reference_address} + 1000000" | tr -dc '0-9')
+
+order_book_value=$((${order_book_min_utxo}))
+order_book_script_reference_utxo="${script_reference_address} + ${order_book_value}"
+
 echo -e "\nCreating CIP68 Script:\n" ${cip68_script_reference_utxo}
 echo -e "\nCreating Stake Script:\n" ${stake_script_reference_utxo}
 echo -e "\nCreating Refer Script:\n" ${ref_script_reference_utxo}
@@ -92,6 +102,7 @@ echo -e "\nCreating Mint Script:\n" ${mint_script_reference_utxo}
 echo -e "\nCreating Sale Script:\n" ${sale_script_reference_utxo}
 echo -e "\nCreating Queue Script:\n" ${queue_script_reference_utxo}
 echo -e "\nCreating Pointer Script:\n" ${pointer_script_reference_utxo}
+echo -e "\nCreating Order Book Script:\n" ${order_book_script_reference_utxo}
 #
 # exit
 #
@@ -387,6 +398,44 @@ ${cli} transaction sign \
     --out-file ./tmp/tx-7.signed \
     --testnet-magic ${testnet_magic}
 
+###############################################################################
+
+nextUTxO=$(${cli} transaction txid --tx-body-file ./tmp/tx.draft)
+echo "Seventh in the tx chain" $nextUTxO
+
+echo -e "\033[0;36m Building Tx \033[0m"
+${cli} transaction build-raw \
+    --babbage-era \
+    --protocol-params-file ./tmp/protocol.json \
+    --out-file ./tmp/tx.draft \
+    --tx-in="${nextUTxO}#0" \
+    --tx-out="${reference_address} + ${seventhReturn}" \
+    --tx-out="${order_book_script_reference_utxo}" \
+    --tx-out-reference-script-file ${order_book_script_path} \
+    --fee 900000
+
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ./tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ./tmp/protocol.json --tx-in-count 0 --tx-out-count 0 --witness-count 1)
+# echo $FEE
+fee=$(echo $FEE | rev | cut -c 9- | rev)
+
+eigthReturn=$((${seventhReturn} - ${order_book_value} - ${fee}))
+
+${cli} transaction build-raw \
+    --babbage-era \
+    --protocol-params-file ./tmp/protocol.json \
+    --out-file ./tmp/tx.draft \
+    --tx-in="${nextUTxO}#0" \
+    --tx-out="${reference_address} + ${eigthReturn}" \
+    --tx-out="${order_book_script_reference_utxo}" \
+    --tx-out-reference-script-file ${order_book_script_path} \
+    --fee ${fee}
+
+echo -e "\033[0;36m Signing \033[0m"
+${cli} transaction sign \
+    --signing-key-file ./wallets/reference-wallet/payment.skey \
+    --tx-body-file ./tmp/tx.draft \
+    --out-file ./tmp/tx-8.signed \
+    --testnet-magic ${testnet_magic}
 #
 # exit
 #
@@ -418,6 +467,10 @@ ${cli} transaction submit \
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file ./tmp/tx-7.signed
+
+${cli} transaction submit \
+    --testnet-magic ${testnet_magic} \
+    --tx-file ./tmp/tx-8.signed
 #
 
 cp ./tmp/tx-1.signed ./tmp/cip-reference-utxo.signed
@@ -427,5 +480,6 @@ cp ./tmp/tx-4.signed ./tmp/mint-reference-utxo.signed
 cp ./tmp/tx-5.signed ./tmp/sale-reference-utxo.signed
 cp ./tmp/tx-6.signed ./tmp/queue-reference-utxo.signed
 cp ./tmp/tx-7.signed ./tmp/pointer-reference-utxo.signed
+cp ./tmp/tx-8.signed ./tmp/order-book-reference-utxo.signed
 
 echo -e "\033[0;32m\nDone! \033[0m"

@@ -46,7 +46,19 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ),
               ],
             )
-          CompleteOrder(_that_utxo) -> list.and([])
+          CompleteOrder(that_utxo) ->
+            list.and(
+              [
+                ref_value_check,
+                order_book_validators.complete_validation(
+                  datum,
+                  ref_datum,
+                  tx,
+                  output_reference,
+                  that_utxo,
+                ),
+              ],
+            )
         }
 
       // spending only
