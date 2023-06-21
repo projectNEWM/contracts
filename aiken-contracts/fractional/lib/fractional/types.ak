@@ -296,14 +296,14 @@ pub type UpdateOrder =
 pub type RefundOrder =
   Void
 
-pub type TxID {
-  txhash: ByteArray,
-  index: Int,
+pub type TxId {
+  id: ByteArray,
+  idx: Int,
 }
 
 pub type OrderBookRedeemer {
   RemoveOrder
   UpdateOrder
   RefundOrder
-  CompleteOrder { other_utxo: TxID }
+  CompleteOrder(TxId)
 }

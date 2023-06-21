@@ -3,12 +3,13 @@ use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value
 use assist/addresses
 use assist/count
-use assist/data
+// use assist/data
 use assist/find
 use assist/payout
 use assist/signing
-use assist/values
-use fractional/types.{OrderBookDatum, ReferenceDatum}
+use assist/std
+// use assist/values
+use fractional/types.{OrderBookDatum, ReferenceDatum, TxId}
 
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
@@ -106,10 +107,29 @@ pub fn update_validation(
 
 /// perform the swap
 pub fn swap_validation(
-  datum: OrderBookDatum,
-  ref_datum: ReferenceDatum,
+  _datum: OrderBookDatum,
+  _ref_datum: ReferenceDatum,
   tx: Transaction,
-  output_reference: OutputReference,
+  _this_reference: OutputReference,
+  that_txid: TxId,
 ) -> Bool {
+  // let this_input = find.input_by_ref(tx.inputs, this_reference)
+  // let this_value = this_input.output.value
+  // this script we are current spending from
+  // let script_addr = this_input.output.address
+  let that_input =
+    find.input_by_ref(tx.inputs, std.out_ref(that_txid.id, that_txid.idx))
+  // let that_value = that_input.output.value
+  // expect that_datum: OrderBookDatum = data.input_datum(that_input)
+  let that_out_ref = that_input.output_reference
+  // this should fail for bad data
+  expect _: TxId = find.redeemer_by_ref(tx.redeemers, that_out_ref)
+  // whats being paid to the batcher
+  // let the_incentive =
+  //   value.from_asset(
+  //     datum.incentive.pid,
+  //     datum.incentive.tkn,
+  //     datum.incentive.amt,
+  //   )
   True
 }
