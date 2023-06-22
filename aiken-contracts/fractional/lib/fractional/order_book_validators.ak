@@ -147,7 +147,7 @@ pub fn find_datum_by_not_owner(
 
 /// perform the swap
 pub fn complete_validation(
-  datum: OrderBookDatum,
+  this_datum: OrderBookDatum,
   _ref_datum: ReferenceDatum,
   tx: Transaction,
   this_reference: OutputReference,
@@ -166,7 +166,7 @@ pub fn complete_validation(
   // this should fail for bad redeemer data
   expect _: TxId = find.redeemer_by_ref(tx.redeemers, that_out_ref)
   // get the price ratios
-  let this_price_ratio = types.ratio_to_rational(datum.price.ratio)
+  let this_price_ratio = types.ratio_to_rational(this_datum.price.ratio)
   let that_price_ratio = types.ratio_to_rational(that_datum.price.ratio)
 
   // this has units of this per that
@@ -180,44 +180,44 @@ pub fn complete_validation(
     )
   expect Some(reciprocal_average_price) = rational.reciprocal(that_price_ratio)
   // calc the amounts each will get
-  let this_amt_ratio = types.value_to_ratio(this_value, datum.have)
+  let this_amt_ratio = types.value_to_ratio(this_value, this_datum.have)
   let that_amt_ratio = types.value_to_ratio(that_value, that_datum.have)
   // that value changes
   let that_get_amt =
     types.find_best(that_amt_ratio, average_price, this_amt_ratio)
   let that_get_value =
-    value.from_asset(datum.have.pid, datum.have.tkn, that_get_amt)
+    value.from_asset(this_datum.have.pid, this_datum.have.tkn, that_get_amt)
   // this value changes
   let this_get_amt =
     types.find_best(this_amt_ratio, reciprocal_average_price, that_amt_ratio)
   let this_get_value =
     value.from_asset(that_datum.have.pid, that_datum.have.tkn, this_get_amt)
   // whats being paid to the batcher
-  // let the_incentive =
-  //   value.from_asset(
-  //     datum.incentive.pid,
-  //     datum.incentive.tkn,
-  //     datum.incentive.amt,
-  //   )
-  // let that_cont_value = that_value
+  let the_incentive =
+    value.from_asset(
+      this_datum.incentive.pid,
+      this_datum.incentive.tkn,
+      this_datum.incentive.amt,
+    )
+  // add fee in last
   let that_cont_value =
     value.merge(that_value, that_get_value)
       |> value.merge(value.negate(this_get_value))
-  // |> value.merge(value.negate(the_incentive))
+      |> value.merge(value.negate(the_incentive))
   // |> value.merge(types.split_fee_value(tx.fee))
   let that_outbound_datum =
     find_datum_by_not_owner(
       tx.outputs,
-      datum.owner,
+      this_datum.owner,
       that_cont_value,
       script_addr,
     )
   list.and(
     [
       // check if a swap can happen
-      types.is_ok_to_swap(datum, that_datum)?,
+      types.is_ok_to_swap(this_datum, that_datum)?,
       // force the correct datum to be ont he correct utxos
-      (datum != that_outbound_datum)?,
+      (this_datum != that_outbound_datum)?,
       // that datum is correct
       (that_datum == that_outbound_datum)?,
       // cant reference yourself

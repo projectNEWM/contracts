@@ -72,14 +72,16 @@ test find_simple4() {
 // }
 
 test value_test1() {
+  let this_amt = 3000000
+  let that_amt = 1000000
   // how much I have
-  let this_amt_ratio = rational.from_int(2000000)
+  let this_amt_ratio = rational.from_int(this_amt)
   // how much they have
-  let that_amt_ratio = rational.from_int(2000000)
+  let that_amt_ratio = rational.from_int(that_amt)
   // my price ratio
-  expect Some(this_price_ratio) = rational.new(1, 1)
+  expect Some(this_price_ratio) = rational.new(3, 4)
   // their price ratio
-  expect Some(that_price_ratio) = rational.new(1, 1)
+  expect Some(that_price_ratio) = rational.new(4, 3)
 
   // this has units of this per that
   expect Some(reciprocal_that_price_ratio) =
@@ -104,16 +106,28 @@ test value_test1() {
   // let my_get_value = value.from_asset(#"fade", #"cafe", my_get_amt)
   let that_value =
     value.from_lovelace(987654321)
-      |> value.merge(value.from_asset(#"fade", #"cafe", 2000000))
+      |> value.merge(value.from_asset(#"fade", #"cafe", that_amt))
+
+  let this_value =
+    value.from_lovelace(987654321)
+      |> value.merge(value.from_asset(#"acab", #"beef", this_amt))
 
   let that_cont_value =
     value.merge(that_value, that_get_value)
       |> value.merge(value.negate(this_get_value))
   let that_result =
     value.from_lovelace(987654321)
-      |> value.merge(value.from_asset(#"fade", #"cafe", 2000000 - this_get_amt))
+      |> value.merge(value.from_asset(#"fade", #"cafe", that_amt - this_get_amt))
       |> value.merge(value.from_asset(#"acab", #"beef", 0 + that_get_amt))
 
-  that_cont_value == that_result && this_get_amt == that_get_amt
-  // this_get_amt != that_get_amt
+  let this_cont_value =
+    value.merge(this_value, this_get_value)
+      |> value.merge(value.negate(that_get_value))
+  let this_result =
+    value.from_lovelace(987654321)
+      |> value.merge(value.from_asset(#"acab", #"beef", this_amt - that_get_amt))
+      |> value.merge(value.from_asset(#"fade", #"cafe", 0 + this_get_amt))
+  that_cont_value == that_result && this_cont_value == this_result
+  // that_cont_value != that_result
+  // this_get_amt == that_get_amt
 }

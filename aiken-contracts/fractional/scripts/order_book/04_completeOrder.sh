@@ -98,7 +98,8 @@ elif [[ $current_have_value1 -le 0 && $current_incentive_value1 -gt 0 ]]; then
 elif [[ $current_have_value1 -gt 0 && $current_incentive_value1 -le 0 ]]; then
     exit
 else
-    returning_asset="${current_have_value1} ${pid1}.${tkn1} + ${current_incentive_value1} ${ipid1}.${itkn1}"
+    returning_asset="${current_have_value1} ${pid1}.${tkn1}"
+    # returning_asset="${current_have_value1} ${pid1}.${tkn1} + ${current_incentive_value1} ${ipid1}.${itkn1}"
     script_address_out1="${script_address} + ${lovelace_value2} + ${returning_asset}"
 fi
 echo "Complete OUTPUT 1: "${script_address_out1}
@@ -110,7 +111,8 @@ elif [[ $current_have_value2 -le 0 && $current_incentive_value2 -gt 0 ]]; then
 elif [[ $current_have_value2 -gt 0 && $current_incentive_value2 -le 0 ]]; then
     exit
 else
-    returning_asset="${current_have_value2} ${pid2}.${tkn2} + ${current_incentive_value2} ${ipid2}.${itkn2}"
+    returning_asset="${current_have_value2} ${pid2}.${tkn2}"
+    # returning_asset="${current_have_value2} ${pid2}.${tkn2} + ${current_incentive_value2} ${ipid2}.${itkn2}"
     script_address_out2="${script_address} + ${lovelace_value1} + ${returning_asset}"
 fi
 echo "Complete OUTPUT 2: "${script_address_out2}
@@ -119,19 +121,23 @@ echo "Complete OUTPUT 2: "${script_address_out2}
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
+
+echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
 ${cli} query utxo \
+    --address ${batcher_address} \
     --testnet-magic ${testnet_magic} \
-    --address ${buyer1_address} \
-    --out-file ../tmp/buyer_utxo.json
-TXNS=$(jq length ../tmp/buyer_utxo.json)
+    --out-file ../tmp/batcher_utxo.json
+# transaction variables
+TXNS=$(jq length ../tmp/batcher_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer1_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${batcher_address} \033[0m \n";
    exit;
 fi
-alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
-buyer_tx_in=${TXIN::-8}
+
+TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
+batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
+batcher_tx_in=${TXIN::-8}
+echo Batcher UTXO ${batcher_tx_in}
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -153,10 +159,10 @@ echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
     --out-file ../tmp/tx.draft \
-    --change-address ${buyer1_address} \
+    --change-address ${batcher_address} \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
-    --tx-in ${buyer_tx_in} \
+    --tx-in ${batcher_tx_in} \
     --tx-in ${script_tx_in1} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
