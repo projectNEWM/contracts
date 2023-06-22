@@ -322,6 +322,37 @@ pub fn split_fee_value(self: Value) -> Value {
   }
 }
 
+pub fn ratio_average(a: Ratio, b: Ratio) -> Ratio {
+  // geometric mean
+  let top = a.numerator * b.denominator
+  let bot = a.denominator * b.numerator
+  Ratio { numerator: sqrt(top), denominator: sqrt(bot) }
+}
+
+pub fn sqrt(number: Int) -> Int {
+  sqrt_binary_search(number, 1, number)
+}
+
+fn sqrt_binary_search(number: Int, low: Int, high: Int) -> Int {
+  if low > high {
+    high
+  } else if number < 0 {
+    error @"Number Must Be Positive"
+  } else if number == 0 {
+    0
+  } else {
+    let mid = ( low + high ) / 2
+    let square = mid * mid
+    if square == number {
+      mid
+    } else if square < number {
+      sqrt_binary_search(number, mid + 1, high)
+    } else {
+      sqrt_binary_search(number, low, mid - 1)
+    }
+  }
+}
+
 pub type RemoveOrder =
   Void
 

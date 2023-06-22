@@ -1,7 +1,7 @@
 use aiken/list
 use aiken/math/rational
 use aiken/transaction/value
-use fractional/types
+use fractional/types.{Ratio}
 
 test simple_ratio() {
   let x = rational.from_int(134)
@@ -72,27 +72,35 @@ test find_simple4() {
 // }
 
 test value_test1() {
-  let this_amt = 3000000
-  let that_amt = 1000000
+  let this_amt = 2000000
+  let that_amt = 2000000
   // how much I have
   let this_amt_ratio = rational.from_int(this_amt)
   // how much they have
   let that_amt_ratio = rational.from_int(that_amt)
-  // my price ratio
-  expect Some(this_price_ratio) = rational.new(3, 4)
-  // their price ratio
-  expect Some(that_price_ratio) = rational.new(4, 3)
 
-  // this has units of this per that
-  expect Some(reciprocal_that_price_ratio) =
-    rational.reciprocal(that_price_ratio)
-  expect Some(one_half) = rational.reciprocal(rational.from_int(2))
+  // my price ratio
+  // expect Some(this_price_ratio) = rational.new(3, 4)
+  // // their price ratio
+  // expect Some(that_price_ratio) = rational.new(4, 3)
+  // // this has units of this per that
+  // expect Some(reciprocal_that_price_ratio) =
+  //   rational.reciprocal(that_price_ratio)
+  // expect Some(one_half) = rational.reciprocal(rational.from_int(2))
+  // let average_price =
+  //   rational.mul(
+  //     one_half,
+  //     rational.add(this_price_ratio, reciprocal_that_price_ratio),
+  //   )
+  // expect Some(reciprocal_average_price) = rational.reciprocal(that_price_ratio)
+  // get the price ratio
+  let this_price = Ratio { numerator: 67, denominator: 2500 }
+  let that_price = Ratio { numerator: 35331, denominator: 1000 }
   let average_price =
-    rational.mul(
-      one_half,
-      rational.add(this_price_ratio, reciprocal_that_price_ratio),
-    )
-  expect Some(reciprocal_average_price) = rational.reciprocal(that_price_ratio)
+    types.ratio_average(this_price, that_price)
+      |> types.ratio_to_rational()
+  expect Some(reciprocal_average_price) = rational.reciprocal(average_price)
+
   // that value changes
   let that_get_amt =
     types.find_best(that_amt_ratio, average_price, this_amt_ratio)
@@ -130,4 +138,32 @@ test value_test1() {
   that_cont_value == that_result && this_cont_value == this_result
   // that_cont_value != that_result
   // this_get_amt == that_get_amt
+}
+
+test simple_sqrt() {
+  types.sqrt(25) == 5
+}
+
+test moderate_sqrt() {
+  types.sqrt(9871) == 99
+}
+
+test large_sqrt() {
+  types.sqrt(987654321) == 31426
+}
+
+test huge_sqrt() {
+  types.sqrt(9876543211234567890) == 3142696805
+}
+
+test simple_average_sqrt() {
+  let this_price = Ratio { numerator: 67, denominator: 2500 }
+  let that_price = Ratio { numerator: 35331, denominator: 1000 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  expect Some(right) =
+    types.ratio_average(that_price, this_price)
+      |> types.ratio_to_rational()
+      |> rational.reciprocal()
+  left == right
 }

@@ -31,11 +31,29 @@ fi
 # '.fields[0].fields[0].bytes=$pkh' \
 # ../data/order_book/order-book-datum.json | sponge ../data/order_book/order-book-datum.json
 
+echo "Order OUTPUT: "${script_address_out}
+#
+# exit
+#
+echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
+${cli} query utxo \
+    --testnet-magic ${testnet_magic} \
+    --address ${buyer_address} \
+    --out-file ../tmp/buyer_utxo.json
+TXNS=$(jq length ../tmp/buyer_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
+   exit;
+fi
+alltxin=""
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
+buyer_tx_in=${TXIN::-8}
+
 #
 pid=$(jq -r '.fields[1].fields[0].bytes' ${datum_path})
 tkn=$(jq -r '.fields[1].fields[1].bytes' ${datum_path})
-total_amt=2000000
-want_asset="${total_amt} ${pid}.${tkn}"
+current_amt=$(jq -r --arg pid "${pid}" --arg tkn "${tkn}" '[to_entries[] | select(.value.value[$pid][$tkn]) | .value.value[$pid][$tkn]] | add' ../tmp/buyer_utxo.json)
+want_asset="${current_amt} ${pid}.${tkn}"
 
 ipid=$(jq -r '.fields[3].fields[0].bytes' ${datum_path})
 itkn=$(jq -r '.fields[3].fields[1].bytes' ${datum_path})

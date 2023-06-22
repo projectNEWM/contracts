@@ -98,9 +98,10 @@ elif [[ $current_have_value1 -le 0 && $current_incentive_value1 -gt 0 ]]; then
 elif [[ $current_have_value1 -gt 0 && $current_incentive_value1 -le 0 ]]; then
     exit
 else
-    returning_asset="${current_have_value1} ${pid1}.${tkn1}"
+    returning_asset="4312688 ${pid2}.${tkn2}"
+    # returning_asset="${current_have_value1} ${pid1}.${tkn1}"
     # returning_asset="${current_have_value1} ${pid1}.${tkn1} + ${current_incentive_value1} ${ipid1}.${itkn1}"
-    script_address_out1="${script_address} + ${lovelace_value2} + ${returning_asset}"
+    script_address_out1="${script_address} + ${lovelace_value1} + ${returning_asset}"
 fi
 echo "Complete OUTPUT 1: "${script_address_out1}
 
@@ -111,9 +112,10 @@ elif [[ $current_have_value2 -le 0 && $current_incentive_value2 -gt 0 ]]; then
 elif [[ $current_have_value2 -gt 0 && $current_incentive_value2 -le 0 ]]; then
     exit
 else
-    returning_asset="${current_have_value2} ${pid2}.${tkn2}"
+    returning_asset="3234516 ${pid1}.${tkn1} + 3009546 ${pid2}.${tkn2}"
+    # returning_asset="${current_have_value2} ${pid2}.${tkn2}"
     # returning_asset="${current_have_value2} ${pid2}.${tkn2} + ${current_incentive_value2} ${ipid2}.${itkn2}"
-    script_address_out2="${script_address} + ${lovelace_value1} + ${returning_asset}"
+    script_address_out2="${script_address} + ${lovelace_value2} + ${returning_asset}"
 fi
 echo "Complete OUTPUT 2: "${script_address_out2}
 
@@ -174,9 +176,9 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer2.json \
     --tx-out="${script_address_out1}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum2.json  \
-    --tx-out="${script_address_out2}" \
     --tx-out-inline-datum-file ../data/order_book/order-book-datum1.json  \
+    --tx-out="${script_address_out2}" \
+    --tx-out-inline-datum-file ../data/order_book/order-book-datum2.json  \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
 

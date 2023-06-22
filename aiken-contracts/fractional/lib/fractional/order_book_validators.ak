@@ -165,20 +165,11 @@ pub fn complete_validation(
   let that_out_ref = that_input.output_reference
   // this should fail for bad redeemer data
   expect _: TxId = find.redeemer_by_ref(tx.redeemers, that_out_ref)
-  // get the price ratios
-  let this_price_ratio = types.ratio_to_rational(this_datum.price.ratio)
-  let that_price_ratio = types.ratio_to_rational(that_datum.price.ratio)
-
-  // this has units of this per that
-  expect Some(reciprocal_that_price_ratio) =
-    rational.reciprocal(that_price_ratio)
-  expect Some(one_half) = rational.reciprocal(rational.from_int(2))
+  // get the price ratio
   let average_price =
-    rational.mul(
-      one_half,
-      rational.add(this_price_ratio, reciprocal_that_price_ratio),
-    )
-  expect Some(reciprocal_average_price) = rational.reciprocal(that_price_ratio)
+    types.ratio_average(this_datum.price.ratio, that_datum.price.ratio)
+      |> types.ratio_to_rational()
+  expect Some(reciprocal_average_price) = rational.reciprocal(average_price)
   // calc the amounts each will get
   let this_amt_ratio = types.value_to_ratio(this_value, this_datum.have)
   let that_amt_ratio = types.value_to_ratio(that_value, that_datum.have)

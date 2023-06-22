@@ -41,10 +41,10 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 1
+              "int": 3
             },
             {
-              "int": 1
+              "int": 4
             }
           ]
         },
