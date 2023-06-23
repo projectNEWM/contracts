@@ -309,7 +309,7 @@ pub fn find_best(
   }
 }
 
-pub fn value_to_ratio(self: Value, token: BundleInfo) -> Rational {
+pub fn value_to_rational(self: Value, token: BundleInfo) -> Rational {
   let amt = value.quantity_of(self, token.pid, token.tkn)
   rational.from_int(amt)
 }
@@ -319,44 +319,25 @@ pub fn split_fee_value(self: Value) -> Value {
   if amt % 2 != 0 {
     error @"Even Fees Only"
   } else {
+    // just return the int
+    // -amt / 2
     value.from_lovelace(-amt / 2)
   }
 }
 
 pub fn ratio_average(a: Ratio, b: Ratio) -> Ratio {
   // geometric mean
-  let top = a.numerator * b.denominator
-  let bot = a.denominator * b.numerator
-  Ratio { numerator: sqrt(top), denominator: sqrt(bot) }
-}
-
-pub fn sqrt(number: Int) -> Int {
-  // sqrt_binary_search(number, 1, number)
-  sqrt_babylonian(number, number, ( number + 1 ) / 2)
-  // sqrt_halley(number, number, 0)
-  // sqrt_bakhshali(number, number, 0)
-}
-
-fn sqrt_binary_search(number: Int, low: Int, high: Int) -> Int {
-  if low > high {
-    high
-  } else if number < 0 {
-    error @"Number Must Be Positive"
-  } else if number == 0 {
-    0
-  } else {
-    let mid = ( low + high ) / 2
-    let square = mid * mid
-    if square == number {
-      mid
-    } else if square < number {
-      sqrt_binary_search(number, mid + 1, high)
-    } else {
-      sqrt_binary_search(number, low, mid - 1)
-    }
+  Ratio {
+    numerator: sqrt(a.numerator * b.denominator),
+    denominator: sqrt(a.denominator * b.numerator),
   }
 }
 
+pub fn sqrt(number: Int) -> Int {
+  sqrt_babylonian(number, number, ( number + 1 ) / 2)
+}
+
+/// this is great for small numbers
 fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
   if y >= x {
     x
@@ -365,36 +346,8 @@ fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
   } else if number == 0 {
     0
   } else {
-    let new_x = y
-    let new_y = ( new_x + number / new_x ) / 2
-    sqrt_babylonian(number, new_x, new_y)
-  }
-}
-
-fn sqrt_halley(number: Int, x: Int, prev_x: Int) -> Int {
-  if math.abs(x - prev_x) <= 0 {
-    x
-  } else if number < 0 {
-    error @"Number Must Be Positive"
-  } else if number == 0 {
-    0
-  } else {
-    let new_x = ( x + number / x ) / 2
-    sqrt_halley(number, new_x, x)
-  }
-}
-
-fn sqrt_bakhshali(number: Int, x: Int, prev_x: Int) -> Int {
-  if math.abs(x - prev_x) <= 0 {
-    x
-  } else if number < 0 {
-    error @"Number Must Be Positive"
-  } else if number == 0 {
-    0
-  } else {
-    let y = ( x + number / x ) / 2
-    let new_x = y - ( y * y - number ) / ( 2 * y )
-    sqrt_bakhshali(number, new_x, x)
+    let new_y = ( y + number / y ) / 2
+    sqrt_babylonian(number, y, new_y)
   }
 }
 

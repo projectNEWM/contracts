@@ -209,3 +209,12 @@ test huge_self_average_sqrt() {
     types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
   left == left
 }
+// this is broken
+// test adding_values_together() {
+//   let v =
+//     value.from_lovelace(123)
+//       |> value.add(#"acab", #"beef", 321)
+//       |> value.add(#"acab", #"beef", -1 * 321)
+//   // v == value.from_lovelace(123)
+//   cbor.diagnostic(v) == cbor.diagnostic(value.from_lovelace(123))
+// }
