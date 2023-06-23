@@ -121,7 +121,7 @@ echo "Complete OUTPUT 2: "${script_address_out2}
 
 
 #
-# exit
+exit
 #
 
 echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
