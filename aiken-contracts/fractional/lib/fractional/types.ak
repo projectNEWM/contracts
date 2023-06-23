@@ -3,7 +3,6 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/list
-use aiken/math
 use aiken/math/rational.{Rational}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
@@ -337,7 +336,8 @@ pub fn sqrt(number: Int) -> Int {
   sqrt_babylonian(number, number, ( number + 1 ) / 2)
 }
 
-/// this is great for small numbers
+/// this is great for small numbers less than about 3^28
+/// after that the Bakhshali method is better
 fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
   if y >= x {
     x
@@ -346,8 +346,7 @@ fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
   } else if number == 0 {
     0
   } else {
-    let new_y = ( y + number / y ) / 2
-    sqrt_babylonian(number, y, new_y)
+    sqrt_babylonian(number, y, ( y + number / y ) / 2)
   }
 }
 

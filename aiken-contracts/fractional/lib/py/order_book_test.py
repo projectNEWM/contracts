@@ -63,9 +63,9 @@ def calculate_trade(this_amt: int, that_amt: int, this_price:fractions.Fraction,
 
 if __name__ == "__main__":
     # this amt
-    x = 3234516
+    x = 1
     # that amt
-    y = 7322234
+    y = 1
 
     # this price    
     p1 = f(67,2500).limit_denominator()

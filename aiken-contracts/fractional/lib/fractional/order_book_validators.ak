@@ -55,7 +55,8 @@ pub fn refund_validation(
       datum.incentive.pid,
       datum.incentive.tkn,
     ) < datum.incentive.amt
-  // ran out of money to buy
+  // ran out of money to buy, 
+  // should this be some threshold inside the datum?
   let holding_enough_check =
     value.quantity_of(validating_value, datum.have.pid, datum.have.tkn) < datum.price.ratio.numerator
   let script_addr = validating_input.output.address
@@ -219,6 +220,11 @@ pub fn complete_validation(
   //          this_datum.incentive.tkn,
   //          -1 * this_datum.incentive.amt,
   //        )
+  //     // |> value.add(
+  //     //      value.ada_policy_id,
+  //     //      value.ada_asset_name,
+  //     //      types.split_fee_value(tx.fee),
+  //     //    )
   // This checks for an outbound utxo with the correct value, datum, and address all in one.
   // It will error first if nothing is found.
   let that_outbound_datum =
@@ -230,6 +236,8 @@ pub fn complete_validation(
     )
   list.and(
     [
+      // there has to be something to trade
+      that_get_amt != 0,
       // check if a swap can happen
       types.is_ok_to_swap(this_datum, that_datum)?,
       // that datum is correct

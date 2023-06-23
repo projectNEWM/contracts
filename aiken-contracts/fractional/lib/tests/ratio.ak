@@ -209,6 +209,7 @@ test huge_self_average_sqrt() {
     types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
   left == left
 }
+
 // this is broken
 // test adding_values_together() {
 //   let v =
@@ -218,3 +219,24 @@ test huge_self_average_sqrt() {
 //   // v == value.from_lovelace(123)
 //   cbor.diagnostic(v) == cbor.diagnostic(value.from_lovelace(123))
 // }
+
+test value_merge_test() {
+  let that_value = value.from_lovelace(123)
+  let that_get_value = value.from_asset(#"acab", #"beef", 2)
+  let this_get_value = value.from_asset(#"fade", #"cafe", 22)
+  let the_incentive = value.from_asset(#"face", #"feed", 2)
+  let that_cont_value =
+    value.merge(that_value, that_get_value)
+      |> value.merge(value.negate(this_get_value))
+      |> value.merge(value.negate(the_incentive))
+  that_cont_value != value.zero()
+}
+
+test value_add_test() {
+  let that_value = value.from_lovelace(123)
+  let that_cont_value =
+    value.add(that_value, #"acab", #"beef", 2)
+      |> value.add(#"fade", #"cafe", -22)
+      |> value.add(#"face", #"feed", -2)
+  that_cont_value != value.zero()
+}
