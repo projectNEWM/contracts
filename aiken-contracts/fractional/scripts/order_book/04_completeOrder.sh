@@ -98,7 +98,7 @@ elif [[ $current_have_value1 -le 0 && $current_incentive_value1 -gt 0 ]]; then
 elif [[ $current_have_value1 -gt 0 && $current_incentive_value1 -le 0 ]]; then
     exit
 else
-    returning_asset="4312688 ${pid2}.${tkn2}"
+    returning_asset="3033502 ${pid1}.${tkn1} + 7322234 ${pid2}.${tkn2}"
     # returning_asset="${current_have_value1} ${pid1}.${tkn1}"
     # returning_asset="${current_have_value1} ${pid1}.${tkn1} + ${current_incentive_value1} ${ipid1}.${itkn1}"
     script_address_out1="${script_address} + ${lovelace_value1} + ${returning_asset}"
@@ -112,7 +112,7 @@ elif [[ $current_have_value2 -le 0 && $current_incentive_value2 -gt 0 ]]; then
 elif [[ $current_have_value2 -gt 0 && $current_incentive_value2 -le 0 ]]; then
     exit
 else
-    returning_asset="3234516 ${pid1}.${tkn1} + 3009546 ${pid2}.${tkn2}"
+    returning_asset="201014 ${pid1}.${tkn1}"
     # returning_asset="${current_have_value2} ${pid2}.${tkn2}"
     # returning_asset="${current_have_value2} ${pid2}.${tkn2} + ${current_incentive_value2} ${ipid2}.${itkn2}"
     script_address_out2="${script_address} + ${lovelace_value2} + ${returning_asset}"
@@ -121,7 +121,7 @@ echo "Complete OUTPUT 2: "${script_address_out2}
 
 
 #
-exit
+# exit
 #
 
 echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"

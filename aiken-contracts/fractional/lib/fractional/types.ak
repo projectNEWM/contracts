@@ -3,6 +3,7 @@
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/list
+use aiken/math
 use aiken/math/rational.{Rational}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
@@ -275,11 +276,11 @@ pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
   list.and(
     [
       // no self swaps
-      (a.owner != b.owner)?,
+      a.owner != b.owner,
       // want I have is what you want
-      (a.have == b.price.want)?,
-      // want I want is what your have
-      (a.price.want == b.have)?,
+      a.have == b.price.want,
+      // want I want is what you have
+      a.price.want == b.have,
       // your price is is within my limits
       rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse)?,
       rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high)?,
@@ -330,7 +331,10 @@ pub fn ratio_average(a: Ratio, b: Ratio) -> Ratio {
 }
 
 pub fn sqrt(number: Int) -> Int {
-  sqrt_binary_search(number, 1, number)
+  // sqrt_binary_search(number, 1, number)
+  sqrt_babylonian(number, number, ( number + 1 ) / 2)
+  // sqrt_halley(number, number, 0)
+  // sqrt_bakhshali(number, number, 0)
 }
 
 fn sqrt_binary_search(number: Int, low: Int, high: Int) -> Int {
@@ -350,6 +354,47 @@ fn sqrt_binary_search(number: Int, low: Int, high: Int) -> Int {
     } else {
       sqrt_binary_search(number, low, mid - 1)
     }
+  }
+}
+
+fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
+  if y >= x {
+    x
+  } else if number < 0 {
+    error @"Number Must Be Positive"
+  } else if number == 0 {
+    0
+  } else {
+    let new_x = y
+    let new_y = ( new_x + number / new_x ) / 2
+    sqrt_babylonian(number, new_x, new_y)
+  }
+}
+
+fn sqrt_halley(number: Int, x: Int, prev_x: Int) -> Int {
+  if math.abs(x - prev_x) <= 0 {
+    x
+  } else if number < 0 {
+    error @"Number Must Be Positive"
+  } else if number == 0 {
+    0
+  } else {
+    let new_x = ( x + number / x ) / 2
+    sqrt_halley(number, new_x, x)
+  }
+}
+
+fn sqrt_bakhshali(number: Int, x: Int, prev_x: Int) -> Int {
+  if math.abs(x - prev_x) <= 0 {
+    x
+  } else if number < 0 {
+    error @"Number Must Be Positive"
+  } else if number == 0 {
+    0
+  } else {
+    let y = ( x + number / x ) / 2
+    let new_x = y - ( y * y - number ) / ( 2 * y )
+    sqrt_bakhshali(number, new_x, x)
   }
 }
 

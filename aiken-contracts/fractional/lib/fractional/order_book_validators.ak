@@ -207,12 +207,8 @@ pub fn complete_validation(
     [
       // check if a swap can happen
       types.is_ok_to_swap(this_datum, that_datum)?,
-      // force the correct datum to be ont he correct utxos
-      (this_datum != that_outbound_datum)?,
       // that datum is correct
-      (that_datum == that_outbound_datum)?,
-      // cant reference yourself
-      (this_reference != that_out_ref)?,
+      that_datum == that_outbound_datum,
       // single script input
       count.inputs_by_addr(tx.inputs, script_addr, 2),
       // single script output

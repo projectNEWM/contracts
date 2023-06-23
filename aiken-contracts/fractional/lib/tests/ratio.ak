@@ -167,3 +167,45 @@ test simple_average_sqrt() {
       |> rational.reciprocal()
   left == right
 }
+
+test self_average_sqrt() {
+  let this_price = Ratio { numerator: 67, denominator: 2500 }
+  let that_price = Ratio { numerator: 35331, denominator: 1000 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  left == left
+}
+
+test small_average_sqrt() {
+  let this_price = Ratio { numerator: 17, denominator: 20 }
+  let that_price = Ratio { numerator: 21, denominator: 18 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  left == left
+}
+
+test medium_average_sqrt() {
+  let this_price = Ratio { numerator: 17321, denominator: 20123 }
+  let that_price = Ratio { numerator: 21321, denominator: 18123 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  left == left
+}
+
+test big_self_average_sqrt() {
+  let this_price = Ratio { numerator: 827851, denominator: 30889997 }
+  let that_price = Ratio { numerator: 436196523, denominator: 12345997 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  left == left
+}
+
+test huge_self_average_sqrt() {
+  let this_price =
+    Ratio { numerator: 890876827851, denominator: 34532130889997 }
+  let that_price =
+    Ratio { numerator: 456432436196523, denominator: 19812312345997 }
+  let left =
+    types.ratio_average(this_price, that_price) |> types.ratio_to_rational()
+  left == left
+}

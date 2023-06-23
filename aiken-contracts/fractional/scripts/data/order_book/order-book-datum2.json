@@ -52,10 +52,10 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 1
+              "int": 7
             },
             {
-              "int": 1
+              "int": 3
             }
           ]
         }
