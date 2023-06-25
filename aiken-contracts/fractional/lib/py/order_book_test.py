@@ -51,30 +51,32 @@ def calculate_trade(this_amt: int, that_amt: int, this_price:fractions.Fraction,
     top = this_price.numerator * that_price.denominator
     bot = this_price.denominator * that_price.numerator
     this_average_price = f(sqrt_binary_search(top), sqrt_binary_search(bot))
+    print(f"\nAverage Price: {float(this_average_price)}")
     that_reciprocal_average_price = pow(this_average_price, -1)
     
     that_paid, that_get_amt = find_best(that_amt_fraction, this_average_price, this_amt_fraction)
     this_paid, this_get_amt = find_best(this_amt_fraction, that_reciprocal_average_price, that_amt_fraction)
     
     # these are teh numbers to be used
-    print(f"this pays {this_paid} and gets {this_get_amt}")
-    print(f"that pays {that_paid} and gets {that_get_amt}")
-    
+    print(f"\nThis pays {this_paid} pid1.tkn1 and gets {this_get_amt} pid2.tkn2")
+    print(f"That pays {that_paid} pid2.tkn2 and gets {that_get_amt} pid1.tkn1")
+    return this_paid, this_get_amt
 
 if __name__ == "__main__":
     # this amt
-    x = 1
+    x = 64143
     # that amt
-    y = 1
+    y = 2123235
 
     # this price    
-    p1 = f(67,2500).limit_denominator()
-    dp1 = f(1,500).limit_denominator()
+    p1 = f(0.7754).limit_denominator()
+    dp1 = f(0.1).limit_denominator()
     # that rpice
-    p2 = f(35331,1000).limit_denominator()
-    dp2 = f(7,3).limit_denominator()
+    p2 = f(1/0.7454).limit_denominator()
+    dp2 = f(0.25).limit_denominator()
     
-    print(float(p1), float(p2))
+    print(f"This has {x} pid1.tkn1 at a price of {float(p1)}")
+    print(f"That has {y} pid2.tkn2 at a price of {1/float(p2)}")
     
     low1 = p1 - dp1
     high1 = p1 + dp1
@@ -85,12 +87,14 @@ if __name__ == "__main__":
     ip1 = pow(p1, -1)
     
     # this checks if sale can happen
-    print(low1 <= ip2 <= high1)
-    print(low2 <= ip1 <= high2)
+    print("\nIs trade valid?", low1 <= ip2 <= high1 and low2 <= ip1 <= high2)
     
     # the ranges
-    print(float(low1), float(ip2), float(high1))
-    print(float(low2), float(ip1), float(high2))
+    print(float(low1),'<', float(ip2),'<', float(high1))
+    print(float(low2),'<', float(ip1),'<', float(high2))
     
-    calculate_trade(x,y,p1,p2)
-    
+    xp, xg = calculate_trade(x,y,p1,p2)
+    print("\nReturning Assets:\n")
+    print(f"{x - xp} pid1.tkn1 + {xg} pid2.tkn2")
+    print(f"{y - xg} pid2.tkn2 + {xp} pid1.tkn1")
+    # create f string for both return assets
