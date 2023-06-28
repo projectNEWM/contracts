@@ -86,7 +86,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                       mint,
                       own_currency_symbol,
                       prefixes.prefix_444,
-                      -1 * burn_amt,
+                      -burn_amt,
                     ),
                   ],
                 ),

@@ -51,15 +51,15 @@ def calculate_trade(this_amt: int, that_amt: int, this_price:fractions.Fraction,
     top = this_price.numerator * that_price.denominator
     bot = this_price.denominator * that_price.numerator
     this_average_price = f(sqrt_binary_search(top), sqrt_binary_search(bot))
-    print(f"\nAverage Price: {float(this_average_price)}")
+    # print(f"\nAverage Price: {float(this_average_price)}")
     that_reciprocal_average_price = pow(this_average_price, -1)
     
     that_paid, that_get_amt = find_best(that_amt_fraction, this_average_price, this_amt_fraction)
     this_paid, this_get_amt = find_best(this_amt_fraction, that_reciprocal_average_price, that_amt_fraction)
     
     # these are teh numbers to be used
-    print(f"\nThis pays {this_paid} pid1.tkn1 and gets {this_get_amt} pid2.tkn2")
-    print(f"That pays {that_paid} pid2.tkn2 and gets {that_get_amt} pid1.tkn1")
+    # print(f"\nThis pays {this_paid} pid1.tkn1 and gets {this_get_amt} pid2.tkn2")
+    # print(f"That pays {that_paid} pid2.tkn2 and gets {that_get_amt} pid1.tkn1")
     return this_paid, this_get_amt
 
 if __name__ == "__main__":

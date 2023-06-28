@@ -215,7 +215,7 @@ test huge_self_average_sqrt() {
 //   let v =
 //     value.from_lovelace(123)
 //       |> value.add(#"acab", #"beef", 321)
-//       |> value.add(#"acab", #"beef", -1 * 321)
+//       |> value.add(#"acab", #"beef", -321)
 //   // v == value.from_lovelace(123)
 //   cbor.diagnostic(v) == cbor.diagnostic(value.from_lovelace(123))
 // }

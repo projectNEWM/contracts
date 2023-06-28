@@ -313,14 +313,13 @@ pub fn value_to_rational(self: Value, token: BundleInfo) -> Rational {
   rational.from_int(amt)
 }
 
-pub fn split_fee_value(self: Value) -> Value {
+pub fn split_fee_value(self: Value) -> Int {
   let amt = value.quantity_of(self, value.ada_policy_id, value.ada_asset_name)
   if amt % 2 != 0 {
     error @"Even Fees Only"
   } else {
     // just return the int
-    // -amt / 2
-    value.from_lovelace(-amt / 2)
+    -amt / 2
   }
 }
 

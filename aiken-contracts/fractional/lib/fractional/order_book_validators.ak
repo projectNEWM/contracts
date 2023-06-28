@@ -152,7 +152,7 @@ pub fn find_datum_by_not_owner(
 /// perform the swap
 pub fn complete_validation(
   this_datum: OrderBookDatum,
-  _ref_datum: ReferenceDatum,
+  ref_datum: ReferenceDatum,
   tx: Transaction,
   this_reference: OutputReference,
   that_txid: TxId,
@@ -205,17 +205,17 @@ pub fn complete_validation(
       this_datum.have.tkn,
       that_get_amt,
     )
-      |> value.add(that_datum.have.pid, that_datum.have.tkn, -1 * this_get_amt)
+      |> value.add(that_datum.have.pid, that_datum.have.tkn, -this_get_amt)
       |> value.add(
            this_datum.incentive.pid,
            this_datum.incentive.tkn,
-           -1 * this_datum.incentive.amt,
+           -this_datum.incentive.amt,
          )
-  // |> value.add(
-  //      value.ada_policy_id,
-  //      value.ada_asset_name,
-  //      types.split_fee_value(tx.fee),
-  //    )
+      |> value.add(
+           value.ada_policy_id,
+           value.ada_asset_name,
+           types.split_fee_value(tx.fee),
+         )
   // This checks for an outbound utxo with the correct value, datum, and address all in one.
   // It will error first if nothing is found.
   let that_outbound_datum =
@@ -227,6 +227,7 @@ pub fn complete_validation(
     )
   list.and(
     [
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
       // the other redeemer must be the complete redeemer
       good_redeemer_check?,
       // there has to be something to trade
