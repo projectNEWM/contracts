@@ -4,9 +4,9 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use assist/data
 use assist/find
+use assist/minting
 use assist/signing
 use assist/values
-use fractional/mint_validators
 use fractional/types.{BurnTokens, MintRedeemer, MintTokens, ReferenceDatum}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -46,12 +46,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // prevent roll over double nft attack
                 first_index < 256,
                 // must mint 1 pointer token
-                mint_validators.correct_mint(
-                  mint,
-                  own_currency_symbol,
-                  pointer_tkn,
-                  1,
-                ),
+                minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
                 // data reference must be holding correct token
                 ref_value_check,
               ],
@@ -61,7 +56,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               [
                 burn_amt == 0,
                 // must burn 1 pointer token
-                mint_validators.correct_burn(
+                minting.by_prefix(
                   mint,
                   own_currency_symbol,
                   // non standard prefix

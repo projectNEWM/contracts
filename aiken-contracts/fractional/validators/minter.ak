@@ -4,10 +4,10 @@ use aiken/transaction/credential
 use aiken/transaction/value
 use assist/data
 use assist/find
+use assist/minting
 use assist/prefixes
 use assist/signing
 use assist/values
-use fractional/mint_validators
 use fractional/types.{BurnTokens, MintRedeemer, MintTokens, ReferenceDatum}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -20,7 +20,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
     let ref_value_check =
-      value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+      values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // Get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // get tx info
@@ -50,14 +50,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // prevent roll over double nft attack
                 first_index < 256,
                 // must mint 1 reference token
-                mint_validators.correct_mint(
-                  mint,
-                  own_currency_symbol,
-                  reference_tkn,
-                  1,
-                ),
+                minting.exact(mint, own_currency_symbol, reference_tkn, 1),
                 // must mint 100 M fractions
-                mint_validators.correct_mint(
+                minting.exact(
                   mint,
                   own_currency_symbol,
                   fractions_tkn,
@@ -80,14 +75,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 list.or(
                   [
                     // burn only 1 ref token
-                    mint_validators.correct_burn(
+                    minting.by_prefix(
                       mint,
                       own_currency_symbol,
                       prefixes.prefix_100,
                       -1,
                     ),
                     // burn any amount of the fractions
-                    mint_validators.correct_burn(
+                    minting.by_prefix(
                       mint,
                       own_currency_symbol,
                       prefixes.prefix_444,

@@ -4,10 +4,10 @@ use aiken/transaction/value.{Value}
 use assist/addresses
 use assist/count
 use assist/find
+use assist/minting
 use assist/payout
 use assist/signing
 use assist/values
-use fractional/mint_validators
 use fractional/types.{QueuePurchase, ReferenceDatum, SaleDatum}
 
 /// Handle the purchasing of a bundle(s)
@@ -139,12 +139,7 @@ pub fn remove_validation(
   let remove_or_burn =
     if values.prove_nft(ref_datum.pointer_pid, validating_value) == True {
       // must burn 1 pointer token
-      mint_validators.correct_burn(
-        mint,
-        ref_datum.pointer_pid,
-        types.prefix_555,
-        -1,
-      )
+      minting.by_prefix(mint, ref_datum.pointer_pid, types.prefix_555, -1)
     } else {
       // if you dont hold the pointer then your sale never started
       True

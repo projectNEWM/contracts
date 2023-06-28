@@ -175,32 +175,25 @@ pub fn purchase_validation(
   let script_addr = validating_input.output.address
   // the total cost value for the bundle
   let cost_value = values.multiply(sale_datum.cost, number_of_bundles)
-  // whats going back to the sale contract
-  let bundle_value =
-    value.from_asset(
-      sale_datum.bundle.pid,
-      sale_datum.bundle.tkn,
-      number_of_bundles * sale_datum.bundle.amt,
-    )
-  // whats being paid to the batcher
-  let the_incentive =
-    value.from_asset(
-      datum.incentive.pid,
-      datum.incentive.tkn,
-      datum.incentive.amt,
-    )
-  // remove bundle
-  // add cost
+  // since the cost is a value type, merge it, but add the bundle
   let return_sale_value =
     value.merge(sale_value, cost_value)
-      |> value.merge(value.negate(bundle_value))
+      |> value.add(
+           sale_datum.bundle.pid,
+           sale_datum.bundle.tkn,
+           number_of_bundles * sale_datum.bundle.amt,
+         )
   // remove the fee, cost value, and incentive
   // add the bundle value
   let return_queue_value =
-    value.merge(validating_value, bundle_value)
-      |> value.merge(value.negate(cost_value))
-      |> value.merge(value.negate(the_incentive))
+    value.merge(validating_value, value.negate(cost_value))
       |> value.merge(value.negate(tx.fee))
+      |> value.add(
+           sale_datum.bundle.pid,
+           sale_datum.bundle.tkn,
+           number_of_bundles * sale_datum.bundle.amt,
+         )
+      |> value.add(datum.incentive.pid, datum.incentive.tkn, -datum.incentive.amt)
   // the datum going back to the queue contract
   expect outbound_datum: QueueDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)

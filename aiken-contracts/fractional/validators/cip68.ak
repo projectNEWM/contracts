@@ -7,6 +7,7 @@ use assist/data
 use assist/find
 use assist/payout
 use assist/signing
+use assist/values
 use fractional/types.{
   CIP68Datum, CIP68Redeemer, ReferenceDatum, RemoveMeta, UpdateMeta,
 }
@@ -24,8 +25,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_addr = credential.from_script(ref_hash)
     // find the first reference input
     let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    // ref utxo must have starter token
     let ref_value_check =
-      value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+      values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // the job that signs this, 
@@ -53,14 +55,25 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // updates the metadata and change min ada
           UpdateMeta { lovelace, direction } -> {
             let validating_value = validating_input.output.value
-            let increase_value = value.from_lovelace(lovelace.increase)
             // set a direction for add and remove
             let cont_value =
               when direction is {
                 // add
-                0 -> value.merge(validating_value, increase_value)
+                0 ->
+                  value.add(
+                    validating_value,
+                    value.ada_policy_id,
+                    value.ada_asset_name,
+                    lovelace.increase,
+                  )
                 // subtract
-                _ -> value.merge(validating_value, value.negate(increase_value))
+                _ ->
+                  value.add(
+                    validating_value,
+                    value.ada_policy_id,
+                    value.ada_asset_name,
+                    -lovelace.increase,
+                  )
               }
             list.and(
               [

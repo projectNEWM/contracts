@@ -1,5 +1,6 @@
 use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
+use aiken/transaction/value
 use assist/count
 use assist/find
 use assist/payout
@@ -21,6 +22,8 @@ validator {
         let tx = context.transaction
         let validating_input = find.input_by_ref(tx.inputs, output_reference)
         let validating_value = validating_input.output.value
+        // assume it has an nft and the min lovelace can be whatever
+        let cont_value = value.without_lovelace(validating_value)
         let script_addr = validating_input.output.address
         // the datum cont
         expect cont_datum: ReferenceDatum =
@@ -107,7 +110,7 @@ validator {
         list.and(
           [
             // send back to script but allow lovelace increase
-            payout.at_least(script_addr, validating_value, tx.outputs),
+            payout.at_least(script_addr, cont_value, tx.outputs),
             // single script input
             count.inputs_by_addr(tx.inputs, script_addr, 1),
             // single script output

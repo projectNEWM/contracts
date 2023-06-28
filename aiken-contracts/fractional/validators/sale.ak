@@ -1,9 +1,9 @@
 use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
-use aiken/transaction/value
 use assist/data
 use assist/find
+use assist/values
 use fractional/sale_validators
 use fractional/types.{
   ExtractSale, Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer,
@@ -23,8 +23,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_addr = credential.from_script(ref_hash)
     // find the first reference input
     let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    // ref utxo must have starter token
     let ref_value_check =
-      value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
+      values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     when context.purpose is {
