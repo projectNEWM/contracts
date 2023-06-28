@@ -64,16 +64,16 @@ def calculate_trade(this_amt: int, that_amt: int, this_price:fractions.Fraction,
 
 if __name__ == "__main__":
     # this amt
-    x = 64143
+    x = 3234516
     # that amt
-    y = 2123235
+    y = 7322234
 
     # this price    
-    p1 = f(0.7754).limit_denominator()
-    dp1 = f(0.1).limit_denominator()
+    p1 = f(67, 2500).limit_denominator()
+    dp1 = f(1, 500).limit_denominator()
     # that rpice
-    p2 = f(1/0.7454).limit_denominator()
-    dp2 = f(0.25).limit_denominator()
+    p2 = f(35331, 1000).limit_denominator()
+    dp2 = f(7,3).limit_denominator()
     
     print(f"This has {x} pid1.tkn1 at a price of {float(p1)}")
     print(f"That has {y} pid2.tkn2 at a price of {1/float(p2)}")

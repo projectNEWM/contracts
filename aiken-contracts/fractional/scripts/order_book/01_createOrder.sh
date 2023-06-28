@@ -25,12 +25,6 @@ else
     exit
 fi
 
-# update owner data
-# jq \
-# --arg pkh "$buyer_pkh" \
-# '.fields[0].fields[0].bytes=$pkh' \
-# ../data/order_book/order-book-datum.json | sponge ../data/order_book/order-book-datum.json
-
 echo "Order OUTPUT: "${script_address_out}
 #
 # exit

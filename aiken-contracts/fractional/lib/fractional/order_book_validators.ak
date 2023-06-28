@@ -11,7 +11,10 @@ use assist/payout
 use assist/signing
 use assist/std
 // use assist/values
-use fractional/types.{OrderBookDatum, OwnerInfo, ReferenceDatum, TxId}
+use fractional/types.{
+  CompleteOrder, OrderBookDatum, OrderBookRedeemer, OwnerInfo, ReferenceDatum,
+  TxId,
+}
 
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
@@ -95,15 +98,15 @@ pub fn update_validation(
   list.and(
     [
       // sign to update
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
+      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
       // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1)?,
+      count.inputs_by_addr(tx.inputs, script_addr, 1),
       // single script output
-      count.outputs_by_addr(tx.outputs, script_addr, 1)?,
+      count.outputs_by_addr(tx.outputs, script_addr, 1),
       // make sure value is continuing
-      payout.exact(script_addr, validating_value, tx.outputs)?,
+      payout.exact(script_addr, validating_value, tx.outputs),
       // datum check
-      types.valid_order_update(datum, outbound_datum)?,
+      types.valid_order_update(datum, outbound_datum),
     ],
   )
 }
@@ -163,7 +166,13 @@ pub fn complete_validation(
   // now we need to get that same information from the other utxo
   let that_out_ref = std.out_ref(that_txid.id, that_txid.idx)
   // this should fail for bad redeemer data
-  expect _: TxId = find.redeemer_by_ref(tx.redeemers, that_out_ref)
+  expect that_redeemer: OrderBookRedeemer =
+    find.redeemer_by_ref(tx.redeemers, that_out_ref)
+  let good_redeemer_check =
+    when that_redeemer is {
+      CompleteOrder(_) -> True
+      _ -> error @"Bad Redeemer"
+    }
   let that_input = find.input_by_ref(tx.inputs, that_out_ref)
   // that value on the other utxo
   let that_value = that_input.output.value
@@ -178,12 +187,9 @@ pub fn complete_validation(
   // calc the amounts each will get
   let this_amt_rational = types.value_to_rational(this_value, this_datum.have)
   let that_amt_rational = types.value_to_rational(that_value, that_datum.have)
-  // A lot of below will be removed when value.add is fixed
   // that value changes
   let that_get_amt =
     types.find_best(that_amt_rational, average_price, this_amt_rational)
-  let that_get_value =
-    value.from_asset(this_datum.have.pid, this_datum.have.tkn, that_get_amt)
   // this value changes
   let this_get_amt =
     types.find_best(
@@ -191,40 +197,25 @@ pub fn complete_validation(
       reciprocal_average_price,
       that_amt_rational,
     )
-  let this_get_value =
-    value.from_asset(that_datum.have.pid, that_datum.have.tkn, this_get_amt)
-  // whats being paid to the batcher
-  let the_incentive =
-    value.from_asset(
-      this_datum.incentive.pid,
-      this_datum.incentive.tkn,
-      this_datum.incentive.amt,
-    )
-  // add fee in last
+  // The value continue to the contract
   let that_cont_value =
-    value.merge(that_value, that_get_value)
-      |> value.merge(value.negate(this_get_value))
-      |> value.merge(value.negate(the_incentive))
-  // |> value.merge(types.split_fee_value(tx.fee))
-  // This doesn't work the way I want it to work right now.
-  // let that_cont_value =
-  //   value.add(
-  //     that_value,
-  //     this_datum.have.pid,
-  //     this_datum.have.tkn,
-  //     that_get_amt,
-  //   )
-  //     |> value.add(that_datum.have.pid, that_datum.have.tkn, -1 * this_get_amt)
-  //     |> value.add(
-  //          this_datum.incentive.pid,
-  //          this_datum.incentive.tkn,
-  //          -1 * this_datum.incentive.amt,
-  //        )
-  //     // |> value.add(
-  //     //      value.ada_policy_id,
-  //     //      value.ada_asset_name,
-  //     //      types.split_fee_value(tx.fee),
-  //     //    )
+    value.add(
+      that_value,
+      this_datum.have.pid,
+      this_datum.have.tkn,
+      that_get_amt,
+    )
+      |> value.add(that_datum.have.pid, that_datum.have.tkn, -1 * this_get_amt)
+      |> value.add(
+           this_datum.incentive.pid,
+           this_datum.incentive.tkn,
+           -1 * this_datum.incentive.amt,
+         )
+  // |> value.add(
+  //      value.ada_policy_id,
+  //      value.ada_asset_name,
+  //      types.split_fee_value(tx.fee),
+  //    )
   // This checks for an outbound utxo with the correct value, datum, and address all in one.
   // It will error first if nothing is found.
   let that_outbound_datum =
@@ -236,12 +227,14 @@ pub fn complete_validation(
     )
   list.and(
     [
+      // the other redeemer must be the complete redeemer
+      good_redeemer_check?,
       // there has to be something to trade
       that_get_amt != 0,
       // check if a swap can happen
       types.is_ok_to_swap(this_datum, that_datum)?,
       // that datum is correct
-      that_datum == that_outbound_datum,
+      (that_datum == that_outbound_datum)?,
       // single script input
       count.inputs_by_addr(tx.inputs, script_addr, 2),
       // single script output
