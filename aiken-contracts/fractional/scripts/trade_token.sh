@@ -16,7 +16,6 @@ data="./tmp/${sender_address}.json"
 lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
 echo "Lovelace: " ${lovelace}
 
-
 assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
 # echo $assets
 if [ -z "$assets" ]; then  # check if the result is an empty string
