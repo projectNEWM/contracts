@@ -100,3 +100,105 @@
     }
   ]
 }
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "map": [
+        {
+          "k": {
+            "bytes": "6d65746164617461"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "6d696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "706f696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "list": [
+            {
+              "bytes": "6fff6d33958f65022de64aabd3c16a7a7e07bad7a94a4585ce1dac76"
+            },
+            {
+              "bytes": "13e17b6072008140a59a22402bd5ef44baf75cc7f6913b4cf219981e"
+            },
+            {
+              "bytes": "961cd2e5e40805232e0ad7b274fc5bbb49ef167881a4581f578d4f63"
+            }
+          ]
+        },
+        {
+          "int": 2
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "fa1a5e1e70bc2fa7f60080b214f7bf5ab14c51da4b307a1a792c1714"
+        },
+        {
+          "bytes": "f26075cdda22f046b06739c6e2454dc72e9248b1e366d73b4eb81d96"
+        },
+        {
+          "bytes": ""
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "d873143c04cd14a22fd7583382fb3090f60bbc7ffd8572735e57a7eb"
+        },
+        {
+          "bytes": "19c9edc3d6e4f1725e9e0a429a4c2af11a3e08bcdc67c3045f124ee6"
+        },
+        {
+          "bytes": "5aefac517b54dbc7ef3a49e156edeb49f0186cef7d5e7ba748985ee4"
+        },
+        {
+          "bytes": "fcf113b70306e269c2b394f794f7c5d9657bc27f2108c348233fc671"
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "int": 1000000
+        },
+        {
+          "int": 1000000
+        },
+        {
+          "int": 1000000
+        }
+      ]
+    },
+    {
+      "bytes": "8da49dea6cd4ed0cb46168445b9831f1212eaa72e7aae6d43931eaba"
+    }
+  ]
+}
