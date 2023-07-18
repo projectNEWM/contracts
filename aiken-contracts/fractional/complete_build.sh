@@ -25,8 +25,13 @@ echo -e "\033[1;34m Building Contracts \033[0m"
 # aiken build
 aiken build --keep-traces
 
+# random string
+ran=$(jq -r '.random' start_info.json)
+ran_cbor=$(python ./convert_to_cbor.py ${ran})
+
 echo -e "\033[1;33m Convert Reference Contract \033[0m"
-aiken blueprint convert -v data_reference.data_reference > contracts/reference_contract.plutus
+aiken blueprint apply -o plutus.json -v data_reference.params "${ran_cbor}" .
+aiken blueprint convert -v data_reference.params > contracts/reference_contract.plutus
 cardano-cli transaction policyid --script-file contracts/reference_contract.plutus > hashes/reference_contract.hash
 
 # reference hash
@@ -54,11 +59,6 @@ cardano-cli transaction policyid --script-file contracts/cip68_contract.plutus >
 
 
 # build the stake contract
-
-ran=$(jq -r '.random' start_info.json)
-ran_cbor=$(python ./convert_to_cbor.py ${ran})
-
-
 echo -e "\033[1;33m Convert Stake Contract \033[0m"
 aiken blueprint apply -o plutus.json -v staking.params "${pid_cbor}" .
 aiken blueprint apply -o plutus.json -v staking.params "${tkn_cbor}" .

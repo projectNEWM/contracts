@@ -10,8 +10,8 @@ use fractional/types.{
   UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
 }
 
-validator {
-  fn data_reference(
+validator(_random_string: ByteArray) {
+  fn params(
     datum: ReferenceDatum,
     redeemer: ReferenceRedeemer,
     context: ScriptContext,
