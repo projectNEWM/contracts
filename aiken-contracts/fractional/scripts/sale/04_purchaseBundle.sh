@@ -30,8 +30,8 @@ artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 #
-buyer_address=$(cat ../wallets/buyer1-wallet/payment.addr)
-buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
+buyer_address=$(cat ../wallets/buyer2-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer2-wallet/payment.vkey)
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)

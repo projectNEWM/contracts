@@ -87,7 +87,7 @@ mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 # artist_address_out="${artist_address} + ${utxo_value}"
 artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
 # artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-echo "Return OUTPUT: "${artist_address_out}
+# echo "Return OUTPUT: "${artist_address_out}
 #
 # exit
 #
@@ -136,7 +136,6 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/sale/remove-redeemer.json \
-    --tx-out="${artist_address_out}" \
     --mint="${pointer_asset}" \
     --mint-tx-in-reference="${pointer_ref_utxo}#1" \
     --mint-plutus-script-v2 \

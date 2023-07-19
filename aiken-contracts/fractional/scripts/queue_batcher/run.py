@@ -9,7 +9,7 @@ import address
 
 def run():
 
-    DEBUG = True
+    DEBUG = False
 
     cli = "cardano-cli"
     network = "--testnet-magic 1"
