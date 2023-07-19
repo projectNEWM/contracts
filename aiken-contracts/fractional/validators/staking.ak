@@ -7,6 +7,7 @@ use assist/addresses
 use assist/data
 use assist/find
 use assist/payout
+use assist/signing
 use assist/values
 use fractional/types.{Delegate, ReferenceDatum, Withdraw, WithdrawRedeemer}
 
@@ -73,6 +74,12 @@ validator(
                 ref_value_check,
                 // The only cert is for new delegation
                 certificate == new_delegation,
+                // only keepers can update the data
+                signing.verify_multisig(
+                  tx.extra_signatories,
+                  ref_datum.keepers.pkhs,
+                  ref_datum.keepers.threshold,
+                ),
               ],
             )
           }
