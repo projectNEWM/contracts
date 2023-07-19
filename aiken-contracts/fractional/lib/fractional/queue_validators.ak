@@ -74,7 +74,7 @@ pub fn refund_validation(
     
       True
     } else {
-      error @"not the correct bundle sale"
+      fail @"not the correct bundle sale"
     }
   // check the state of the sale with a queue item
   let refund_value_check =
@@ -115,7 +115,7 @@ pub fn refund_validation(
       // check if the pointer is equal to the bundle
       correct_sale_check?,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound)?,
       // check if utxo has cost and check if cant make sale
       refund_value_check?,
       // owner must get the utxo back
@@ -159,7 +159,7 @@ pub fn purchase_validation(
     if quantity_of_pointer >= sale_datum.bundle.amt {
       True
     } else {
-      error @"not enough for a bundle"
+      fail @"not enough for a bundle"
     }
   // allows for a partial bundle to be fulfilled
   let number_of_bundles =
@@ -207,13 +207,13 @@ pub fn purchase_validation(
       // must have enough for the sale
       sale_value_check?,
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound)?,
       // prove existance of at least the incentive on the intermediate value
       types.prove_existence_of_incentive(validating_value, datum.incentive)?,
       // valid bundle size
       types.valid_bundle_size(number_of_bundles, sale_datum.max_bundle_size)?,
       // just continue the datum
-      datum == outbound_datum,
+      (datum == outbound_datum)?,
       // queue gets the bundle
       payout.exact(script_addr, return_queue_value, tx.outputs)?,
       // sale gets the cost
