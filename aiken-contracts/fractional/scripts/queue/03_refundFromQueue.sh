@@ -17,8 +17,8 @@ buyer_address=$(cat ../wallets/buyer1-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
 
 #
-newm_address=$(cat ../wallets/newm-wallet/payment.addr)
-newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
+batcher_address=$(cat ../wallets/batcher-wallet/payment.addr)
+batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/batcher-wallet/payment.vkey)
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -37,19 +37,24 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
-echo $script_tx_in
+echo Script TxId: $script_tx_in
 # exit
-# CURRENT_VALUE=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-# returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
-
-# if [[ CURRENT_VALUE -le 0 ]] ; then
-# else
-#     buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
-# fi
 
 # this needs to be dynamic
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+
+CURRENT_VALUE=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
+
+if [[ CURRENT_VALUE -le 0 ]] ; then
+    tokens="${CURRENT_VALUE} ${pid}.${tkn}"
+
+else
+    buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
+fi
+
+
 total_amt=100000000
 tokens="${CURRENT_VALUE} ${pid}.${tkn}"
 echo REMAINING: ${tokens}
@@ -60,8 +65,10 @@ utxo_value=$LOVELACE_VALUE
 # utxo_value=3640661
 # tokens="100000000 989b0b633446d55c994ce997634fd5f94bd4e530bfa041448ea75c9c.28343434290198e10f93b990f9eab9fd6d05b2d2a0a08c359f36f123a925c36d"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
+echo -e "\nRefund OUTPUT: "${buyer_address_out}
+
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -117,7 +124,7 @@ ${cli} transaction build-raw \
     --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/refund-redeemer.json \
     --tx-out="${buyer_address_out}" \
-    --required-signer-hash ${newm_pkh} \
+    --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee 400000
 
@@ -146,7 +153,7 @@ ${cli} transaction build-raw \
     --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/refund-redeemer.json \
     --tx-out="${buyer_address_out}" \
-    --required-signer-hash ${newm_pkh} \
+    --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}
 
@@ -156,7 +163,7 @@ echo -e "\033[1;32m Fee: \033[0m" $total_fee
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file ../wallets/newm-wallet/payment.skey \
+    --signing-key-file ../wallets/batcher-wallet/payment.skey \
     --signing-key-file ../wallets/collat-wallet/payment.skey \
     --tx-body-file ../tmp/tx.draft \
     --out-file ../tmp/tx.signed \

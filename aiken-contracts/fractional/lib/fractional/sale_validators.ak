@@ -139,7 +139,7 @@ pub fn remove_validation(
   let remove_or_burn =
     if values.prove_nft(ref_datum.pointer_pid, validating_value) == True {
       // must burn 1 pointer token
-      minting.by_prefix(mint, ref_datum.pointer_pid, types.prefix_555, -1)
+      minting.by_prefix(mint, ref_datum.pointer_pid, types.prefix_555, -1)?
     } else {
       // if you dont hold the pointer then your sale never started
       True

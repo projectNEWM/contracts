@@ -77,9 +77,12 @@ fi
 
 # this needs to be dynamic
 # utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
-default_asset="${total_amt} ${pid}.${tkn}"
+# default_asset="${total_amt} ${pid}.${tkn}"
+
+variable=0; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
+mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 
 # artist_address_out="${artist_address} + ${utxo_value}"
 artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"

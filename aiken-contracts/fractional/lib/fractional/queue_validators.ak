@@ -175,15 +175,21 @@ pub fn purchase_validation(
   let script_addr = validating_input.output.address
   // the total cost value for the bundle
   let cost_value = values.multiply(sale_datum.cost, number_of_bundles)
-  // since the cost is a value type, merge it, but add the bundle
+  // since the cost is a value type, merge it, but sub the bundle
   let return_sale_value =
     value.merge(sale_value, cost_value)
       |> value.add(
            sale_datum.bundle.pid,
            sale_datum.bundle.tkn,
-           number_of_bundles * sale_datum.bundle.amt,
+           -number_of_bundles * sale_datum.bundle.amt,
          )
   // remove the fee, cost value, and incentive
+  // add the bundle value
+  // let return_queue_value =
+  //   value.merge(validating_value, bundle_value)
+  //     |> value.merge(value.negate(cost_value))
+  //     |> value.merge(value.negate(the_incentive))
+  //     |> value.merge(value.negate(tx.fee))
   // add the bundle value
   let return_queue_value =
     value.merge(validating_value, value.negate(cost_value))
