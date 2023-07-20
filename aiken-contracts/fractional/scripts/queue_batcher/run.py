@@ -197,6 +197,7 @@ def run():
                 continue
 
             if potential_refund_flag is True:
+                # refund utxo
                 print(f"\nRefunding {queue_utxo}")
                 q_out_val = subtract_dicts(queue_value, {"lovelace": 600000})
                 buyer_out = process_output(buyer_address, q_out_val)
@@ -205,6 +206,9 @@ def run():
                      network, '../tmp/tx-refund.signed')
                 if DEBUG is False:
                     submit(network, socket, '../tmp/tx-refund.signed')
+                # this should prevent a double refund attempt
+                spent_order_book[queue_utxo] = order_book[queue_utxo]
+                
                 continue
 
             # assume that the sale data is constant
@@ -248,6 +252,7 @@ def run():
                 else:
                     # This needs to trigger the action for the autorefund when the sale doesn't have enough tokens
                     print("\nNot Enough For A Bundle")
+                    # refund utxo
                     print(f"Refunding {queue_utxo}")
                     q_out_val = subtract_dicts(
                         queue_value, {"lovelace": 600000})
@@ -257,6 +262,9 @@ def run():
                          network, '../tmp/tx-refund.signed')
                     if DEBUG is False:
                         submit(network, socket, '../tmp/tx-refund.signed')
+                    # this should prevent a double refund attempt
+                    spent_order_book[queue_utxo] = order_book[queue_utxo]
+                    
                     continue
 
             except KeyError:
@@ -270,6 +278,8 @@ def run():
                      network, '../tmp/tx-refund.signed')
                 if DEBUG is False:
                     submit(network, socket, '../tmp/tx-refund.signed')
+                spent_order_book[queue_utxo] = order_book[queue_utxo]
+                
                 continue
 
             # print("\nBundle Value", bundle_value)
@@ -351,6 +361,7 @@ def run():
             batcher_tx_in = id + "#0"
             batcher_value = b_out_val
 
+            # refund utxo
             print(f"Refunding")
             q_out_val = subtract_dicts(q_out_val, {"lovelace": 600000})
             buyer_out = process_output(buyer_address, q_out_val)

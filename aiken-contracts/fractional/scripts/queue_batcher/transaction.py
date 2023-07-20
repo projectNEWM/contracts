@@ -216,7 +216,7 @@ def submit(network, socket_path, signed_file_path):
     result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.stderr != "":
         print('ERROR:', result.stderr)
-        # should this exit here?
+        # should this exit be here?
         # exit(1)
     else:
         print(result.stdout.strip())
