@@ -136,17 +136,17 @@ min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
 change_address_out="${issuer_address} + ${min_utxo_value} + ${assets}"
 
 echo "Script OUTPUT: "${script_address_out}
-echo "Change OUTPUT: "${change_address_out}
+# echo "Change OUTPUT: "${change_address_out}
 #
 # exit
 #
+    # --tx-out="${change_address_out}" \
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
     --out-file ../tmp/tx.draft \
     --change-address ${issuer_address} \
     --tx-in ${issuer_tx_in} \
-    --tx-out="${change_address_out}" \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
     --testnet-magic ${testnet_magic})

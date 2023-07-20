@@ -52,6 +52,8 @@ ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_mag
 echo -e "\033[1;35m\nQueue Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${queue_script_address} \033[0m \n";
 ${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_magic}
+${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_queue_utxo.json
+
 #
 echo -e "\033[1;35m\nOrderBook Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${order_book_script_address} \033[0m \n";

@@ -4,6 +4,7 @@ from query import utxo
 from transaction import build_sale, sign, submit, txid, build_refund
 from parsing import compress_dicts, add_dicts, subtract_dicts, process_output, map_to_value, delete_zeros, value_exist_in_value
 from pycardano import Address, Network, VerificationKeyHash
+from datums import update_owner
 import address
 
 
@@ -98,6 +99,10 @@ def run():
             queue_pkh = queue_address_data['fields'][0]['bytes']
             queue_vkh = VerificationKeyHash(bytes.fromhex(queue_pkh))
             queue_sc = queue_address_data['fields'][1]['bytes']
+            # print(queue_pkh, queue_sc)
+            
+            update_owner("../data/queue/queue-datum.json", queue_pkh, queue_sc)
+            # the datum file needs to be updated
             if queue_sc == "":
                 print("\nEnterprise Wallet")
                 buyer_address = Address(
@@ -328,6 +333,9 @@ def run():
             # print("Batcher Tx Out: ", batcher_out)
 
             # build the purchase; THIS CHANGES THE TXID: sale and queue
+            print('BATCHER', batcher_out)
+            print('SALE', sale_out)
+            print('QUEUE', queue_out)
             print("Purchasing")
             build_sale(batcher_tx_in, sale_utxo, queue_utxo,
                        batcher_out, sale_out, queue_out)
