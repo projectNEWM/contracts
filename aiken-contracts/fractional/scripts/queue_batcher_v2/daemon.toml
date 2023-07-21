@@ -1,0 +1,16 @@
+[source]
+type = "N2C"
+address = ["Unix", "/home/logic/Documents/Work/LogicalMechanism/full-node-wallet/node/db-testnet/node.socket"]
+magic = "preprod"
+
+[source.intersect]
+type = "Tip"
+
+[source.mapper]
+include_transaction_details = true
+
+[sink]
+type = "Webhook"
+url = "http://localhost:8008/webhook"
+timeout = 60000
+error_policy = "Exit"

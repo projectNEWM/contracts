@@ -185,12 +185,6 @@ pub fn purchase_validation(
          )
   // remove the fee, cost value, and incentive
   // add the bundle value
-  // let return_queue_value =
-  //   value.merge(validating_value, bundle_value)
-  //     |> value.merge(value.negate(cost_value))
-  //     |> value.merge(value.negate(the_incentive))
-  //     |> value.merge(value.negate(tx.fee))
-  // add the bundle value
   let return_queue_value =
     value.merge(validating_value, value.negate(cost_value))
       |> value.merge(value.negate(tx.fee))
