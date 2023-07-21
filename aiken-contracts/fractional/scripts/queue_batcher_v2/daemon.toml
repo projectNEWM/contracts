@@ -4,7 +4,8 @@ address = ["Unix", "/home/logic/Documents/Work/LogicalMechanism/full-node-wallet
 magic = "preprod"
 
 [source.intersect]
-type = "Tip"
+type = "Point"
+value = [34117450, "529c536c02fa056874ff2e9aaa56d79b7e4d3b0fceafc1321cbd048dd9361808"]
 
 [source.mapper]
 include_transaction_details = true

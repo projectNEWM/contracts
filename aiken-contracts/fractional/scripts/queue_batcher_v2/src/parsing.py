@@ -1,3 +1,5 @@
+import hashlib
+
 def asset_list_to_dict(assets: list) -> dict:
     """Convert the Oura asset list inside a tx output into a value dictionary.
 
@@ -33,3 +35,13 @@ def key_exists_in_dict(dictionary: dict, key: str) -> bool:
         bool: True if exists else False
     """
     return key in dictionary
+
+
+def sha3_256(input_string):
+    # Convert the input string to bytes since hashlib functions require bytes
+    input_bytes = input_string.encode('utf-8')
+
+    # Calculate the SHA3-256 hash
+    sha3_256_hash = hashlib.sha3_256(input_bytes).hexdigest()
+
+    return sha3_256_hash
