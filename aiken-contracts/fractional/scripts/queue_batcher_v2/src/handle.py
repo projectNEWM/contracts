@@ -13,6 +13,7 @@ def tx_input(db, data):
     if result:
         db.delete_sale_record(result[0])
     
+    # utxo_base_64 = base64.urlsafe_b64encode(output_utxo.encode('utf-8')).decode('utf-8')
     utxo_base_64 = parsing.sha3_256(input_utxo)
     if db.is_key_in_queue(utxo_base_64):
         db.delete_queue_record(utxo_base_64)
@@ -21,7 +22,9 @@ def tx_output(db, constants, data):
     # print(f"Block Number: {data['context']['block_number']}")
     # do something here
     context = data['context']
+    # timestamp for ordering, equal timestamps use the tx_idx to order
     timestamp = context['timestamp']
+    tx_idx = context['tx_idx']
     
     output_utxo = context['tx_hash'] + '#' + str(context['output_idx'])
     # utxo_base_64 = base64.urlsafe_b64encode(output_utxo.encode('utf-8')).decode('utf-8')
@@ -35,8 +38,8 @@ def tx_output(db, constants, data):
         value_obj = parsing.asset_list_to_dict(data['tx_output']['assets'])
         value_obj['lovelace'] = lovelace
         
-        # print(f"Queue Output Inside UTxO: {utxo_base_64} At Slot: {slot}")
-        db.create_queue_record(utxo_base_64, tkn, queue_datum, value_obj, timestamp)
+        print(f"Queue Output Inside UTxO: {output_utxo} At Timestamp: {timestamp}")
+        db.create_queue_record(utxo_base_64, output_utxo, tkn, queue_datum, value_obj, timestamp, tx_idx)
         
     
     if data['tx_output']['address'] == constants['sale_address']:
@@ -49,7 +52,7 @@ def tx_output(db, constants, data):
         
         if parsing.key_exists_in_dict(value_obj, constants['pointer_policy']):
             tkn = list(value_obj[constants['pointer_policy']].keys())[0]
-            # print(f"Sale Output Inside Block: {output_utxo} At Slot: {slot}")
+            print(f"Sale Output Inside Block: {output_utxo} At Timestamp: {timestamp}")
             db.create_sale_record(tkn, output_utxo, sale_datum, value_obj)
 
 def rollback(data):
@@ -61,5 +64,7 @@ def rollback(data):
     
     # if a rollback occurs we need to handle it
     if block_hash is not None:
-        print("ROLLBACK DO SOME THING HERE TO FIX STUFF")
+        print("\nROLLBACK")
+        print("DO SOME THING HERE\n")
         print(data)
+        exit(1)

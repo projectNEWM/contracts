@@ -3,10 +3,10 @@ from flask import Flask, request
 import multiprocessing
 import subprocess
 import json
-import base64
-from src import parsing, db_manager_redis, handle
+from src import db_manager_redis, handle
 
 db = db_manager_redis.DatabaseManager()
+
 # Clear the database
 db.clear_database()
 
@@ -49,7 +49,13 @@ def webhook():
     
     # do the orders here
     # get all the queue items and sale items
+    sales = db.read_all_sale_records()
+    orders = db.read_all_queue_records()
+    
     # match the queue items with sale items
+    sale_to_order_dict = {}
+    # loop sales and loop orders and build out the dictionary
+    
     # fifo the queue list per each sale
     # do the tx stuff
     # assume success and keep trying until it leaves the db
@@ -68,11 +74,11 @@ def run_daemon():
 def start_processes():
     start_event = multiprocessing.Event()
 
-    # Start the Flask app process
+    # start the webhook
     flask_proc = multiprocessing.Process(target=flask_process, args=(start_event,))
     flask_proc.start()
 
-    # Start the daemon process
+    # start oura daemon
     daemon_proc = multiprocessing.Process(target=run_daemon)
     daemon_proc.start()
 
