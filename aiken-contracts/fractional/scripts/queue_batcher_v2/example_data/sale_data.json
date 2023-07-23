@@ -1,0 +1,66 @@
+{
+    "txid": "01d234fa116029315ab660c89b110ddd5711e603cbc32d31d9cc17d8a89d276e#1",
+    "datum": {
+        "constructor": 0,
+        "fields": [
+            {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "bytes": "39f29cfe6ab0765578a6e0d8871e1a3bc18f5d277b257095aabf1cd8"
+                    },
+                    {
+                        "bytes": ""
+                    }
+                ]
+            },
+            {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "bytes": "4d6d1192d39a48f4c80edbe52a5c480bec0a4e0711a998ca016b81a5"
+                    },
+                    {
+                        "bytes": "001bc280012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3"
+                    },
+                    {
+                        "int": 1000000
+                    }
+                ]
+            },
+            {
+                "map": [
+                    {
+                        "k": {
+                            "bytes": "015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"
+                        },
+                        "v": {
+                            "map": [
+                                {
+                                    "k": {
+                                        "bytes": "43757272656e6379"
+                                    },
+                                    "v": {
+                                        "int": 2000000
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "int": 10
+            }
+        ]
+    },
+    "value": {
+        "4d6d1192d39a48f4c80edbe52a5c480bec0a4e0711a998ca016b81a5": {
+            "001bc280012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3": 100000000
+        },
+        "c77be50d69ed0fd344e84ea7de7502b3143a1604c05675d93b146229": {
+            "0022bfb0012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3": 1
+        },
+        "lovelace": 2607550
+    }
+}

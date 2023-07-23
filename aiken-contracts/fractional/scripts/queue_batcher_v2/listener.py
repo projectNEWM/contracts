@@ -3,7 +3,7 @@ from flask import Flask, request
 import multiprocessing
 import subprocess
 import json
-from src import db_manager_redis, handle
+from src import db_manager_redis, handle, sorting
 
 db = db_manager_redis.DatabaseManager()
 
@@ -26,6 +26,12 @@ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    """The webhook for oura. This is where all the db logic and batcher logic
+    needs to go.
+
+    Returns:
+        str: A success string
+    """
     data = request.get_json()  # Get the JSON data from the request
 
     try:
@@ -52,12 +58,47 @@ def webhook():
     sales = db.read_all_sale_records()
     orders = db.read_all_queue_records()
     
-    # match the queue items with sale items
-    sale_to_order_dict = {}
-    # loop sales and loop orders and build out the dictionary
+    # there is at least one sale and one order
+    if len(sales) >= 1 and len(orders) >= 1:
+        
+        # match the queue items with sale items
+        sale_to_order_dict = {}
+        
+        # loop sales and loop orders and build out the dictionary
+        for sale in sales:
+            # print('SALE:', sale)
+            pointer_token = sale[0]
+            sale_data = sale[1]
+            sale_to_order_dict[pointer_token] = []
+            
+            for order in orders:
+                order_hash = order[0]
+                order_data = order[1]
+                tkn = order_data['tkn']
+                
+                if pointer_token == tkn:
+                    sale_to_order_dict[pointer_token].append((order_hash, order_data['timestamp'], order_data['tx_idx']))
+                    # print(f"\nThe sale utxo: {sale_data['txid']}")
+                    # print(f"The queue utxo: {order_data['txid']}")
+
     
-    # fifo the queue list per each sale
-    # do the tx stuff
+        # fifo the queue list per each sale
+        sorted_sale_to_order_dict = sorting.fifo(sale_to_order_dict)
+        
+        # loop the sorted sales and start batching
+        for sale in sorted_sale_to_order_dict:
+            sale_info = db.read_sale_record(sale)
+            sale_orders = sorted_sale_to_order_dict[sale]
+            for order in sale_orders:
+                order_hash = order[0]
+                order_info = db.read_queue_record(order_hash)
+                # this is a sale to complete
+                print(f'\nsale info: {sale_info}')
+                print(f'order info: {order_info}')
+                
+                # do the tx stuff here
+                
+
     # assume success and keep trying until it leaves the db
     # potentially may need intermediate db that tracks mempool
     

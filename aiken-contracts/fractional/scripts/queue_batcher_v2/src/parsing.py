@@ -37,11 +37,14 @@ def key_exists_in_dict(dictionary: dict, key: str) -> bool:
     return key in dictionary
 
 
-def sha3_256(input_string):
-    # Convert the input string to bytes since hashlib functions require bytes
-    input_bytes = input_string.encode('utf-8')
+def sha3_256(input_string: str) -> str:
+    """Compute the hex digest of a sha3_256 hash of some input string.
 
+    Args:
+        input_string (str): Some input string to be hashed.
+
+    Returns:
+        str: The sha3_256 hash of some string.
+    """
     # Calculate the SHA3-256 hash
-    sha3_256_hash = hashlib.sha3_256(input_bytes).hexdigest()
-
-    return sha3_256_hash
+    return hashlib.sha3_256(str(input_string).encode('utf-8')).hexdigest()
