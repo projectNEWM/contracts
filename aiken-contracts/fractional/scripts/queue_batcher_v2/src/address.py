@@ -23,7 +23,9 @@ def from_script_files(spend: str, stake: str, constants: dict):
             '--stake-script-file', stake
         ]
 
-    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout.read().decode('utf-8').rstrip()
+    p = subprocess.Popen(func, stdout=subprocess.PIPE).stdout
+    if p is not None:
+        return p.read().decode('utf-8').rstrip()
     return p
 
 def from_pkh_sc(pkh:str, sc: str, network: Network):

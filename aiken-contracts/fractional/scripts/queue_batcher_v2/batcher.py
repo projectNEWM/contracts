@@ -2,26 +2,22 @@ import logging
 from flask import Flask, request
 import multiprocessing
 import subprocess
-import json
-from src import db_manager_redis, handle, sorting
+from src import db_manager_redis, handle, json_file, purchase, refund
 
+# start the redis database
 db = db_manager_redis.DatabaseManager()
 
 # Clear the database
 db.clear_database()
 
-# the batcher uses constants defined in the env file
-def load_constants():
-    with open('env.json', 'r') as f:
-        constants = json.load(f)
-    return constants
-
-constants = load_constants()
+# load the environment constants
+constants = json_file.read("env.json")
 
 # Disable Flask's default logger
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
+# initial flask
 app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
@@ -53,50 +49,23 @@ def webhook():
     except Exception as e:
         return 'Webhook deserialization failure'
     
-    # do the orders here
-    # get all the queue items and sale items
-    sales = db.read_all_sale_records()
-    orders = db.read_all_queue_records()
-    
-    # there is at least one sale and one order
-    if len(sales) >= 1 and len(orders) >= 1:
+    # get all the queue items and sale items in fifo order
+    sorted_sale_to_order_dict = handle.fifo_order(db)
         
-        # match the queue items with sale items
-        sale_to_order_dict = {}
-        
-        # loop sales and loop orders and build out the dictionary
-        for sale in sales:
-            # print('SALE:', sale)
-            pointer_token = sale[0]
-            sale_data = sale[1]
-            sale_to_order_dict[pointer_token] = []
+    # loop the sorted sales and start batching
+    batcher_info = db.read_all_batcher_records()[0][1]
+    for sale in sorted_sale_to_order_dict:
+        sale_info = db.read_sale_record(sale)
+        sale_orders = sorted_sale_to_order_dict[sale]
+        for order in sale_orders:
+            order_hash = order[0]
+            order_info = db.read_queue_record(order_hash)
+            # check the order info for current state
+            # this is a sale to complete
+            purchase.build_tx(sale_info, order_info, batcher_info, constants)
+            refund.build_tx()
             
-            for order in orders:
-                order_hash = order[0]
-                order_data = order[1]
-                tkn = order_data['tkn']
-                
-                if pointer_token == tkn:
-                    sale_to_order_dict[pointer_token].append((order_hash, order_data['timestamp'], order_data['tx_idx']))
-                    # print(f"\nThe sale utxo: {sale_data['txid']}")
-                    # print(f"The queue utxo: {order_data['txid']}")
-
-    
-        # fifo the queue list per each sale
-        sorted_sale_to_order_dict = sorting.fifo(sale_to_order_dict)
-        
-        # loop the sorted sales and start batching
-        for sale in sorted_sale_to_order_dict:
-            sale_info = db.read_sale_record(sale)
-            sale_orders = sorted_sale_to_order_dict[sale]
-            for order in sale_orders:
-                order_hash = order[0]
-                order_info = db.read_queue_record(order_hash)
-                # this is a sale to complete
-                print(f'\nsale info: {sale_info}')
-                print(f'order info: {order_info}')
-                
-                # do the tx stuff here
+            # do the tx stuff here
                 
 
     # assume success and keep trying until it leaves the db
@@ -134,6 +103,7 @@ def start_processes():
         print("\nKeyboardInterrupt detected, terminating processes...")
         print(db.read_all_queue_records())
         print(db.read_all_sale_records())
+        print(db.read_all_batcher_records())
         flask_proc.terminate()
         daemon_proc.terminate()
         flask_proc.join()

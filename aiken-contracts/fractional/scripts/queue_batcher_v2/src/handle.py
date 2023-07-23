@@ -1,4 +1,4 @@
-from src import parsing, db_manager_redis
+from src import parsing, db_manager_redis, sorting
 
 def tx_input(db: db_manager_redis.DatabaseManager, data: dict) -> None:
     # the tx hash of this transaction
@@ -11,6 +11,9 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict) -> None:
     utxo_base_64 = parsing.sha3_256(input_utxo)
     if db.is_key_in_queue(utxo_base_64):
         db.delete_queue_record(utxo_base_64)
+    
+    if db.is_key_in_batcher(utxo_base_64):
+        db.delete_batcher_record(utxo_base_64)
 
 def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug:bool = True) -> None:
     # do something here
@@ -21,6 +24,17 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
     
     output_utxo = context['tx_hash'] + '#' + str(context['output_idx'])
     utxo_base_64 = parsing.sha3_256(output_utxo)
+    
+    if data['tx_output']['address'] == constants['batcher_address']:
+        # update the batcher information
+        lovelace = data['tx_output']['amount']
+        value_obj = parsing.asset_list_to_dict(data['tx_output']['assets'])
+        value_obj['lovelace'] = lovelace
+        
+        if debug is True:
+            print(f"Batcher Output Inside UTxO: {output_utxo} At Timestamp: {timestamp}")
+        db.create_batcher_record(utxo_base_64, output_utxo, value_obj)
+    
     
     if data['tx_output']['address'] == constants['queue_address']:
         queue_datum = data['tx_output']['inline_datum']['plutus_data'] if data['tx_output']['inline_datum'] is not None else {}
@@ -64,3 +78,30 @@ def rollback(data:dict) -> None:
         print("DO SOME THING HERE\n")
         print(data)
         exit(1)
+
+def fifo_order(db: db_manager_redis.DatabaseManager) -> dict:
+    # get all the queue items and sale items
+    sales = db.read_all_sale_records()
+    orders = db.read_all_queue_records()
+    
+    sale_to_order_dict = {}
+    
+    # there is at least one sale and one order
+    if len(sales) >= 1 and len(orders) >= 1:
+        # loop sales and loop orders and build out the dictionary
+        for sale in sales:
+            pointer_token = sale[0]
+            sale_to_order_dict[pointer_token] = []
+            
+            for order in orders:
+                order_hash = order[0]
+                order_data = order[1]
+                tkn = order_data['tkn']
+                
+                # find an order that points to a sale
+                if pointer_token == tkn:
+                    # timestap is primary sort var but tx_idx should be use to handle equal timestamps
+                    sale_to_order_dict[pointer_token].append((order_hash, order_data['timestamp'], order_data['tx_idx']))
+    
+    # fifo the queue list per each sale
+    return sorting.fifo(sale_to_order_dict)

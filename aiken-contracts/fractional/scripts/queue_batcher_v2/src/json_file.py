@@ -9,7 +9,7 @@ def read(file_name: str) -> dict:
     Returns:
         dict: The data from json file
     """
-    with open(file_name) as f:
+    with open(file_name, 'r') as f:
         d = json.load(f)
     return d
 

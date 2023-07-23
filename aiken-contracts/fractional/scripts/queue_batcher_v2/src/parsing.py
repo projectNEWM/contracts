@@ -1,5 +1,38 @@
 import hashlib
 
+def process_output(address: str, value_dict: dict) -> str:
+    """This will produce a correctly formatted output given an address and the
+    value dictionary that will go along with it.
+
+    Args:
+        address (str): The bech32 address
+        value_dict (dict): The value that is on the utxo
+
+    Returns:
+        str: The output in the "address + lovelace + asset" format.
+    """
+    # Get the value of the 'lovelace' key in the dictionary
+    lovelace_value = str(value_dict['lovelace'])
+    
+    # Get the values of the nested dictionary and combine them into a string
+    nested_dict_values = []
+    for key, value in value_dict.items():
+        if key != 'lovelace':
+            for sub_key, sub_value in value.items():
+                nested_dict_values.append(f"{sub_value} {key}.{sub_key}")
+    
+    # just add in the lovelace else do the assets too
+    if len(nested_dict_values) == 0:
+        # combine the address with the lovelace amount
+        output_string = address + " + " + lovelace_value
+    else:
+        nested_dict_values = " + ".join(nested_dict_values)
+        
+        # Combine the address wit the lovelace and the dictionary values
+        output_string = address + " + " + lovelace_value + " + " + nested_dict_values
+    
+    return output_string
+
 def asset_list_to_dict(assets: list) -> dict:
     """Convert the Oura asset list inside a tx output into a value dictionary.
 
