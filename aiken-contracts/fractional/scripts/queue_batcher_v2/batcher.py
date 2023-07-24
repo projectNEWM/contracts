@@ -2,7 +2,7 @@ import logging
 from flask import Flask, request
 import multiprocessing
 import subprocess
-from src import db_manager_redis, handle, json_file, purchase, refund
+from src import db_manager_redis, handle, json_file
 
 # start the redis database
 db = db_manager_redis.DatabaseManager()
@@ -53,23 +53,7 @@ def webhook():
     sorted_sale_to_order_dict = handle.fifo_order(db)
         
     # loop the sorted sales and start batching
-    batcher_info = db.read_all_batcher_records()[0][1]
-    for sale in sorted_sale_to_order_dict:
-        sale_info = db.read_sale_record(sale)
-        sale_orders = sorted_sale_to_order_dict[sale]
-        for order in sale_orders:
-            order_hash = order[0]
-            order_info = db.read_queue_record(order_hash)
-            # check the order info for current state
-            # this is a sale to complete
-            purchase.build_tx(sale_info, order_info, batcher_info, constants)
-            refund.build_tx()
-            
-            # do the tx stuff here
-                
-
-    # assume success and keep trying until it leaves the db
-    # potentially may need intermediate db that tracks mempool
+    handle.order_fulfillment(db, sorted_sale_to_order_dict, constants)
     
     # 
     return 'Webhook received successfully'

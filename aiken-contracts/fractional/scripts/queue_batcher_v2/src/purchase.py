@@ -1,6 +1,9 @@
 import os
 import src.json_file as json_file
 import src.datums as datums
+import src.dicts as dicts
+import src.parsing as parsing
+import subprocess
 
 def create_folder_if_not_exists(folder_path: str) -> None:
     if not os.path.exists(folder_path):
@@ -21,6 +24,8 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
 
     # HARDCODE FEE FOR NOW, NEED WAY TO ESITMATE THESE UNITS BETTER
     FEE = 6000000
+    # this needs to be dynamic here
+    FEE_VALUE = {"lovelace": FEE}
     sale_execution_units = "(300000000, 1000000)"
     queue_execution_units = "(1100000000, 3000000)"
 
@@ -32,6 +37,8 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
     
     protocol_file_path = os.path.join(parent_dir, "tmp/protocol.json")
     out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
+    purchased_tx_signed_path = os.path.join(parent_dir, 'tmp/purchased-tx.signed')
+    # refunded_tx_signed_path = os.path.join(parent_dir, 'tmp/refunded-tx.signed')
     
     # sale purchase redeemer
     json_file.write(datums.empty(0), "tmp/purchase-redeemer.json")
@@ -51,13 +58,41 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
     json_file.write(queue_datum, "tmp/queue-datum.json")
     queue_datum_file_path = os.path.join(parent_dir, "tmp/queue-datum.json")
 
+    bundle_pid = sale_info['datum']['fields'][1]['fields'][0]['bytes']
+    bundle_tkn = sale_info['datum']['fields'][1]['fields'][1]['bytes']
+    bundle_amt = sale_info['datum']['fields'][1]['fields'][2]['int']
+    wanted_bundle_size = queue_info['datum']['fields'][2]['int']
+    current_bundle_amt = sale_info['value'][bundle_pid][bundle_tkn]
+    if current_bundle_amt // bundle_amt < wanted_bundle_size:
+        number_of_bundles = current_bundle_amt // bundle_amt 
+    else:
+        number_of_bundles = wanted_bundle_size
+
+    incentive_data = queue_datum['fields'][3]['fields']
+    
+    bundle_value = {bundle_pid: {bundle_tkn: number_of_bundles * bundle_amt}}
     batcher_value = batcher_info['value']
     sale_value = sale_info['value']
     queue_value = queue_info['value']
+    cost_value = parsing.cost_map_to_value_dict(sale_info['datum']['fields'][2], number_of_bundles)
+    incentive_value = {incentive_data[0]: {incentive_data[1]: incentive_data[2]}}
     
-    batcher_out = ''
-    sale_out = ''
-    queue_out = ''
+    sv1 = dicts.add(sale_value, cost_value)
+    sv2 = dicts.subtract(sv1, bundle_value)
+    
+    qv1 = dicts.subtract(queue_value, cost_value)
+    qv2 = dicts.add(qv1, bundle_value)
+    qv3 = dicts.subtract(qv2, incentive_value)
+    qv4 = dicts.subtract(qv3, FEE_VALUE)
+    
+    bv1 = dicts.add(batcher_value, incentive_value)
+    
+    batcher_out = parsing.process_output(constants['batcher_address'], bv1)
+    print(batcher_out)
+    sale_out = parsing.process_output(constants['sale_address'], sv2)
+    print(sale_out)
+    queue_out = parsing.process_output(constants['queue_address'], qv4)
+    print(queue_out)
 
     func = [
         "cardano-cli", "transaction", "build-raw",
@@ -87,7 +122,6 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
         "--required-signer-hash", batcher_pkh,
         "--fee", str(FEE)
     ]
-
-    # result = subprocess.run(func, capture_output=True, text=True, check=True)
-
-    # return result.stdout.strip()
+    print("\nFUNC: ", func)
+    subprocess.run(func, capture_output=True, text=True, check=True)
+    

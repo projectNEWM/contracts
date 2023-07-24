@@ -1,5 +1,31 @@
 import hashlib
 
+def cost_map_to_value_dict(map_obj: dict, scale: int = 1) -> dict:
+    """Convert the cost map from the sale datum and scale it into a value
+    dictionary that is used in the db.
+
+    Args:
+        map_obj (dict): The map type for a plutus datum
+        scale (int): The scaling for the value.
+
+    Returns:
+        dict: The value dictionary similar to the db
+    """
+    val_obj = {}
+    for value in map_obj['map']:
+        pid = value['k']['bytes']
+        asset = value['v']['map']
+        for token in asset:
+            tkn = token['k']['bytes']
+            amt = token['v']['int']
+        
+            if pid in val_obj:
+                val_obj[pid] = {tkn:amt}
+                val_obj[pid][tkn] += scale*amt
+            else:
+                val_obj[pid] = {tkn: scale*amt}
+    return val_obj
+
 def process_output(address: str, value_dict: dict) -> str:
     """This will produce a correctly formatted output given an address and the
     value dictionary that will go along with it.

@@ -1,4 +1,4 @@
-from src import parsing, db_manager_redis, sorting
+from src import parsing, db_manager_redis, sorting, validate, purchase, refund
 
 def tx_input(db: db_manager_redis.DatabaseManager, data: dict) -> None:
     # the tx hash of this transaction
@@ -105,3 +105,34 @@ def fifo_order(db: db_manager_redis.DatabaseManager) -> dict:
     
     # fifo the queue list per each sale
     return sorting.fifo(sale_to_order_dict)
+
+def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order_dict: dict, constants: dict) -> None:
+    # loop the sorted sales and start batching
+    try:
+        batcher_info = db.read_all_batcher_records()[0][1]
+    except IndexError:
+        return
+        
+    for sale in sorted_sale_to_order_dict:
+        sale_info = db.read_sale_record(sale)
+        sale_orders = sorted_sale_to_order_dict[sale]
+        for order in sale_orders:
+            order_hash = order[0]
+            order_info = db.read_queue_record(order_hash)
+            # check the order info for current state
+            state = validate.utxo(sale_info, order_info)
+            if state is None:
+                # can not refund nor purchase
+                # user must cancel order manually
+                continue
+            elif state is True:
+                # the state needs a full purchase and refund
+                purchase.build_tx(sale_info, order_info, batcher_info, constants)
+                # sign tx
+                refund.build_tx()
+                # sign tx
+                # submit
+                # submit
+            else:
+                # the state just needs a refund
+                refund.build_tx()

@@ -41,5 +41,26 @@ if __name__ == "__main__":
             ('order4', 1, 1)
         ]
     }
+    
+    sorted_dict = {
+        'sale1': [
+            ('order4', 2, 0),
+            ('order1', 5, 0),
+            ('order3', 5, 1),
+            ('order2', 5, 2),
+        ],
+        'sale2': [
+            ('order4', 1, 0),
+            ('order3', 2, 1),
+            ('order2', 3, 2),
+            ('order1', 4, 0),
+        ],
+        'sale3': [
+            ('order4', 1, 1),
+            ('order2', 1, 2),
+            ('order3', 1, 3),
+            ('order1', 1, 4),
+        ]
+    }
     result = fifo(input_dict)
-    print(result)
+    print(result == sorted_dict)

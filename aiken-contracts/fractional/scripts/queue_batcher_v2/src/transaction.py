@@ -141,7 +141,7 @@ def signing_keys(signer_keys):
 #     return result.stdout.strip()
 
 
-def sign(signing_key_files, network, signed_file_path):
+def sign(signed_file_path, network, batcher_skey_path):
     """
     Sign a transaction with a list of payment keys.
     """
@@ -152,9 +152,10 @@ def sign(signing_key_files, network, signed_file_path):
         '--tx-body-file',
         '../tmp/tx.draft',
         '--tx-file',
-        signed_file_path
+        signed_file_path,
+        '--signing-key-file',
+        batcher_skey_path
     ]
-    func += signing_keys(signing_key_files)
     func += network.split(" ")
 
     # print(func)

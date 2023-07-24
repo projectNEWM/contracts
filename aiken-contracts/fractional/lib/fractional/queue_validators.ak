@@ -163,9 +163,13 @@ pub fn purchase_validation(
     }
   // allows for a partial bundle to be fulfilled
   let number_of_bundles =
+    // the amount on the sale utxo divided by the max sale amount is less
+    // than what the buyer wants to get as defined in the queue datum
     if quantity_of_pointer / sale_datum.bundle.amt < datum.bundle_amt {
+      // so get the left over
       quantity_of_pointer / sale_datum.bundle.amt
     } else {
+      // or get what you want
       datum.bundle_amt
     }
   // this value we are currently spending
