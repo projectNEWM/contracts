@@ -3,13 +3,13 @@ import src.json_file as json_file
 import src.datums as datums
 import src.dicts as dicts
 import src.parsing as parsing
+import src.transaction as transaction
+import src.handle as handle
 import subprocess
+from typing import Tuple
 
-def create_folder_if_not_exists(folder_path: str) -> None:
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
 
-def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
+def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict,dict,dict]:
     """
     Build a transaction and save the fileName into the tmp folder.
     """
@@ -18,14 +18,14 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
     sale_ref_utxo = constants['sale_ref_utxo']
     queue_ref_utxo = constants['queue_ref_utxo']
 
-
     # hardcode this for now
     batcher_pkh = constants['batcher_pkh']
 
     # HARDCODE FEE FOR NOW, NEED WAY TO ESITMATE THESE UNITS BETTER
-    FEE = 6000000
+    FEE = 600000
     # this needs to be dynamic here
     FEE_VALUE = {"lovelace": FEE}
+    COLLAT_VALUE = {"lovelace": int(1.5 * FEE)}
     sale_execution_units = "(300000000, 1000000)"
     queue_execution_units = "(1100000000, 3000000)"
 
@@ -33,12 +33,10 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
     parent_dir = os.path.dirname(this_dir)
     
     tmp_folder = os.path.join(parent_dir, "tmp")
-    create_folder_if_not_exists(tmp_folder)
+    handle.create_folder_if_not_exists(tmp_folder)
     
     protocol_file_path = os.path.join(parent_dir, "tmp/protocol.json")
     out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
-    purchased_tx_signed_path = os.path.join(parent_dir, 'tmp/purchased-tx.signed')
-    # refunded_tx_signed_path = os.path.join(parent_dir, 'tmp/refunded-tx.signed')
     
     # sale purchase redeemer
     json_file.write(datums.empty(0), "tmp/purchase-redeemer.json")
@@ -69,13 +67,14 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
         number_of_bundles = wanted_bundle_size
 
     incentive_data = queue_datum['fields'][3]['fields']
+    # print('\nincentive_data:', incentive_data)
     
     bundle_value = {bundle_pid: {bundle_tkn: number_of_bundles * bundle_amt}}
     batcher_value = batcher_info['value']
     sale_value = sale_info['value']
     queue_value = queue_info['value']
     cost_value = parsing.cost_map_to_value_dict(sale_info['datum']['fields'][2], number_of_bundles)
-    incentive_value = {incentive_data[0]: {incentive_data[1]: incentive_data[2]}}
+    incentive_value = {incentive_data[0]['bytes']: {incentive_data[1]['bytes']: incentive_data[2]['int']}}
     
     sv1 = dicts.add(sale_value, cost_value)
     sv2 = dicts.subtract(sv1, bundle_value)
@@ -87,19 +86,29 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
     
     bv1 = dicts.add(batcher_value, incentive_value)
     
+    cv1 = dicts.subtract(batcher_value, COLLAT_VALUE)
+    
     batcher_out = parsing.process_output(constants['batcher_address'], bv1)
-    print(batcher_out)
     sale_out = parsing.process_output(constants['sale_address'], sv2)
-    print(sale_out)
     queue_out = parsing.process_output(constants['queue_address'], qv4)
-    print(queue_out)
+    
+    collat_out = parsing.process_output(constants['batcher_address'], cv1)
+    # print('\nPURCHASE')
+    # print(batcher_out)
+    # print(sale_out)
+    # print(queue_out)
+
+    # [--tx-out-return-collateral ADDRESS VALUE]
+    # [--tx-total-collateral INTEGER]
+
+        # "--tx-out-return-collateral", collat_out, "-tx-total-collateral", str(int(1.5*FEE)),
 
     func = [
         "cardano-cli", "transaction", "build-raw",
         "--babbage-era",
         "--protocol-params-file", protocol_file_path,
         "--out-file", out_file_path,
-        "--tx-in-collateral", batcher_info['txid'],
+        "--tx-in-collateral", constants['collat_utxo'],
         "--read-only-tx-in-reference", data_ref_utxo,
         "--tx-in", batcher_info['txid'],
         "--tx-in", sale_info['txid'],
@@ -120,8 +129,26 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> None:
         "--tx-out", queue_out,
         "--tx-out-inline-datum-file", queue_datum_file_path,
         "--required-signer-hash", batcher_pkh,
+        "--required-signer-hash", constants['collat_pkh'],
         "--fee", str(FEE)
     ]
-    print("\nFUNC: ", func)
-    subprocess.run(func, capture_output=True, text=True, check=True)
     
+    # print('\nPURCHASE FUNC: ',func)
+    result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    # update the sale, queue, and batcher info for the next stepz
+    
+    intermediate_txid = transaction.txid(out_file_path)
+    # print("Purchase TxId:", intermediate_txid)
+    
+    
+    queue_info['txid'] = intermediate_txid + "#2"
+    queue_info['value'] = qv4
+    
+    sale_info['txid'] = intermediate_txid + "#1"
+    sale_info['value'] = sv2
+    
+    batcher_info['txid'] = intermediate_txid + "#0"
+    batcher_info['value'] = bv1
+    
+    return sale_info, queue_info, batcher_info

@@ -18,7 +18,7 @@ issuer_path="issuer-wallet"
 issuer_address=$(cat ../wallets/${issuer_path}/payment.addr)
 
 # issuer order for
-buyer_path="buyer2-wallet"
+buyer_path="buyer1-wallet"
 buyer_address=$(cat ../wallets/${buyer_path}/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer_path}/payment.vkey)
 

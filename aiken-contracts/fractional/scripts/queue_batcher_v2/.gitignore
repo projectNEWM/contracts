@@ -2,3 +2,4 @@ README.md
 batcher.db
 src/__pycache__/
 tmp/
+key/
