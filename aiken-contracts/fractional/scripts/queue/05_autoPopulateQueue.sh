@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+MAX_NUMBER_OF_TX=1000
+
 export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
 cli=$(cat ../data/path_to_cli.sh)
 testnet_magic=$(cat ../data/testnet.magic)
@@ -107,10 +109,16 @@ if [[ ${1} -eq 0 ]] ; then
     # 
     assets=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from subtract_value_string import subtract_value; subtract_value('${assets}', ${bundle_amount}, 1000000)")
     # echo otehr assets $assets
+    counter=0
 else
     lovelace=${1}
     assets=${2}
     issuer_tx_in=${3}
+    counter=${4}
+
+    if [[ ${counter} -gt ${MAX_NUMBER_OF_TX} ]] ; then
+        exit
+    fi
 
     echo $lovelace
     echo $issuer_tx_in
@@ -181,5 +189,5 @@ tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx
 
 python3 -c "import time, random; time.sleep(random.uniform(0, 2))"
-
-./05_autoPopulateQueue.sh ${lovelace_return} "${assets}" "${tx}#1"
+increment=$((${counter} + 1))
+./05_autoPopulateQueue.sh ${lovelace_return} "${assets}" "${tx}#1" ${increment}
