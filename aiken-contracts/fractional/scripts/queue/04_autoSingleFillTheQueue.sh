@@ -18,7 +18,7 @@ issuer_path="issuer-wallet"
 issuer_address=$(cat ../wallets/${issuer_path}/payment.addr)
 
 # issuer order for
-buyer_path="buyer1-wallet"
+buyer_path="buyer2-wallet"
 buyer_address=$(cat ../wallets/${buyer_path}/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer_path}/payment.vkey)
 
@@ -45,6 +45,7 @@ bundleSize=${1}
 # update bundle size
 variable=${bundleSize}; jq --argjson variable "$variable" '.fields[2].int=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
 mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
+
 # update token info
 bundle_pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 bundle_tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
@@ -62,7 +63,6 @@ mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
 buyer_assets=$(python3 -c "import sys; sys.path.append('../py/'); from convertMapToOutput import get_map; get_map($(jq -r '.fields[2].map' ../data/sale/sale-datum.json), ${bundleSize})")
 
 # the pure ada part
-pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
 pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
 if [[ -z $pSize ]]; then
   pSize=0

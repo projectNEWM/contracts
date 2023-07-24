@@ -1,5 +1,7 @@
 def fifo(input_dict: dict) -> dict:
     """This function will do a fifo sort on the sale-order dictionary.
+     txHash    timestamp  location-in-block
+    ("tx#idx", timestamp, tx_idx)
 
     Args:
         input_dict (dict): The sales are the keys and the orders are a list.
