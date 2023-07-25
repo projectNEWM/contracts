@@ -32,7 +32,6 @@ def webhook():
     something_happened_flag = False
     try:
         variant = data['variant']
-        # print(data['context']['block_number'])
         # if a rollback occurs we need to handle it
         if variant == 'RollBack':
             something_happened_flag = handle.rollback(data)

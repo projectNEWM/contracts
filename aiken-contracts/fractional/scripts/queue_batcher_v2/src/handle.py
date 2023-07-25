@@ -12,7 +12,7 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True
     result = db.find_sale_by_utxo(input_utxo)
     if result:
         if debug is True:
-            print(f"Sale Input @ {input_utxo}")
+            print(f"Spent Sale Input @ {input_utxo} @ Timestamp {data['context']['timestamp']}")
         db.delete_sale_record(result[0])
         return True
         
@@ -20,14 +20,14 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True
     utxo_base_64 = parsing.sha3_256(input_utxo)
     if db.is_key_in_queue(utxo_base_64):
         if debug is True:
-            print(f"Queue Input @ {input_utxo}")
+            print(f"Spent Queue Input @ {input_utxo} @ Timestamp {data['context']['timestamp']}")
         db.delete_queue_record(utxo_base_64)
         return True
         
     
     if db.is_key_in_batcher(utxo_base_64):
         if debug is True:
-            print(f"Batcher Input @ {input_utxo}")
+            print(f"Batcher Input @ {input_utxo} @ Timestamp {data['context']['timestamp']}")
         db.delete_batcher_record(utxo_base_64)
         return True
     return False
@@ -155,16 +155,21 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
         for order in sale_orders:
             order_hash = order[0]
             order_info = db.read_queue_record(order_hash)
+            # merklize the sale and order
+            tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
+            # check if the tag has been seen before
+            if db.read_seen_record(tag) is True:
+                # lets continue to the next order if we have seen it
+                continue
+            # check if this sale-order combo hash been seen
             # check the order info for current state
             state = validate.utxo(sale_info, order_info)
             if state is None:
                 print("BAD STATE")
-                
                 # can not refund nor purchase
                 # user must cancel order manually
                 continue
             elif state is True:
-                # print("NEEDS TO BE FULFILLED STATE")
                 # build the purchase tx
                 sale_info, order_info, batcher_info = purchase.build_tx(sale_info, order_info, batcher_info, constants)
                 # sign tx
@@ -177,7 +182,10 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 
                 # submit tx
                 transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
+                db.create_seen_record(tag)
                 transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
+                db.create_seen_record(tag)
             else:
                 # print("NEEDS TO BE REFUNDED STATE")
                 
@@ -187,5 +195,6 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 # # submit refund
                 transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                db.create_seen_record(tag)
                 
                 

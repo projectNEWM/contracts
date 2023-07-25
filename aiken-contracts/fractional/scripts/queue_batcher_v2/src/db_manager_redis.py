@@ -32,6 +32,9 @@ class DatabaseManager:
             'value': value,
         }))
     
+    def create_seen_record(self, id: str) -> None:
+        self.conn.hset('seen', id, json.dumps({'tag': id}))
+    
     def delete_sale_record(self, tkn: str) -> int:
         return self.conn.hdel('sale', tkn)
 
@@ -52,6 +55,10 @@ class DatabaseManager:
     def read_batcher_record(self, id: str) -> Optional[dict]:
         record = self.conn.hget('batcher', id)
         return json.loads(record) if record else None
+    
+    def read_seen_record(self, id: str) -> bool:
+        record = self.conn.hget('seen', id)
+        return True if record else False
 
     def find_sale_by_utxo(self, txid: str) -> List[str]:
         records = self.conn.hgetall('sale')
