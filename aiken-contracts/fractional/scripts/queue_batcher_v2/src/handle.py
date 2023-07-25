@@ -89,7 +89,7 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
     
             
 
-def rollback(data:dict) -> bool:
+def rollback(data:dict, debug:bool = True) -> bool:
     """TODO"""
     # do something here
     context = data['context']
@@ -132,7 +132,7 @@ def fifo_order(db: db_manager_redis.DatabaseManager) -> dict:
     # fifo the queue list per each sale
     return sorting.fifo(sale_to_order_dict)
 
-def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order_dict: dict, constants: dict) -> None:
+def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order_dict: dict, constants: dict, debug: bool = True) -> None:
     # loop the sorted sales and start batching
     
     # there needs to be at least a single batcher record
@@ -155,11 +155,14 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
         for order in sale_orders:
             order_hash = order[0]
             order_info = db.read_queue_record(order_hash)
+            if order_info is None:
+                print("nonthing")
+                continue
             # merklize the sale and order
             tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
             # check if the tag has been seen before
+            # I think this is breaking shit
             if db.read_seen_record(tag) is True:
-                # lets continue to the next order if we have seen it
                 continue
             # check if this sale-order combo hash been seen
             # check the order info for current state
@@ -181,20 +184,29 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 
                 # submit tx
-                transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
-                db.create_seen_record(tag)
-                transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
-                tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
-                db.create_seen_record(tag)
-            else:
-                # print("NEEDS TO BE REFUNDED STATE")
+                purchase_result, purchase_output = transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
+                if purchase_result is True:
+                    db.create_seen_record(tag)
+                else:
+                    continue
+                refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                if refund_result is True:
+                    tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
+                    db.create_seen_record(tag)
+                # if debug is True:
+                #     print(f"Purchase: {purchase_result}")
+                #     print(f"Refund: {refund_result}")
                 
+            else:
                 # # build the refund tx
                 refund.build_tx(sale_info, order_info, batcher_info, constants)
                 # # sign tx
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 # # submit refund
-                transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
-                db.create_seen_record(tag)
+                refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                if refund_result is True:
+                    db.create_seen_record(tag)
+                # if debug is True:
+                #     print(f"Refund: {refund_result}")
                 
                 
