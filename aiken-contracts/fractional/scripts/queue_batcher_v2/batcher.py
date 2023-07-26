@@ -36,28 +36,7 @@ def webhook():
         str: A success string
     """
     data = request.get_json()  # Get the JSON data from the request
-    something_happened_flag = False
-    try:
-        variant = data['variant']
-        # if a rollback occurs we need to handle it
-        if variant == 'RollBack':
-            something_happened_flag = handle.rollback(data, DEBUG)
-        
-        # tx outputs
-        if variant == 'TxOutput':
-            something_happened_flag = handle.tx_output(db, constants, data, DEBUG)
-        
-        # tx inputs
-        if variant == 'TxInput':
-            something_happened_flag = handle.tx_input(db, data, DEBUG)
-        
-        # there may other things to dump
-    except Exception as e:
-        print('ERROR with DATA')
-        return 'Webhook deserialization failure'
     
-    # if something_happened_flag is False:
-    #     return 'Webhook received successfully'
     
     # get all the queue items and sale items in fifo order
     sorted_sale_to_order_dict = handle.fifo_order(db)
@@ -75,10 +54,32 @@ def webhook():
         # sync to tip then begin
         if block_number is not None:
             if int(block_number) > latest_block_number:
+                print(f"\nBlock Number: {int(block_number) }")
+                
                 handle.order_fulfillment(db, sorted_sale_to_order_dict, constants)
             else:
                 print(f"Blocks Left To Sync: {latest_block_number - int(block_number) }")
     
+    something_happened_flag = False
+    try:
+        variant = data['variant']
+        # if a rollback occurs we need to handle it
+        if variant == 'RollBack':
+            something_happened_flag = handle.rollback(data, DEBUG)
+        
+        # tx inputs
+        if variant == 'TxInput':
+            something_happened_flag = handle.tx_input(db, data, DEBUG)
+        
+        # tx outputs
+        if variant == 'TxOutput':
+            something_happened_flag = handle.tx_output(db, constants, data, DEBUG)
+        
+        # there may other things to dump
+    except Exception as e:
+        print('ERROR with DATA')
+        return 'Webhook deserialization failure'
+
     # 
     return 'Webhook received successfully'
 
