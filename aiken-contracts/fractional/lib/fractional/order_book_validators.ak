@@ -72,7 +72,7 @@ pub fn refund_validation(
       // do you have enough stuff
       list.or([holding_enough_check, incentive_check]),
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_order_bound),
       // owner must get the utxo back
       payout.exact(seller_addr, outbound_value, tx.outputs)?,
       // single script input
@@ -145,7 +145,7 @@ pub fn find_datum_by_not_owner(
         _ -> find_datum_by_not_owner(rest, owner, val, addr)
       }
     // if something is matched right this errors
-    [] -> error @"No Datum Found"
+    [] -> fail @"No Datum Found"
   }
 }
 
@@ -171,7 +171,7 @@ pub fn complete_validation(
   let good_redeemer_check =
     when that_redeemer is {
       CompleteOrder(_) -> True
-      _ -> error @"Bad Redeemer"
+      _ -> fail @"Bad Redeemer"
     }
   let that_input = find.input_by_ref(tx.inputs, that_out_ref)
   // that value on the other utxo
@@ -227,7 +227,7 @@ pub fn complete_validation(
     )
   list.and(
     [
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_order_bound),
       // the other redeemer must be the complete redeemer
       good_redeemer_check?,
       // there has to be something to trade

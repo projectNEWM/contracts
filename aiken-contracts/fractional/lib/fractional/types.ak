@@ -67,7 +67,7 @@ pub type SaleRedeemer {
 }
 
 // greater than zero and less than or equal to the max bundle size
-pub fn valid_bundle_size(buy_amt: Int, max_bundle_size: Int) -> Bool {
+pub fn valid_number_of_bundles(buy_amt: Int, max_bundle_size: Int) -> Bool {
   buy_amt > 0 && buy_amt <= max_bundle_size
 }
 
@@ -105,7 +105,7 @@ pub type Workers =
 pub fn find_worker(workers: Workers, job: ByteArray) -> PublicKeyHash {
   when dict.get(workers, job) is {
     Some(one) -> one
-    None -> error @"worker not found"
+    None -> fail @"worker not found"
   }
 }
 
@@ -131,9 +131,11 @@ pub type ContractHashData {
 }
 
 pub type FeeInfoData {
-  purchase_upper_bound: Int,
-  refund_upper_bound: Int,
-  start_upper_bound: Int,
+  purchase_queue_bound: Int,
+  refund_queue_bound: Int,
+  start_sale_bound: Int,
+  purchase_order_bound: Int,
+  refund_order_bound: Int,
 }
 
 // data to be used inside other contracts
@@ -210,8 +212,8 @@ pub type BundleInfo {
 // single token bundle and cost
 pub type QueueDatum {
   owner: OwnerInfo,
-  pointer: BundleInfo,
-  bundle_amt: Int,
+  bundle: BundleInfo,
+  number_of_bundles: Int,
   incentive: TokenInfo,
   pointer_tkn: ByteArray,
 }
@@ -316,7 +318,7 @@ pub fn value_to_rational(self: Value, token: BundleInfo) -> Rational {
 pub fn split_fee_value(self: Value) -> Int {
   let amt = value.quantity_of(self, value.ada_policy_id, value.ada_asset_name)
   if amt % 2 != 0 {
-    error @"Even Fees Only"
+    fail @"Even Fees Only"
   } else {
     // just return the int
     -amt / 2
@@ -341,7 +343,7 @@ fn sqrt_babylonian(number: Int, x: Int, y: Int) -> Int {
   if y >= x {
     x
   } else if number < 0 {
-    error @"Number Must Be Positive"
+    fail @"Number Must Be Positive"
   } else if number == 0 {
     0
   } else {
