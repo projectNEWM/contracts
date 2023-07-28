@@ -19,22 +19,23 @@ pub fn purchase_validation(
 ) -> Bool {
   // the thing being spent
   let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  // the thing in the queue
+  // The queue address
   let queue_addr =
     addresses.create_script_address(
       ref_datum.contracts.queue,
       ref_datum.contracts.stake,
     )
-  // find the first sale input input
+  // find the first queue input input
   let queue_input = find.input_by_addr(tx.inputs, queue_addr)
   let queue_out_ref = queue_input.output_reference
-  // the datum going back to the contract
+  // The sale address
   let script_addr = validating_input.output.address
+  // the datum going back to the sale contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
-  // this should fail for bad data
+  // this should fail for bad data serialization
   expect _: QueuePurchase = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
-  // purchasing requires a constant datum and 1 thing being spent from the queue
+  // purchasing requires a constant datum and 1 in /  1 out from the queue contract
   list.and(
     [
       // single script input
@@ -68,7 +69,7 @@ pub fn start_validation(
   list.and(
     [
       // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_upper_bound),
+      types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_sale_bound),
       // prove pointer has pointer token
       values.prove_nft(ref_datum.pointer_pid, pointer)?,
       // prove validating value doesn't have pointer token

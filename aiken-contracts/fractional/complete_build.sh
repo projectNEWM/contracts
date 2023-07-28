@@ -132,11 +132,15 @@ stakeHash=$(cat hashes/stake.hash)
 pointerHash=$(cat hashes/pointer_policy.hash)
 
 # the purchase upper bound
-pub=$(jq -r '.purchase_upper_bound' start_info.json)
+pqb=$(jq -r '.purchase_queue_bound' start_info.json)
 # the refund upper bound
-rub=$(jq -r '.refund_upper_bound' start_info.json)
+rqb=$(jq -r '.refund_queue_bound' start_info.json)
 # the start upper bound
-sub=$(jq -r '.start_upper_bound' start_info.json)
+ssb=$(jq -r '.start_sale_bound' start_info.json)
+# the purchase upper bound
+pob=$(jq -r '.purchase_order_bound' start_info.json)
+# the refund upper bound
+rob=$(jq -r '.refund_order_bound' start_info.json)
 
 
 # this needs to be placed or auto generated somewhere
@@ -155,9 +159,11 @@ jq \
 --arg saleHash "$saleHash" \
 --arg queueHash "$queueHash" \
 --arg stakeHash "$stakeHash" \
---argjson pub "$pub" \
---argjson rub "$rub" \
---argjson sub "$sub" \
+--argjson pqb "$pqb" \
+--argjson rqb "$rqb" \
+--argjson ssb "$ssb" \
+--argjson pob "$pob" \
+--argjson rob "$rob" \
 --arg pointerHash "$pointerHash" \
 '.fields[0]=$signer_map | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
@@ -169,9 +175,11 @@ jq \
 .fields[3].fields[1].bytes=$saleHash |
 .fields[3].fields[2].bytes=$queueHash |
 .fields[3].fields[3].bytes=$stakeHash |
-.fields[4].fields[0].int=$pub |
-.fields[4].fields[1].int=$rub |
-.fields[4].fields[2].int=$sub |
+.fields[4].fields[0].int=$pqb |
+.fields[4].fields[1].int=$rqb |
+.fields[4].fields[2].int=$ssb |
+.fields[4].fields[3].int=$pob |
+.fields[4].fields[4].int=$rob |
 .fields[5].bytes=$pointerHash
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
