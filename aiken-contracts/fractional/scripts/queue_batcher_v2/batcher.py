@@ -25,7 +25,8 @@ latest_block_number = query.get_latest_block_number(constants['socket_path'], 't
 
 # This probably should be in the env file or something
 # or even just ahve the debug go to a log folder
-DEBUG = True
+UTXO_DEBUG = True
+SUBMIT_DEBUG = False
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -37,50 +38,44 @@ def webhook():
     """
     data = request.get_json()  # Get the JSON data from the request
     
-    
     # get all the queue items and sale items in fifo order
     sorted_sale_to_order_dict = handle.fifo_order(db)
     
     block_number = data['context']['block_number']
     db_number = db.read_block_record()
+    
+    # if the block number changes then attempt to do the swaps
     if db_number == 0:
         db.create_block_record(block_number)
         return 'Webhook received successfully'
     elif block_number == db_number:
+        # still in the block getting data
         pass
     else:
         db.create_block_record(block_number)
-        # loop the sorted sales and start batching
-        # sync to tip then begin
         if block_number is not None:
             if int(block_number) > latest_block_number:
                 print(f"\nBlock Number: {int(block_number) }")
-                
-                handle.order_fulfillment(db, sorted_sale_to_order_dict, constants)
+                handle.order_fulfillment(db, sorted_sale_to_order_dict, constants, SUBMIT_DEBUG)
             else:
                 print(f"Blocks Left To Sync: {latest_block_number - int(block_number) }")
     
-    something_happened_flag = False
     try:
         variant = data['variant']
+        
         # if a rollback occurs we need to handle it
         if variant == 'RollBack':
-            something_happened_flag = handle.rollback(data, DEBUG)
+            handle.rollback(data, UTXO_DEBUG)
         
         # tx inputs
         if variant == 'TxInput':
-            something_happened_flag = handle.tx_input(db, data, DEBUG)
+            handle.tx_input(db, data, UTXO_DEBUG)
         
         # tx outputs
         if variant == 'TxOutput':
-            something_happened_flag = handle.tx_output(db, constants, data, DEBUG)
-        
-        # there may other things to dump
-    except Exception as e:
-        print('ERROR with DATA')
+            handle.tx_output(db, constants, data, UTXO_DEBUG)
+    except Exception:
         return 'Webhook deserialization failure'
-
-    # 
     return 'Webhook received successfully'
 
 def flask_process(start_event):
@@ -110,9 +105,11 @@ def start_processes():
     except KeyboardInterrupt:
         # Handle KeyboardInterrupt (CTRL+C)
         print("\nKeyboardInterrupt detected, terminating processes...")
+        # this needs to be commented out later
         print(db.read_all_queue_records())
         print(db.read_all_sale_records())
         print(db.read_all_batcher_records())
+        # terminate and join
         flask_proc.terminate()
         daemon_proc.terminate()
         flask_proc.join()

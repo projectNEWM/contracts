@@ -1,4 +1,4 @@
-from src import parsing, db_manager_redis, sorting, validate, purchase, refund, transaction
+from src import parsing, db_manager_redis, sorting, validate, purchase, refund, transaction, query
 import os
 
 def create_folder_if_not_exists(folder_path: str) -> None:
@@ -16,7 +16,6 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True
         db.delete_sale_record(result[0])
         return True
         
-    
     utxo_base_64 = parsing.sha3_256(input_utxo)
     if db.is_key_in_queue(utxo_base_64):
         if debug is True:
@@ -24,14 +23,12 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True
         db.delete_queue_record(utxo_base_64)
         return True
         
-    
     if db.is_key_in_batcher(utxo_base_64):
         if debug is True:
             print(f"Batcher Input @ {input_utxo} @ Timestamp {data['context']['timestamp']}")
         db.delete_batcher_record(utxo_base_64)
         return True
     return False
-        
 
 def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug:bool = True) -> bool:
     # do something here
@@ -54,7 +51,6 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
         db.create_batcher_record(utxo_base_64, output_utxo, value_obj)
         return True
     
-    
     if data['tx_output']['address'] == constants['queue_address']:
         queue_datum = data['tx_output']['inline_datum']['plutus_data'] if data['tx_output']['inline_datum'] is not None else {}
         tkn = queue_datum['fields'][4]['bytes']
@@ -68,8 +64,6 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
         db.create_queue_record(utxo_base_64, output_utxo, tkn, queue_datum, value_obj, timestamp, tx_idx)
         return True
         
-        
-    
     if data['tx_output']['address'] == constants['sale_address']:
         sale_datum = data['tx_output']['inline_datum']['plutus_data'] if data['tx_output']['inline_datum'] is not None else {}
         
@@ -87,8 +81,6 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
             return True
     return False
     
-            
-
 def rollback(data:dict, debug:bool = True) -> bool:
     """TODO"""
     # do something here
@@ -144,6 +136,7 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
     this_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(this_dir)
     out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
+    mempool_file_path = os.path.join(parent_dir, "tmp/mempool.json")
     signed_purchase_tx = os.path.join(parent_dir, "tmp/purchase-tx.signed")
     signed_refund_tx = os.path.join(parent_dir, "tmp/refund-tx.signed")
     batcher_skey_path = os.path.join(parent_dir, "key/batcher.skey")
@@ -178,24 +171,40 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 # sign tx
                 transaction.sign(out_file_path, signed_purchase_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 
+                # is the purchase tx already submitted?
+                intermediate_txid = transaction.txid(out_file_path)
+                mempool_check = query.does_tx_exists_in_mempool(constants['socket_path'], intermediate_txid, mempool_file_path, constants['network'])
+                if mempool_check is True:
+                    continue
+                
                 # build the refund tx
                 refund.build_tx(sale_info, order_info, batcher_info, constants)
                 # sign tx
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 
+                # is the refund tx already submitted?
+                intermediate_txid = transaction.txid(out_file_path)
+                mempool_check = query.does_tx_exists_in_mempool(constants['socket_path'], intermediate_txid, mempool_file_path, constants['network'])
+                if mempool_check is True:
+                    continue
+                
                 # submit tx
                 purchase_result, purchase_output = transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
+                # if successful add to the seen record
                 if purchase_result is True:
                     db.create_seen_record(tag)
                 else:
                     continue
                 refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                # if successful add to the seen record
                 if refund_result is True:
                     tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
                     db.create_seen_record(tag)
-                # if debug is True:
-                #     print(f"Purchase: {purchase_result}")
-                #     print(f"Refund: {refund_result}")
+                
+                # needs better debug
+                if debug is True:
+                    print(f"Purchase: {purchase_result}")
+                    print(f"Refund: {refund_result}")
                 
             else:
                 # # build the refund tx
@@ -206,7 +215,7 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
                 if refund_result is True:
                     db.create_seen_record(tag)
-                # if debug is True:
-                #     print(f"Refund: {refund_result}")
                 
-                
+                # needs better debug
+                if debug is True:
+                    print(f"Refund: {refund_result}")

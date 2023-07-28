@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-MAX_NUMBER_OF_TX=275
+MAX_NUMBER_OF_TX=100
 
 export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
 cli=$(cat ../data/path_to_cli.sh)
@@ -188,6 +188,6 @@ ${cli} transaction submit \
 tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx
 
-python3 -c "import time, random; time.sleep(random.uniform(0, 5))"
+python3 -c "import time, random; time.sleep(random.uniform(0, 10))"
 increment=$((${counter} + 1))
 ./05_autoPopulateQueue.sh ${lovelace_return} "${assets}" "${tx}#1" ${increment}
