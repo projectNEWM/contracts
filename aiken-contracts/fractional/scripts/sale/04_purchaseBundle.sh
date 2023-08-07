@@ -137,7 +137,7 @@ incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af
 batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive}"
 
 # need better way for this
-cost_value="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+cost_value="4000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
 # queue contract return
 # the cost value is ada

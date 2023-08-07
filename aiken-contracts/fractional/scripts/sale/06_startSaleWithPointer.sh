@@ -169,6 +169,7 @@ ${cli} transaction build-raw \
     --required-signer-hash ${collat_pkh} \
     --fee 400000
 
+
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
