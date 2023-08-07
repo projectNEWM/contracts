@@ -249,6 +249,9 @@ pub type OrderBookPrice {
   ratio: Ratio,
   // plus or minus the slippage
   slippage: Ratio,
+  // minimum order thresholds
+  have_threshold: Int,
+  want_threshold: Int,
 }
 
 pub type OrderBookDatum {
@@ -271,7 +274,7 @@ pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
   let a_price = ratio_to_rational(a.price.ratio)
   let a_slip = ratio_to_rational(a.price.slippage)
   let b_price = ratio_to_rational(b.price.ratio)
-  let a_low = rational.add(a_price, rational.negate(a_slip))
+  let a_low = rational.sub(a_price, a_slip)
   let a_high = rational.add(a_price, a_slip)
   expect Some(b_inverse) = rational.reciprocal(b_price)
   list.and(
@@ -304,8 +307,10 @@ pub fn find_best(
     ],
   ){
   
+    // there is more or exactly zero of the getting token inside that_total
     rational.floor(getting)
   } else {
+    // there is only enough for that_total
     rational.floor(that_total)
   }
 }
