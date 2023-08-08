@@ -15,6 +15,10 @@ use fractional/types.{
   TxId,
 }
 
+pub fn buy_validation() {
+  todo
+}
+
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
   datum: OrderBookDatum,
