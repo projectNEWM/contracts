@@ -1,5 +1,6 @@
 /////////////////////
 
+use aiken/bytearray
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/list
@@ -18,6 +19,9 @@ pub const minter_key = #"6d696e746572"
 
 // pointer
 pub const pointer_key = #"706f696e746572"
+
+// batcher token
+pub const batcher_token_name = #"5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
 
 // wallet hash
 pub type PublicKeyHash =
@@ -138,6 +142,57 @@ pub type FeeInfoData {
   refund_order_bound: Int,
 }
 
+pub type BatcherData {
+  monster_pid: ByteArray,
+  monster_tkns: List<ByteArray>,
+  batcher_pid: ByteArray,
+  batcher_tkn: ByteArray,
+}
+
+/// Token names are from the value or total value. Monster token names are the
+/// official prefixes for the monster nfts.
+///
+pub fn has_tokens(
+  token_names: List<ByteArray>,
+  monster_tkns: List<ByteArray>,
+) -> Bool {
+  when monster_tkns is {
+    // I found all of them
+    [] -> True
+    // go through all the prefixes from the set
+    [prefix, ..prefixes] ->
+      if find_token_name_from_prefix(token_names, prefix) == True {
+        // found something so go to the next one
+        has_tokens(token_names, prefixes)
+      } else {
+        // missing something from the set
+        False
+      }
+  }
+}
+
+fn find_token_name_from_prefix(token_names: List<ByteArray>, prefix: ByteArray) {
+  when token_names is {
+    // didn't find a token name with the correct prefix
+    [] -> False
+    // check token name if prefix exist
+    [tkn, ..tkns] ->
+      if prefix_in_token_name(prefix, tkn) == True {
+        True
+      } else {
+        find_token_name_from_prefix(tkns, prefix)
+      }
+  }
+}
+
+/// Check if some known prefix exists within some token name.
+fn prefix_in_token_name(prefix: ByteArray, token_name: ByteArray) -> Bool {
+  // the length of the prefix counting from 0
+  let length_of_prefix = bytearray.length(prefix) - 1
+  // excluding the number does at least the prefix match
+  bytearray.slice(token_name, start: 0, end: length_of_prefix) == prefix
+}
+
 // data to be used inside other contracts
 pub type ReferenceDatum {
   hot_key: Workers,
@@ -146,6 +201,7 @@ pub type ReferenceDatum {
   contracts: ContractHashData,
   fee_info: FeeInfoData,
   pointer_pid: ByteArray,
+  batcher_info: BatcherData,
 }
 
 // The tx fee must be less than equal to the upper bound
@@ -171,6 +227,9 @@ pub type UpdateFeeInfo =
 pub type UpdatePointer =
   Void
 
+pub type UpdateBatcher =
+  Void
+
 pub type ReferenceRedeemer {
   UpdateHotKey
   UpdateKeepers
@@ -178,6 +237,7 @@ pub type ReferenceRedeemer {
   UpdateContracts
   UpdateFeeInfo
   UpdatePointer
+  UpdateBatcher
 }
 
 pub type StakeData {
@@ -375,4 +435,22 @@ pub type OrderBookRedeemer {
   UpdateOrder
   RefundOrder
   CompleteOrder(TxId)
+}
+
+// We need some data types for the new monster batcher nft pass
+pub type BandLockUpDatum {
+  owner: OwnerInfo,
+  full_flag: Int,
+}
+
+pub type BandLockUpRedeemer {
+  RemoveBand
+  AddToBand { member: Value }
+  MintBand
+  BurnBand
+}
+
+pub type BatcherTokenRedeemer {
+  MintBatcherToken
+  BurnBatcherToken
 }

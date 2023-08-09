@@ -6,8 +6,8 @@ use assist/find
 use assist/payout
 use assist/signing
 use fractional/types.{
-  ReferenceDatum, ReferenceRedeemer, UpdateContracts, UpdateFeeInfo,
-  UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
+  ReferenceDatum, ReferenceRedeemer, UpdateBatcher, UpdateContracts,
+  UpdateFeeInfo, UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
 }
 
 validator(_random_string: ByteArray) {
@@ -104,8 +104,19 @@ validator(_random_string: ByteArray) {
                   datum.fee_info == cont_datum.fee_info,
                 ],
               )
+            // Update the batcher info
+            UpdateBatcher ->
+              list.and(
+                [
+                  datum.hot_key == cont_datum.hot_key,
+                  datum.keepers == cont_datum.keepers,
+                  datum.staking == cont_datum.staking,
+                  datum.contracts == cont_datum.contracts,
+                  datum.fee_info == cont_datum.fee_info,
+                  datum.pointer_pid == cont_datum.pointer_pid,
+                ],
+              )
           }
-
         // The validaiton criteria
         list.and(
           [
