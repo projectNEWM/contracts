@@ -15,10 +15,6 @@ use fractional/types.{
   TxId,
 }
 
-pub fn buy_validation() {
-  todo
-}
-
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
   datum: OrderBookDatum,
@@ -245,6 +241,8 @@ pub fn complete_validation(
     )
   list.and(
     [
+      // that cant get zero
+      that_get_amt != 0,
       // order must meet thresholds
       list.and([this_is_enough, that_is_enough])?,
       // order must have value tx fee

@@ -148,7 +148,7 @@ pub type ReferenceDatum {
   pointer_pid: ByteArray,
 }
 
-// The tx fee must be less than the upper bound
+// The tx fee must be less than equal to the upper bound
 pub fn valid_tx_fee(fee: Value, upper_bound: Int) -> Bool {
   value.lovelace_of(fee) <= upper_bound
 }

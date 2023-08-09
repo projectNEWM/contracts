@@ -13,7 +13,7 @@ order_book_script_path="../../contracts/order_book_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${order_book_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
-buyer="buyer2"
+buyer="buyer1"
 buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
@@ -25,9 +25,6 @@ else
     exit
 fi
 
-echo "Order OUTPUT: "${script_address_out}
-#
-# exit
 #
 echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -60,29 +57,14 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file ${datum_path} \
     --tx-out="${script_address} + 5000000 + ${want_asset} + ${incentive_asset}" | tr -dc '0-9')
 
-self_start_fee=2000000
-min_ada=$((${utxo_value} + ${self_start_fee}))
+tx_gas=2000000
+min_ada=$((${utxo_value} + ${tx_gas}))
 
 script_address_out="${script_address} + ${min_ada} + ${want_asset} + ${incentive_asset}"
 echo "Order OUTPUT: "${script_address_out}
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
-${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
-    --address ${buyer_address} \
-    --out-file ../tmp/buyer_utxo.json
-TXNS=$(jq length ../tmp/buyer_utxo.json)
-if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
-   exit;
-fi
-alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
-buyer_tx_in=${TXIN::-8}
-
-# exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \

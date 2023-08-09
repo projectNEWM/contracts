@@ -13,7 +13,7 @@ order_book_script_path="../../contracts/order_book_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${order_book_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # set the buyer
-buyer="buyer2"
+buyer="buyer1"
 buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
@@ -57,7 +57,6 @@ echo Current Lovelace: $lovelace_value
 # exit
 current_have_value=$(jq -r --arg alltxin "" --arg pkh "${buyer_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 current_incentive_value=$(jq -r --arg alltxin "" --arg pkh "${buyer_pkh}" --arg pid "${ipid}" --arg tkn "${itkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-
 
 if [[ $current_have_value -le 0 && $current_incentive_value -le 0 ]]; then
     buyer_address_out="${buyer_address} + ${lovelace_value}"
