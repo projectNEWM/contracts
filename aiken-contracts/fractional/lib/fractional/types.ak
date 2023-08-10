@@ -131,6 +131,7 @@ pub type ContractHashData {
   cip68: ValidatorHash,
   sale: ValidatorHash,
   queue: ValidatorHash,
+  band: ValidatorHash,
   stake: ValidatorHash,
 }
 
@@ -442,6 +443,16 @@ pub type BandLockUpDatum {
   owner: OwnerInfo,
   full_flag: Int,
 }
+
+pub fn set_full_flag(old: BandLockUpDatum, new: BandLockUpDatum) -> Bool {
+  list.and([old.owner == new.owner, old.full_flag == 0, new.full_flag == 1])
+}
+
+pub type MintBand =
+  Void
+
+pub type BurnBand =
+  Void
 
 pub type BandLockUpRedeemer {
   RemoveBand
