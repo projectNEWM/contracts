@@ -79,7 +79,7 @@ jq \
 .fields[1].fields[0].bytes=$policy_id | 
 .fields[1].fields[1].bytes=$frac_name |
 .fields[1].fields[2].int=$bundle_size |
-.fields[2].map=$bundle_price |
+.fields[2].fields[0].map=$bundle_price |
 .fields[3].int=$max_bundle_size
 ' \
 ../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json

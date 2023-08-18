@@ -195,7 +195,7 @@ fn prefix_in_token_name(prefix: ByteArray, token_name: ByteArray) -> Bool {
 
 // data to be used inside other contracts
 pub type ReferenceDatum {
-  hot_key: Workers,
+  hot_key: PublicKeyHash,
   keepers: KeeperData,
   staking: StakePoolData,
   contracts: ContractHashData,

@@ -160,6 +160,15 @@ rob=$(jq -r '.refund_order_bound' start_info.json)
 
 
 # This needs to be generated from the hot key in start info.
+# Assume the hot key is all the keys for now
+# hotKey=$(jq -r '.hotKey' start_info.json)
+# jq \
+# --arg hotKey "$hotKey" \
+# '.map[0].v.bytes=$hotKey |
+# .map[1].v.bytes=$hotKey |
+# .map[2].v.bytes=$hotKey
+# ' \
+# ./scripts/data/reference/workers.json | sponge ./scripts/data/reference/workers.json
 
 # this needs to be placed or auto generated somewhere
 signer_map=$(cat ./scripts/data/reference/workers.json)
@@ -167,7 +176,6 @@ signer_map=$(cat ./scripts/data/reference/workers.json)
 cp ./scripts/data/reference/reference-datum.json ./scripts/data/reference/backup-reference-datum.json
 # update reference data
 jq \
---argjson signer_map "$signer_map" \
 --argjson pkhs "$pkhs" \
 --argjson thres "$thres" \
 --arg poolId "$poolId" \
@@ -185,8 +193,7 @@ jq \
 --argjson rob "$rob" \
 --arg pointerHash "$pointerHash" \
 --arg batcherHash "$batcherHash" \
-'.fields[0]=$signer_map | 
-.fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
+'.fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
 .fields[1].fields[1].int=$thres | 
 .fields[2].fields[0].bytes=$poolId |
 .fields[2].fields[1].bytes=$rewardPkh |

@@ -100,19 +100,19 @@ validator(_random_string: ByteArray) {
         // The validaiton criteria
         and {
           // send back to script but allow lovelace increase
-          payout.at_least(script_addr, cont_value, tx.outputs),
+          payout.at_least(script_addr, cont_value, tx.outputs)?,
           // single script input
-          count.inputs_by_addr(tx.inputs, script_addr, 1),
+          count.inputs_by_addr(tx.inputs, script_addr, 1)?,
           // single script output
-          count.outputs_by_addr(tx.outputs, script_addr, 1),
+          count.outputs_by_addr(tx.outputs, script_addr, 1)?,
           // only keepers can update the data
           signing.verify_multisig(
             tx.extra_signatories,
             datum.keepers.pkhs,
             datum.keepers.threshold,
-          ),
+          )?,
           // the cont datum check
-          datum_cont_check,
+          datum_cont_check?,
         }
       }
       // anything else fails
