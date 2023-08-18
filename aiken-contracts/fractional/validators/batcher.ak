@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{Mint, ScriptContext}
 use aiken/transaction/credential
 use aiken/transaction/value
@@ -41,30 +40,26 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           MintBatcherToken -> {
             expect _: MintBand =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
-            list.and(
-              [
-                // single script input
-                count.inputs_by_addr(tx.inputs, band_addr, 1),
-                // single script output
-                count.outputs_by_addr(tx.outputs, band_addr, 1),
-                ref_value_check,
-              ],
-            )
+            and {
+              // single script input
+              count.inputs_by_addr(tx.inputs, band_addr, 1),
+              // single script output
+              count.outputs_by_addr(tx.outputs, band_addr, 1),
+              ref_value_check,
+            }
           }
 
           // must spend 1 thing from the band contract and use the burn band redeemer
           BurnBatcherToken -> {
             expect _: BurnBand =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
-            list.and(
-              [
-                // single script input
-                count.inputs_by_addr(tx.inputs, band_addr, 1),
-                // single script output
-                count.outputs_by_addr(tx.outputs, band_addr, 1),
-                ref_value_check,
-              ],
-            )
+            and {
+              // single script input
+              count.inputs_by_addr(tx.inputs, band_addr, 1),
+              // single script output
+              count.outputs_by_addr(tx.outputs, band_addr, 1),
+              ref_value_check,
+            }
           }
         }
       // anthing else fails

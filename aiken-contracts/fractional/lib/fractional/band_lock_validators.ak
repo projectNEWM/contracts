@@ -1,5 +1,4 @@
 use aiken/dict
-use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value.{Value}
 use assist/addresses
@@ -21,20 +20,18 @@ pub fn remove_validation(
   let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
   let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  list.and(
-    [
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(owner_addr, validating_value, tx.outputs),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-      // can not have a full set
-      datum.full_flag == 0,
-    ],
-  )
+  and {
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // owner must get the utxo back
+    payout.exact(owner_addr, validating_value, tx.outputs),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+    // can not have a full set
+    datum.full_flag == 0,
+  }
 }
 
 /// Remove item from the order book at any point at owner's expense
@@ -50,22 +47,20 @@ pub fn add_member_validation(
   let script_addr = validating_input.output.address
   expect outbound_datum: BandLockUpDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
-  list.and(
-    [
-      // datum cant change
-      datum == outbound_datum,
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(script_addr, validating_value, tx.outputs),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
-      // can not have a full set
-      datum.full_flag == 0,
-    ],
-  )
+  and {
+    // datum cant change
+    datum == outbound_datum,
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // owner must get the utxo back
+    payout.exact(script_addr, validating_value, tx.outputs),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+    // can not have a full set
+    datum.full_flag == 0,
+  }
 }
 
 /// Remove item from the order book at any point at owner's expense
@@ -90,29 +85,27 @@ pub fn mint_validation(
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()
-  list.and(
-    [
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(script_addr, validating_value, tx.outputs),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
-      // must have a full set
-      types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns),
-      // the full flag is now set
-      types.set_full_flag(datum, outbound_datum),
-      // mint exactly 1 batcher token
-      minting.exact(
-        mint,
-        ref_datum.batcher_info.batcher_pid,
-        ref_datum.batcher_info.batcher_tkn,
-        1,
-      ),
-    ],
-  )
+  and {
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // owner must get the utxo back
+    payout.exact(script_addr, validating_value, tx.outputs),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+    // must have a full set
+    types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns),
+    // the full flag is now set
+    types.set_full_flag(datum, outbound_datum),
+    // mint exactly 1 batcher token
+    minting.exact(
+      mint,
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      1,
+    ),
+  }
 }
 
 /// Remove item from the order book at any point at owner's expense
@@ -132,24 +125,22 @@ pub fn burn_validation(
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()
-  list.and(
-    [
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(owner_addr, validating_value, tx.outputs),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-      // mint exactly 1 batcher token
-      minting.exact(
-        mint,
-        ref_datum.batcher_info.batcher_pid,
-        ref_datum.batcher_info.batcher_tkn,
-        -1,
-      ),
-      datum.full_flag == 1,
-    ],
-  )
+  and {
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // owner must get the utxo back
+    payout.exact(owner_addr, validating_value, tx.outputs),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+    // mint exactly 1 batcher token
+    minting.exact(
+      mint,
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      -1,
+    ),
+    datum.full_flag == 1,
+  }
 }

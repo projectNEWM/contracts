@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value
 use assist/addresses
@@ -21,18 +20,16 @@ pub fn cancel_validation(
   let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
   let seller_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  list.and(
-    [
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
-      // owner must get the utxo back
-      payout.exact(seller_addr, validating_value, tx.outputs)?,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-    ],
-  )
+  and {
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
+    // owner must get the utxo back
+    payout.exact(seller_addr, validating_value, tx.outputs)?,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+  }
 }
 
 /// Remove item from queue at any point at their expense
@@ -108,24 +105,22 @@ pub fn refund_validation(
   // subtract the fee from the value being spent
   let outbound_value = value.merge(validating_value, value.negate(tx.fee))
   // The refunding of a queue item is not incentivised.
-  list.and(
-    [
-      // check if official sale
-      official_sale_check?,
-      // check if the pointer is equal to the bundle
-      correct_sale_check?,
-      // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_queue_bound)?,
-      // check if utxo has cost and check if cant make sale
-      refund_value_check?,
-      // owner must get the utxo back
-      payout.exact(seller_addr, outbound_value, tx.outputs)?,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-    ],
-  )
+  and {
+    // check if official sale
+    official_sale_check?,
+    // check if the pointer is equal to the bundle
+    correct_sale_check?,
+    // The transaction fee can not exceed an upperbound
+    types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_queue_bound)?,
+    // check if utxo has cost and check if cant make sale
+    refund_value_check?,
+    // owner must get the utxo back
+    payout.exact(seller_addr, outbound_value, tx.outputs)?,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+  }
 }
 
 /// Remove item from queue at any point at their expense
@@ -206,31 +201,26 @@ pub fn purchase_validation(
   // this should fail for bad data
   expect _: Purchase = find.redeemer_by_ref(tx.redeemers, sale_out_ref)
   // the incentive is left open for whoever completes the tx to take
-  list.and(
-    [
-      // check if official sale
-      official_sale_check?,
-      // must have enough for the sale
-      sale_value_check?,
-      // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_queue_bound)?,
-      // prove existance of at least the incentive on the intermediate value
-      types.prove_existence_of_incentive(validating_value, datum.incentive)?,
-      // valid bundle size
-      types.valid_number_of_bundles(
-        number_of_bundles,
-        sale_datum.max_bundle_size,
-      )?,
-      // just continue the datum
-      (datum == outbound_datum)?,
-      // queue gets the bundle
-      payout.exact(script_addr, return_queue_value, tx.outputs)?,
-      // sale gets the cost
-      payout.exact(sale_addr, return_sale_value, tx.outputs)?,
-      // single sale script input
-      count.inputs_by_addr(tx.inputs, sale_addr, 1),
-      // one sale script output
-      count.outputs_by_addr(tx.outputs, sale_addr, 1),
-    ],
-  )
+  and {
+    // check if official sale
+    official_sale_check?,
+    // must have enough for the sale
+    sale_value_check?,
+    // The transaction fee can not exceed an upperbound
+    types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_queue_bound)?,
+    // prove existance of at least the incentive on the intermediate value
+    types.prove_existence_of_incentive(validating_value, datum.incentive)?,
+    // valid bundle size
+    types.valid_number_of_bundles(number_of_bundles, sale_datum.max_bundle_size)?,
+    // just continue the datum
+    (datum == outbound_datum)?,
+    // queue gets the bundle
+    payout.exact(script_addr, return_queue_value, tx.outputs)?,
+    // sale gets the cost
+    payout.exact(sale_addr, return_sale_value, tx.outputs)?,
+    // single sale script input
+    count.inputs_by_addr(tx.inputs, sale_addr, 1),
+    // one sale script output
+    count.outputs_by_addr(tx.outputs, sale_addr, 1),
+  }
 }

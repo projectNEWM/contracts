@@ -3,7 +3,6 @@
 use aiken/bytearray
 use aiken/dict.{Dict}
 use aiken/hash.{Blake2b_224, Hash}
-use aiken/list
 use aiken/math/rational.{Rational}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
@@ -283,14 +282,12 @@ pub fn prove_existence_of_incentive(
   validating_value: Value,
   the_incentive: TokenInfo,
 ) -> Bool {
-  list.and(
-    [
-      // The incentive must exist
-      value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
-      // the amount cant be zero
-      the_incentive.amt != 0,
-    ],
-  )
+  and {
+    // The incentive must exist
+    value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
+    // the amount cant be zero
+    the_incentive.amt != 0,
+  }
 }
 
 pub type Ratio {
@@ -327,7 +324,10 @@ pub type OrderBookDatum {
 }
 
 pub fn valid_order_update(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
-  list.and([(a.owner == b.owner)?, (a.have == b.have)?])
+  and {
+    (a.owner == b.owner)?,
+    (a.have == b.have)?,
+  }
 }
 
 // this funciton needs to be ran both ways, a,b and b,a, do this over the tx
@@ -338,19 +338,17 @@ pub fn is_ok_to_swap(a: OrderBookDatum, b: OrderBookDatum) -> Bool {
   let a_low = rational.sub(a_price, a_slip)
   let a_high = rational.add(a_price, a_slip)
   expect Some(b_inverse) = rational.reciprocal(b_price)
-  list.and(
-    [
-      // no self swaps
-      a.owner != b.owner,
-      // want I have is what you want
-      a.have == b.price.want,
-      // want I want is what you have
-      a.price.want == b.have,
-      // your price is is within my limits
-      rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse)?,
-      rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high)?,
-    ],
-  )
+  and {
+    // no self swaps
+    a.owner != b.owner,
+    // want I have is what you want
+    a.have == b.price.want,
+    // want I want is what you have
+    a.price.want == b.have,
+    // your price is is within my limits
+    rational.compare_with(a_low, fn(l, r) { l <= r }, b_inverse)?,
+    rational.compare_with(b_inverse, fn(l, r) { l <= r }, a_high)?,
+  }
 }
 
 pub fn find_best(
@@ -360,14 +358,10 @@ pub fn find_best(
 ) -> Int {
   let getting = rational.mul(this_total, price)
   let returning = rational.sub(that_total, getting)
-  if
-  list.or(
-    [
-      rational.compare(returning, rational.zero()) == Greater,
-      rational.compare(returning, rational.zero()) == Equal,
-    ],
-  ){
-  
+  if or {
+    rational.compare(returning, rational.zero()) == Greater,
+    rational.compare(returning, rational.zero()) == Equal,
+  } {
     // there is more or exactly zero of the getting token inside that_total
     rational.floor(getting)
   } else {
@@ -445,7 +439,11 @@ pub type BandLockUpDatum {
 }
 
 pub fn set_full_flag(old: BandLockUpDatum, new: BandLockUpDatum) -> Bool {
-  list.and([old.owner == new.owner, old.full_flag == 0, new.full_flag == 1])
+  and {
+    old.owner == new.owner,
+    old.full_flag == 0,
+    new.full_flag == 1,
+  }
 }
 
 pub type MintBand =

@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{OutputReference, Transaction}
 use aiken/transaction/value.{Value}
 use assist/addresses
@@ -36,16 +35,14 @@ pub fn purchase_validation(
   // this should fail for bad data serialization
   expect _: QueuePurchase = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
   // purchasing requires a constant datum and 1 in /  1 out from the queue contract
-  list.and(
-    [
-      // single script input
-      count.inputs_by_addr(tx.inputs, queue_addr, 1),
-      // single script output
-      count.outputs_by_addr(tx.outputs, queue_addr, 1),
-      // input datum and output datum must equal
-      datum == outbound_datum,
-    ],
-  )
+  and {
+    // single script input
+    count.inputs_by_addr(tx.inputs, queue_addr, 1),
+    // single script output
+    count.outputs_by_addr(tx.outputs, queue_addr, 1),
+    // input datum and output datum must equal
+    datum == outbound_datum,
+  }
 }
 
 /// Handle the updating of a sale
@@ -66,24 +63,22 @@ pub fn start_validation(
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
-  list.and(
-    [
-      // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_sale_bound),
-      // prove pointer has pointer token
-      values.prove_nft(ref_datum.pointer_pid, pointer)?,
-      // prove validating value doesn't have pointer token
-      !values.prove_nft(ref_datum.pointer_pid, validating_value)?,
-      // value must go back to script
-      payout.exact(script_addr, cont_value, tx.outputs)?,
-      // the datum can not change
-      datum == outbound_datum,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // single script output
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
-    ],
-  )
+  and {
+    // The transaction fee can not exceed an upperbound
+    types.valid_tx_fee(tx.fee, ref_datum.fee_info.start_sale_bound),
+    // prove pointer has pointer token
+    values.prove_nft(ref_datum.pointer_pid, pointer)?,
+    // prove validating value doesn't have pointer token
+    !values.prove_nft(ref_datum.pointer_pid, validating_value)?,
+    // value must go back to script
+    payout.exact(script_addr, cont_value, tx.outputs)?,
+    // the datum can not change
+    datum == outbound_datum,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // single script output
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+  }
 }
 
 /// Handle the updating of a sale
@@ -102,24 +97,22 @@ pub fn extract_validation(
   // the datum going back to the contract
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
-  list.and(
-    [
-      // the owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // prove profit does not have pointer token
-      !values.prove_nft(ref_datum.pointer_pid, profit),
-      // prove cont value has pointer token
-      values.prove_nft(ref_datum.pointer_pid, cont_value),
-      // value must go back to script
-      payout.exact(script_addr, cont_value, tx.outputs),
-      // the datum can not change
-      datum == outbound_datum,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // single script output
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
-    ],
-  )
+  and {
+    // the owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // prove profit does not have pointer token
+    !values.prove_nft(ref_datum.pointer_pid, profit),
+    // prove cont value has pointer token
+    values.prove_nft(ref_datum.pointer_pid, cont_value),
+    // value must go back to script
+    payout.exact(script_addr, cont_value, tx.outputs),
+    // the datum can not change
+    datum == outbound_datum,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // single script output
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+  }
 }
 
 /// Remove sale back to owners wallet
@@ -145,16 +138,14 @@ pub fn remove_validation(
       // if you dont hold the pointer then your sale never started
       True
     }
-  list.and(
-    [
-      // if have pointer burn else remove
-      remove_or_burn?,
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-    ],
-  )
+  and {
+    // if have pointer burn else remove
+    remove_or_burn?,
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+  }
 }

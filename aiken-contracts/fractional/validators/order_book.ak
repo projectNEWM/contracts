@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
 use assist/data
@@ -39,17 +38,15 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               )
             // the reference datum
             expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
-            list.and(
-              [
-                ref_value_check,
-                order_book_validators.refund_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                ),
-              ],
-            )
+            and {
+              ref_value_check,
+              order_book_validators.refund_validation(
+                datum,
+                ref_datum,
+                tx,
+                output_reference,
+              ),
+            }
           }
           CompleteOrder(txid) -> {
             // data reference stuff
@@ -65,18 +62,16 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               )
             // the reference datum
             expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
-            list.and(
-              [
-                ref_value_check,
-                order_book_validators.complete_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                  txid,
-                ),
-              ],
-            )
+            and {
+              ref_value_check,
+              order_book_validators.complete_validation(
+                datum,
+                ref_datum,
+                tx,
+                output_reference,
+                txid,
+              ),
+            }
           }
         }
 

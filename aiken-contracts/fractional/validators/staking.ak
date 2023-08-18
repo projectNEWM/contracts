@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{Publish, ScriptContext, WithdrawFrom}
 use aiken/transaction/certificate.{CredentialDelegation}
 use aiken/transaction/credential.{Inline, ScriptCredential}
@@ -41,19 +40,12 @@ validator(
         let reward = find.stake_reward_by_sc(tx.withdrawals, stake_credential)
         when redeemer is {
           // can only withdraw
-          Withdraw ->
-            list.and(
-              [
-                // data reference must hold correct token
-                ref_value_check,
-                // reward address must be paid the exact reward
-                payout.exact(
-                  reward_addr,
-                  value.from_lovelace(reward),
-                  tx.outputs,
-                ),
-              ],
-            )
+          Withdraw -> and {
+              // data reference must hold correct token
+              ref_value_check,
+              // reward address must be paid the exact reward
+              payout.exact(reward_addr, value.from_lovelace(reward), tx.outputs),
+            }
           // all else fails
           _ -> False
         }
@@ -68,20 +60,18 @@ validator(
                 delegator: Inline(ScriptCredential(sd.stake_cred)),
                 delegatee: ref_datum.staking.pool_id,
               }
-            list.and(
-              [
-                // data reference must hold correct token
-                ref_value_check,
-                // The only cert is for new delegation
-                certificate == new_delegation,
-                // only keepers can update the data
-                signing.verify_multisig(
-                  tx.extra_signatories,
-                  ref_datum.keepers.pkhs,
-                  ref_datum.keepers.threshold,
-                ),
-              ],
-            )
+            and {
+              // data reference must hold correct token
+              ref_value_check,
+              // The only cert is for new delegation
+              certificate == new_delegation,
+              // only keepers can update the data
+              signing.verify_multisig(
+                tx.extra_signatories,
+                ref_datum.keepers.pkhs,
+                ref_datum.keepers.threshold,
+              ),
+            }
           }
           // deregistration fails and anything else but changing delegation
           _ -> False

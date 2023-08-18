@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{Mint, ScriptContext}
 use aiken/transaction/credential
 use aiken/transaction/value
@@ -38,35 +37,29 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
-          MintTokens ->
-            list.and(
-              [
-                // hot key must sign
-                signing.verify_sig(tx.extra_signatories, signer),
-                // prevent roll over double nft attack
-                first_index < 256,
-                // must mint 1 pointer token
-                minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
-                // data reference must be holding correct token
-                ref_value_check,
-              ],
-            )
-          BurnTokens { burn_amt } ->
-            list.and(
-              [
-                burn_amt == 0,
-                // must burn 1 pointer token
-                minting.by_prefix(
-                  mint,
-                  own_currency_symbol,
-                  // non standard prefix
-                  types.prefix_555,
-                  -1,
-                )?,
-                // data reference must be holding correct token
-                ref_value_check?,
-              ],
-            )
+          MintTokens -> and {
+              // hot key must sign
+              signing.verify_sig(tx.extra_signatories, signer),
+              // prevent roll over double nft attack
+              first_index < 256,
+              // must mint 1 pointer token
+              minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
+              // data reference must be holding correct token
+              ref_value_check,
+            }
+          BurnTokens { burn_amt } -> and {
+              burn_amt == 0,
+              // must burn 1 pointer token
+              minting.by_prefix(
+                mint,
+                own_currency_symbol,
+                // non standard prefix
+                types.prefix_555,
+                -1,
+              )?,
+              // data reference must be holding correct token
+              ref_value_check?,
+            }
         }
       // Minting Only
       _ -> False

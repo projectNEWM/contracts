@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/math/rational
 use aiken/transaction.{InlineDatum, Output, OutputReference, Transaction}
 use aiken/transaction/credential.{Address}
@@ -26,18 +25,16 @@ pub fn remove_validation(
   let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
   let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  list.and(
-    [
-      // owner must sign it
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // owner must get the utxo back
-      payout.exact(owner_addr, validating_value, tx.outputs),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-    ],
-  )
+  and {
+    // owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // owner must get the utxo back
+    payout.exact(owner_addr, validating_value, tx.outputs),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+  }
 }
 
 /// Remove item from order book at any point at their expense
@@ -65,20 +62,21 @@ pub fn refund_validation(
   // subtract the fee from the value being spent
   let outbound_value = value.merge(validating_value, value.negate(tx.fee))
   // The refunding of a queue item is not incentivised.
-  list.and(
-    [
-      // do you have enough stuff
-      list.or([holding_enough_check, incentive_check]),
-      // The transaction fee can not exceed an upperbound
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_order_bound),
-      // owner must get the utxo back
-      payout.exact(owner_addr, outbound_value, tx.outputs)?,
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // no script outputs
-      count.outputs_by_addr(tx.outputs, script_addr, 0),
-    ],
-  )
+  and {
+    // do you have enough stuff
+    or {
+      holding_enough_check,
+      incentive_check,
+    },
+    // The transaction fee can not exceed an upperbound
+    types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_order_bound),
+    // owner must get the utxo back
+    payout.exact(owner_addr, outbound_value, tx.outputs)?,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // no script outputs
+    count.outputs_by_addr(tx.outputs, script_addr, 0),
+  }
 }
 
 /// Update the price or incentive on an order in the order book
@@ -93,20 +91,18 @@ pub fn update_validation(
   let script_addr = validating_input.output.address
   expect outbound_datum: OrderBookDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
-  list.and(
-    [
-      // sign to update
-      signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-      // single script input
-      count.inputs_by_addr(tx.inputs, script_addr, 1),
-      // single script output
-      count.outputs_by_addr(tx.outputs, script_addr, 1),
-      // make sure value is continuing
-      payout.exact(script_addr, validating_value, tx.outputs),
-      // datum check
-      types.valid_order_update(datum, outbound_datum),
-    ],
-  )
+  and {
+    // sign to update
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // single script output
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+    // make sure value is continuing
+    payout.exact(script_addr, validating_value, tx.outputs),
+    // datum check
+    types.valid_order_update(datum, outbound_datum),
+  }
 }
 
 /// Find the output with an inline datum that doesn't match the owner and return the data.
@@ -126,11 +122,11 @@ pub fn find_datum_by_not_owner(
       when output.datum is {
         InlineDatum(outbound_datum) -> {
           expect datum: OrderBookDatum = outbound_datum
-          if
-          list.and(
-            [datum.owner != owner, output.value == val, output.address == addr],
-          ){
-          
+          if and {
+            datum.owner != owner,
+            output.value == val,
+            output.address == addr,
+          } {
             datum
           } else {
             find_datum_by_not_owner(rest, owner, val, addr)
@@ -239,24 +235,25 @@ pub fn complete_validation(
       that_cont_value,
       this_addr,
     )
-  list.and(
-    [
-      // that cant get zero
-      that_get_amt != 0,
-      // order must meet thresholds
-      list.and([this_is_enough, that_is_enough])?,
-      // order must have value tx fee
-      types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_order_bound),
-      // the other redeemer must be the complete redeemer
-      that_redeemer_check,
-      // check if a swap can happen
-      types.is_ok_to_swap(this_datum, that_datum)?,
-      // that datum is correct
-      that_datum == that_outbound_datum,
-      // single script input
-      count.inputs_by_addr(tx.inputs, this_addr, 2),
-      // single script output
-      count.outputs_by_addr(tx.outputs, this_addr, 2),
-    ],
-  )
+  and {
+    // that cant get zero
+    that_get_amt != 0,
+    // order must meet thresholds
+    and {
+      this_is_enough,
+      that_is_enough,
+    }?,
+    // order must have value tx fee
+    types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_order_bound),
+    // the other redeemer must be the complete redeemer
+    that_redeemer_check,
+    // check if a swap can happen
+    types.is_ok_to_swap(this_datum, that_datum)?,
+    // that datum is correct
+    that_datum == that_outbound_datum,
+    // single script input
+    count.inputs_by_addr(tx.inputs, this_addr, 2),
+    // single script output
+    count.outputs_by_addr(tx.outputs, this_addr, 2),
+  }
 }

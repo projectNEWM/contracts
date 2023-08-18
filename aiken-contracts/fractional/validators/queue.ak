@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
 use assist/data
@@ -31,34 +30,28 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     when context.purpose is {
       Spend(output_reference) ->
         when redeemer is {
-          QueuePurchase ->
-            list.and(
-              [
-                // check if correct reference data
-                ref_value_check,
-                // purchase it
-                queue_validators.purchase_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                )?,
-              ],
-            )
-          QueueRefund ->
-            list.and(
-              [
-                // check if correct reference data
-                ref_value_check,
-                // refund it
-                queue_validators.refund_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                )?,
-              ],
-            )
+          QueuePurchase -> and {
+              // check if correct reference data
+              ref_value_check,
+              // purchase it
+              queue_validators.purchase_validation(
+                datum,
+                ref_datum,
+                tx,
+                output_reference,
+              )?,
+            }
+          QueueRefund -> and {
+              // check if correct reference data
+              ref_value_check,
+              // refund it
+              queue_validators.refund_validation(
+                datum,
+                ref_datum,
+                tx,
+                output_reference,
+              )?,
+            }
           QueueCancel ->
             // this is available at all times for queue items
             queue_validators.cancel_validation(datum, tx, output_reference)

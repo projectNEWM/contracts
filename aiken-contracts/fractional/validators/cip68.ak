@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{ScriptContext, Spend}
 use aiken/transaction/credential
 use aiken/transaction/value
@@ -39,19 +38,16 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         let script_addr = validating_input.output.address
         when redeemer is {
           // removes the utxo entirely from the contract
-          RemoveMeta ->
-            list.and(
-              [
-                // must hold correct data token
-                ref_value_check,
-                // owner must sign it
-                signing.verify_sig(tx.extra_signatories, signer),
-                // single script input
-                count.inputs_by_addr(tx.inputs, script_addr, 1),
-                // no script output
-                count.outputs_by_addr(tx.outputs, script_addr, 0),
-              ],
-            )
+          RemoveMeta -> and {
+              // must hold correct data token
+              ref_value_check,
+              // owner must sign it
+              signing.verify_sig(tx.extra_signatories, signer),
+              // single script input
+              count.inputs_by_addr(tx.inputs, script_addr, 1),
+              // no script output
+              count.outputs_by_addr(tx.outputs, script_addr, 0),
+            }
           // updates the metadata and change min ada
           UpdateMeta { lovelace, direction } -> {
             let validating_value = validating_input.output.value
@@ -75,20 +71,18 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                     -lovelace.increase,
                   )
               }
-            list.and(
-              [
-                // must hold correct data token
-                ref_value_check,
-                // owner must sign it
-                signing.verify_sig(tx.extra_signatories, signer),
-                // single script input
-                count.inputs_by_addr(tx.inputs, script_addr, 1),
-                // single script output
-                count.outputs_by_addr(tx.outputs, script_addr, 1),
-                // make sure value is continuing
-                payout.exact(script_addr, cont_value, tx.outputs),
-              ],
-            )
+            and {
+              // must hold correct data token
+              ref_value_check,
+              // owner must sign it
+              signing.verify_sig(tx.extra_signatories, signer),
+              // single script input
+              count.inputs_by_addr(tx.inputs, script_addr, 1),
+              // single script output
+              count.outputs_by_addr(tx.outputs, script_addr, 1),
+              // make sure value is continuing
+              payout.exact(script_addr, cont_value, tx.outputs),
+            }
           }
         }
       }
