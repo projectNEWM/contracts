@@ -13,7 +13,6 @@ use fractional/types.{BandLockUpDatum, ReferenceDatum}
 /// Remove item from the order book at any point at owner's expense
 pub fn remove_validation(
   datum: BandLockUpDatum,
-  ref_datum: ReferenceDatum,
   tx: Transaction,
   output_reference: OutputReference,
 ) -> Bool {
@@ -22,9 +21,6 @@ pub fn remove_validation(
   let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
   let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
-  let token_names =
-    value.tokens(validating_value, ref_datum.batcher_info.monster_pid)
-      |> dict.keys()
   list.and(
     [
       // owner must sign it
@@ -36,7 +32,7 @@ pub fn remove_validation(
       // no script outputs
       count.outputs_by_addr(tx.outputs, script_addr, 0),
       // can not have a full set
-      !types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns),
+      datum.full_flag == 0,
     ],
   )
 }
@@ -44,7 +40,6 @@ pub fn remove_validation(
 /// Remove item from the order book at any point at owner's expense
 pub fn add_member_validation(
   datum: BandLockUpDatum,
-  ref_datum: ReferenceDatum,
   tx: Transaction,
   output_reference: OutputReference,
   member: Value,
@@ -53,9 +48,6 @@ pub fn add_member_validation(
   let validating_input = find.input_by_ref(tx.inputs, output_reference)
   let validating_value = validating_input.output.value |> value.merge(member)
   let script_addr = validating_input.output.address
-  let token_names =
-    value.tokens(validating_value, ref_datum.batcher_info.monster_pid)
-      |> dict.keys()
   expect outbound_datum: BandLockUpDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   list.and(
@@ -71,7 +63,7 @@ pub fn add_member_validation(
       // no script outputs
       count.outputs_by_addr(tx.outputs, script_addr, 1),
       // can not have a full set
-      !types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns),
+      datum.full_flag == 0,
     ],
   )
 }
@@ -157,6 +149,7 @@ pub fn burn_validation(
         ref_datum.batcher_info.batcher_tkn,
         -1,
       ),
+      datum.full_flag == 1,
     ],
   )
 }

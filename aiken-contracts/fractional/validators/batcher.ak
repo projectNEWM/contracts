@@ -37,6 +37,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       // Mint 1 token
       Mint(_) ->
         when redeemer is {
+          // must spend 1 thing from the band contract and use the mint band redeemer
           MintBatcherToken -> {
             expect _: MintBand =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
@@ -51,6 +52,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             )
           }
 
+          // must spend 1 thing from the band contract and use the burn band redeemer
           BurnBatcherToken -> {
             expect _: BurnBand =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)

@@ -34,30 +34,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         when redeemer is {
           // remove utxo back to owner if not full
           RemoveBand ->
-            list.and(
-              [
-                band_lock_validators.remove_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                ),
-                ref_value_check,
-              ],
-            )
+            band_lock_validators.remove_validation(datum, tx, output_reference)
           // add some memebers to the band if not full
           AddToBand { member } ->
-            list.and(
-              [
-                band_lock_validators.add_member_validation(
-                  datum,
-                  ref_datum,
-                  tx,
-                  output_reference,
-                  member,
-                ),
-                ref_value_check,
-              ],
+            band_lock_validators.add_member_validation(
+              datum,
+              tx,
+              output_reference,
+              member,
             )
           // mint nft and lock full band
           MintBand ->

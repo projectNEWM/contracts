@@ -107,6 +107,20 @@ aiken blueprint apply -o plutus.json -v order_book.params "${ref_cbor}" .
 aiken blueprint convert -v order_book.params > contracts/order_book_contract.plutus
 cardano-cli transaction policyid --script-file contracts/order_book_contract.plutus > hashes/order_book.hash
 
+echo -e "\033[1;33m Convert Band Lock Contract \033[0m"
+aiken blueprint apply -o plutus.json -v band_lock.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v band_lock.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v band_lock.params "${ref_cbor}" .
+aiken blueprint convert -v band_lock.params > contracts/band_lock_contract.plutus
+cardano-cli transaction policyid --script-file contracts/band_lock_contract.plutus > hashes/band_lock.hash
+
+echo -e "\033[1;33m Convert Batcher Token Contract \033[0m"
+aiken blueprint apply -o plutus.json -v batcher.params "${pid_cbor}" .
+aiken blueprint apply -o plutus.json -v batcher.params "${tkn_cbor}" .
+aiken blueprint apply -o plutus.json -v batcher.params "${ref_cbor}" .
+aiken blueprint convert -v batcher.params > contracts/batcher_contract.plutus
+cardano-cli transaction policyid --script-file contracts/batcher_contract.plutus > hashes/batcher.hash
+
 ###############################################################################
 ############## DATUM AND REDEEMER STUFF #######################################
 ###############################################################################
@@ -126,10 +140,12 @@ rewardSc=""
 cip68Hash=$(cat hashes/cip68.hash)
 saleHash=$(cat hashes/sale.hash)
 queueHash=$(cat hashes/queue.hash)
+bandHash=$(cat hashes/band_lock.hash)
 stakeHash=$(cat hashes/stake.hash)
 
 # pointer hash
 pointerHash=$(cat hashes/pointer_policy.hash)
+batcherHash=$(cat hashes/batcher.hash)
 
 # the purchase upper bound
 pqb=$(jq -r '.purchase_queue_bound' start_info.json)
@@ -142,6 +158,8 @@ pob=$(jq -r '.purchase_order_bound' start_info.json)
 # the refund upper bound
 rob=$(jq -r '.refund_order_bound' start_info.json)
 
+
+# This needs to be generated from the hot key in start info.
 
 # this needs to be placed or auto generated somewhere
 signer_map=$(cat ./scripts/data/reference/workers.json)
@@ -156,6 +174,7 @@ jq \
 --arg rewardPkh "$rewardPkh" \
 --arg rewardSc "$rewardSc" \
 --arg cip68Hash "$cip68Hash" \
+--arg bandHash "$bandHash" \
 --arg saleHash "$saleHash" \
 --arg queueHash "$queueHash" \
 --arg stakeHash "$stakeHash" \
@@ -165,6 +184,7 @@ jq \
 --argjson pob "$pob" \
 --argjson rob "$rob" \
 --arg pointerHash "$pointerHash" \
+--arg batcherHash "$batcherHash" \
 '.fields[0]=$signer_map | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
 .fields[1].fields[1].int=$thres | 
@@ -174,13 +194,15 @@ jq \
 .fields[3].fields[0].bytes=$cip68Hash |
 .fields[3].fields[1].bytes=$saleHash |
 .fields[3].fields[2].bytes=$queueHash |
-.fields[3].fields[3].bytes=$stakeHash |
+.fields[3].fields[3].bytes=$bandHash |
+.fields[3].fields[4].bytes=$stakeHash |
 .fields[4].fields[0].int=$pqb |
 .fields[4].fields[1].int=$rqb |
 .fields[4].fields[2].int=$ssb |
 .fields[4].fields[3].int=$pob |
 .fields[4].fields[4].int=$rob |
-.fields[5].bytes=$pointerHash
+.fields[5].bytes=$pointerHash |
+.fields[6].fields[2].bytes=$batcherHash
 ' \
 ./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
 
