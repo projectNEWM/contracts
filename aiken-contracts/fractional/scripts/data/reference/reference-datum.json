@@ -2,7 +2,32 @@
   "constructor": 0,
   "fields": [
     {
-      "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+      "map": [
+        {
+          "k": {
+            "bytes": "6d65746164617461"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "6d696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "706f696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        }
+      ]
     },
     {
       "constructor": 0,
@@ -43,19 +68,19 @@
       "constructor": 0,
       "fields": [
         {
-          "bytes": "3c8205f5c6c0a0329f2acc4a37c70f9197ac5f7ebc85a0be69c6cb48"
+          "bytes": "7b5bd2c6070e687945605f6c7535b0e77c2ac8fa2102ddf1a6271a0c"
         },
         {
-          "bytes": "5f10884a726cdd67664225f59d0041e22e18e569102421c70e681a2a"
+          "bytes": "3f96be93d3bc61b3cb4259ffeaaae0554a9fb4455c629fe3efc103f4"
         },
         {
-          "bytes": "d02183a71b9c4eb860dee44fe94ceb8d74321a984cb66025bb019ad0"
+          "bytes": "0339e1693c5f6f4af0495bc3dd7f50a7db9047badad4ada41c6e3efe"
         },
         {
-          "bytes": "5139787457a7a02a5ce7f7d1b490661802c14ce05412078b77a565c2"
+          "bytes": "431869bb6980bf83c116694a3f4f545f1ee2ab4ecf711e41fa3fdf6a"
         },
         {
-          "bytes": "f9b315e198b5b37ff17e9c083c42279ab720b40d7812b308b48aac8c"
+          "bytes": "9f089af914303fdcb7a5a89fb78c3680f6568203599b602ab01dd001"
         }
       ]
     },
@@ -80,7 +105,7 @@
       ]
     },
     {
-      "bytes": "64dcabaaa8da6ade7b1a08f959a9d00e17d5bc7a8529bd60cf33b37e"
+      "bytes": "d4677f70172c92c58dc1c0d0f5e390b5d6e5fdedf4ec044c72cacab4"
     },
     {
       "constructor": 0,
@@ -102,7 +127,7 @@
           ]
         },
         {
-          "bytes": "92936dd5e5e4b00ec31ca5cb4b3a414971d8b49348a8a1721be07d8b"
+          "bytes": "213189799be05849d1d599a369f3439fff834a54b2eaf027a9e93bf5"
         },
         {
           "bytes": "5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"

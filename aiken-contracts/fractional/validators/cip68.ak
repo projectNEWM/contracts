@@ -31,8 +31,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // the job that signs this, 
     // 6d65746164617461 == metadata
-    // let signer = types.find_worker(ref_datum.hot_key, types.metadata_key)
-    let signer = ref_datum.hot_key
+    let signer = types.find_worker(ref_datum.hot_key, types.metadata_key)
+    // let signer = ref_datum.hot_key
     when context.purpose is {
       Spend(output_reference) -> {
         let validating_input = find.input_by_ref(tx.inputs, output_reference)

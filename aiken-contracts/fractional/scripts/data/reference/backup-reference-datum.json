@@ -2,7 +2,32 @@
   "constructor": 0,
   "fields": [
     {
-      "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+      "map": [
+        {
+          "k": {
+            "bytes": "6d65746164617461"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "6d696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        },
+        {
+          "k": {
+            "bytes": "706f696e746572"
+          },
+          "v": {
+            "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+          }
+        }
+      ]
     },
     {
       "constructor": 0,
