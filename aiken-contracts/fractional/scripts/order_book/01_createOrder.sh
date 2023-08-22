@@ -13,7 +13,7 @@ order_book_script_path="../../contracts/order_book_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${order_book_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
-buyer="buyer1"
+buyer="buyer2"
 buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
@@ -40,11 +40,11 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
 buyer_tx_in=${TXIN::-8}
 
-#
+# the token the buyer has
 pid=$(jq -r '.fields[1].fields[0].bytes' ${datum_path})
 tkn=$(jq -r '.fields[1].fields[1].bytes' ${datum_path})
 current_amt=$(jq -r --arg pid "${pid}" --arg tkn "${tkn}" '[to_entries[] | select(.value.value[$pid][$tkn]) | .value.value[$pid][$tkn]] | add' ../tmp/buyer_utxo.json)
-want_asset="${current_amt} ${pid}.${tkn}"
+have_asset="${current_amt} ${pid}.${tkn}"
 
 ipid=$(jq -r '.fields[3].fields[0].bytes' ${datum_path})
 itkn=$(jq -r '.fields[3].fields[1].bytes' ${datum_path})
@@ -55,12 +55,12 @@ utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ${datum_path} \
-    --tx-out="${script_address} + 5000000 + ${want_asset} + ${incentive_asset}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${have_asset} + ${incentive_asset}" | tr -dc '0-9')
 
 tx_gas=2000000
 min_ada=$((${utxo_value} + ${tx_gas}))
 
-script_address_out="${script_address} + ${min_ada} + ${want_asset} + ${incentive_asset}"
+script_address_out="${script_address} + ${min_ada} + ${have_asset} + ${incentive_asset}"
 echo "Order OUTPUT: "${script_address_out}
 #
 # exit

@@ -76,6 +76,14 @@ pub fn refund_validation(
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs
     count.outputs_by_addr(tx.outputs, script_addr, 0),
+    // tx must be spending the certificate of batcher authenticity
+    types.prove_existence_of_batcher(
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      tx.inputs,
+      output_reference,
+      output_reference,
+    )?,
   }
 }
 
@@ -165,7 +173,7 @@ pub fn complete_validation(
     when that_redeemer is {
       // the other redeemer must be a complete order
       CompleteOrder(_) -> True
-      _ -> fail @"Bad Redeemer"
+      _ -> False
     }
   let that_input = find.input_by_ref(tx.inputs, that_out_ref)
   // that value on the other utxo
@@ -246,14 +254,22 @@ pub fn complete_validation(
     // order must have value tx fee
     types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_order_bound),
     // the other redeemer must be the complete redeemer
-    that_redeemer_check,
+    that_redeemer_check?,
     // check if a swap can happen
     types.is_ok_to_swap(this_datum, that_datum)?,
     // that datum is correct
-    that_datum == that_outbound_datum,
+    (that_datum == that_outbound_datum)?,
     // single script input
     count.inputs_by_addr(tx.inputs, this_addr, 2),
     // single script output
     count.outputs_by_addr(tx.outputs, this_addr, 2),
+    // tx must be spending the certificate of batcher authenticity
+    types.prove_existence_of_batcher(
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      tx.inputs,
+      this_reference,
+      this_reference,
+    )?,
   }
 }

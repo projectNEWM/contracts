@@ -30,10 +30,10 @@
           "constructor": 0,
           "fields": [
             {
-              "bytes": ""
+              "bytes": "79b4b03d86b337231a3a861dba925675bf4edcce3169ad237feb0d14"
             },
             {
-              "bytes": ""
+              "bytes": "6c6f76656c616365"
             }
           ]
         },
@@ -41,10 +41,10 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 67
+              "int": 139
             },
             {
-              "int": 2500
+              "int": 10000
             }
           ]
         },
@@ -52,10 +52,10 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 1
+              "int": 10425
             },
             {
-              "int": 500
+              "int": 10000000
             }
           ]
         },

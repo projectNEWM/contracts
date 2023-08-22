@@ -13,7 +13,7 @@ order_book_script_path="../../contracts/order_book_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${order_book_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # set the buyer
-buyer="buyer1"
+buyer="buyer2"
 buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
