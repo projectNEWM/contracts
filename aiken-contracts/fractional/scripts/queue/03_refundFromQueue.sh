@@ -13,8 +13,9 @@ queue_script_path="../../contracts/queue_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, buyer, reference
-buyer_address=$(cat ../wallets/buyer1-wallet/payment.addr)
-buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
+buyer="buyer2"
+buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
 #
 batcher_address=$(cat ../wallets/batcher-wallet/payment.addr)
@@ -23,6 +24,33 @@ batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
+
+echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
+${cli} query utxo \
+    --address ${batcher_address} \
+    --testnet-magic ${testnet_magic} \
+    --out-file ../tmp/batcher_utxo.json
+# transaction variables
+TXNS=$(jq length ../tmp/batcher_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${batcher_address} \033[0m \n";
+   exit;
+fi
+
+TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
+batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
+batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add' ../tmp/batcher_utxo.json)
+batcher_tx_in=${TXIN::-8}
+echo Batcher UTXO ${batcher_tx_in}
+
+incentive="${batcher_starting_incentive} 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+
+token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+batcher_policy_id=$(cat ../../hashes/batcher.hash)
+batcher_token="1 ${batcher_policy_id}.${token_name}"
+batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive} + ${batcher_token}"
+echo -e "\nBatcher OUTPUT: "${batcher_address_out}
+
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -59,11 +87,9 @@ total_amt=100000000
 tokens="${CURRENT_VALUE} ${pid}.${tkn}"
 echo REMAINING: ${tokens}
 
-LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
+LOVELACE_VALUE=$(jq -r --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
 utxo_value=$LOVELACE_VALUE
 
-# utxo_value=3640661
-# tokens="100000000 989b0b633446d55c994ce997634fd5f94bd4e530bfa041448ea75c9c.28343434290198e10f93b990f9eab9fd6d05b2d2a0a08c359f36f123a925c36d"
 buyer_address_out="${buyer_address} + ${utxo_value} + ${tokens}"
 echo -e "\nRefund OUTPUT: "${buyer_address_out}
 
@@ -98,7 +124,8 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
-last_sale_utxo=$(${cli} transaction txid --tx-file ../tmp/last-sale-utxo.signed )
+# last_sale_utxo=$(${cli} transaction txid --tx-file ../tmp/last-sale-utxo.signed )
+last_sale_utxo="41271d8cb8f70339dae0230ff7acafad89a3467fd337b13cc57c0ce65edb158c"
 
 cpu_steps=600000000
 mem_steps=2000000
@@ -117,12 +144,14 @@ ${cli} transaction build-raw \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --read-only-tx-in-reference="${last_sale_utxo}#1" \
+    --tx-in ${batcher_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/refund-redeemer.json \
+    --tx-out="${batcher_address_out}" \
     --tx-out="${buyer_address_out}" \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
@@ -146,12 +175,14 @@ ${cli} transaction build-raw \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --read-only-tx-in-reference="${last_sale_utxo}#1" \
+    --tx-in ${batcher_tx_in} \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/refund-redeemer.json \
+    --tx-out="${batcher_address_out}" \
     --tx-out="${buyer_address_out}" \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \

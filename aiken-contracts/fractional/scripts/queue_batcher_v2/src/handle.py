@@ -1,5 +1,8 @@
-from src import parsing, db_manager_redis, sorting, validate, purchase, refund, transaction, query
 import os
+
+from src import (db_manager_redis, parsing, purchase, query, refund, sorting,
+                 transaction, validate)
+
 
 def create_folder_if_not_exists(folder_path: str) -> None:
     if not os.path.exists(folder_path):
@@ -154,9 +157,12 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
             # merklize the sale and order
             tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
             # check if the tag has been seen before
+            
             # I think this is breaking shit
             if db.read_seen_record(tag) is True:
+                # print("already seen")
                 continue
+            
             # check if this sale-order combo hash been seen
             # check the order info for current state
             state = validate.utxo(sale_info, order_info)
@@ -178,7 +184,7 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                     continue
                 
                 # build the refund tx
-                refund.build_tx(sale_info, order_info, batcher_info, constants)
+                sale_info, order_info, batcher_info = refund.build_tx(sale_info, order_info, batcher_info, constants)
                 # sign tx
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 
@@ -208,7 +214,7 @@ def order_fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order
                 
             else:
                 # # build the refund tx
-                refund.build_tx(sale_info, order_info, batcher_info, constants)
+                sale_info, order_info, batcher_info = refund.build_tx(sale_info, order_info, batcher_info, constants)
                 # # sign tx
                 transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
                 # # submit refund

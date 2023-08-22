@@ -24,7 +24,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     // get tx info
     let first_index = find.first_input_index(tx.inputs)
     let first_tx_hash = find.first_input_txid(tx.inputs)
-    // use the pointer prefix but its not official
+    // use the pointer prefix
+    // TODO CHANGE 555 INTO POINTER PREFIX
     let pointer_tkn =
       values.unique_token_name(first_tx_hash, first_index, types.prefix_555)
     let mint =

@@ -131,20 +131,26 @@ bundle_value="${buyAmt} ${pid}.${tkn}"
 
 returning_asset="${retAmt} ${pid}.${tkn}"
 
+echo INCENT $batcher_starting_incentive
 incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+echo $incentive
 
-
-batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive}"
+token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+batcher_policy_id=$(cat ../../hashes/batcher.hash)
+batcher_token="1 ${batcher_policy_id}.${token_name}"
+batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive} + ${batcher_token}"
 
 # need better way for this
-cost_value="4000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+cost_value="10000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
 # queue contract return
 # the cost value is ada
 queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
 sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
-queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
-sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
+# queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
+queue_ada_return=$((${queue_utxo_value}))
+# sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
+sale_ada_return=$((${sale_utxo_value}))
 if [ -z "$cost_value" ]; then
     echo "cost value is empty"
 

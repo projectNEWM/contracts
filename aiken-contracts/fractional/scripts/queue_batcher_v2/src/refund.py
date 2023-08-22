@@ -1,13 +1,14 @@
 import os
+import subprocess
+
+import src.address as address
+import src.datums as datums
+import src.dicts as dicts
 import src.handle as handle
 import src.json_file as json_file
-import subprocess
-import src.datums as datums
-import src.address as address
-import src.dicts as dicts
 import src.parsing as parsing
+import src.transaction as transaction
 from pycardano import Network
-
 
 
 def build_tx(sale_info, queue_info, batcher_info, constants: dict):
@@ -45,6 +46,7 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
     qv1 = dicts.subtract(queue_value, FEE_VALUE)
     
     batcher_value = batcher_info['value']
+    batcher_out = parsing.process_output(constants['batcher_address'], batcher_value)
     cv1 = dicts.subtract(batcher_value, COLLAT_VALUE)
     
     
@@ -62,12 +64,14 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
         "--tx-in-collateral", constants['collat_utxo'],
         '--read-only-tx-in-reference', data_ref_utxo,
         '--read-only-tx-in-reference', sale_info['txid'],
+        "--tx-in", batcher_info['txid'],
         '--tx-in', queue_info['txid'],
         '--spending-tx-in-reference', queue_ref_utxo,
         '--spending-plutus-script-v2',
         '--spending-reference-tx-in-inline-datum-present',
         '--spending-reference-tx-in-execution-units', execution_units,
         '--spending-reference-tx-in-redeemer-file', queue_redeemer_file_path,
+        "--tx-out", batcher_out,
         '--tx-out', buyer_out,
         '--required-signer-hash', batcher_pkh,
         '--required-signer-hash', constants['collat_pkh'],
@@ -76,3 +80,16 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
 
     # print('\nREFUND FUNC: ',func)
     result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    intermediate_txid = transaction.txid(out_file_path)
+    # print("Purchase TxId:", intermediate_txid)
+    
+    
+    queue_info['txid'] = intermediate_txid + "#1"
+    queue_info['value'] = qv1
+    
+    # sale_info['txid'] = intermediate_txid + "#1"
+    
+    batcher_info['txid'] = intermediate_txid + "#0"
+    
+    return sale_info, queue_info, batcher_info
