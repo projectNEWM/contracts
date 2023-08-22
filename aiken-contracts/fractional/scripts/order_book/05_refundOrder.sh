@@ -17,11 +17,18 @@ script_address=$(${cli} address build --payment-script-file ${order_book_script_
 batcher_address=$(cat ../wallets/batcher-wallet/payment.addr)
 batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/batcher-wallet/payment.vkey)
 
-buyer1_address=$(cat ../wallets/buyer1-wallet/payment.addr)
-buyer1_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
+# set the buyer
+buyer="buyer1"
+buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
-buyer2_address=$(cat ../wallets/buyer2-wallet/payment.addr)
-buyer2_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer2-wallet/payment.vkey)
+if [ "$buyer" = "buyer1" ]; then
+    datum_path="../data/order_book/order-book-datum1.json"
+elif [ "$buyer" = "buyer2" ]; then
+    datum_path="../data/order_book/order-book-datum2.json"
+else
+    exit
+fi
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -29,18 +36,11 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 
 
 # get the current value
-pid1=$(jq -r '.fields[1].fields[0].bytes' ../data/order_book/order-book-datum1.json)
-tkn1=$(jq -r '.fields[1].fields[1].bytes' ../data/order_book/order-book-datum1.json)
+hpid=$(jq -r '.fields[1].fields[0].bytes' ${datum_path})
+htkn=$(jq -r '.fields[1].fields[1].bytes' ${datum_path})
 
-ipid1=$(jq -r '.fields[3].fields[0].bytes' ../data/order_book/order-book-datum1.json)
-itkn1=$(jq -r '.fields[3].fields[1].bytes' ../data/order_book/order-book-datum1.json)
-
-# get the current value
-pid2=$(jq -r '.fields[1].fields[0].bytes' ../data/order_book/order-book-datum2.json)
-tkn2=$(jq -r '.fields[1].fields[1].bytes' ../data/order_book/order-book-datum2.json)
-
-ipid2=$(jq -r '.fields[3].fields[0].bytes' ../data/order_book/order-book-datum2.json)
-itkn2=$(jq -r '.fields[3].fields[1].bytes' ../data/order_book/order-book-datum2.json)
+wpid=$(jq -r '.fields[2].fields[0].fields[0].bytes' ${datum_path})
+wtkn=$(jq -r '.fields[2].fields[0].fields[1].bytes' ${datum_path})
 
 echo -e "\033[0;36m Gathering Script UTxO Information\n\033[0m"
 ${cli} query utxo \
@@ -53,76 +53,37 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
-script_tx_in1=${TXIN::-8}
-TXIN=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
-script_tx_in2=${TXIN::-8}
-
-# we can calculate the trade here
-
-first_assets=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from order_book import get_this_amt; get_this_amt('../tmp/script_utxo.json', '${script_tx_in1}', '${script_tx_in2}')")
-second_assets=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from order_book import get_that_amt; get_that_amt('../tmp/script_utxo.json', '${script_tx_in1}', '${script_tx_in2}')")
-
-# echo $first_assets
-# echo $second_assets
-# exit
-
-id1=${script_tx_in1::-2}
-idx1=${script_tx_in1: -1}
-
-id2=${script_tx_in2::-2}
-idx2=${script_tx_in2: -1}
-
-jq -r \
---arg id "$id1" \
---argjson idx "$idx1" \
-'.fields[0].fields[0].bytes=$id | .fields[0].fields[1].int=$idx' \
-../data/order_book/complete-redeemer2.json | sponge ../data/order_book/complete-redeemer2.json
-
-jq -r \
---arg id "$id2" \
---argjson idx "$idx2" \
-'.fields[0].fields[0].bytes=$id | .fields[0].fields[1].int=$idx' \
-../data/order_book/complete-redeemer1.json | sponge ../data/order_book/complete-redeemer1.json
-
-lovelace_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid1}" --arg tkn "${tkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
-# echo Current Lovelace: $lovelace_value1
-current_have_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${pid1}" --arg tkn "${tkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-current_incentive_value1=$(jq -r --arg alltxin "" --arg pkh "${buyer1_pkh}" --arg pid "${ipid1}" --arg tkn "${itkn1}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-
-# next 
-lovelace_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid2}" --arg tkn "${tkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
-# echo Current Lovelace: $lovelace_value2
-current_have_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${pid2}" --arg tkn "${tkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-current_incentive_value2=$(jq -r --arg alltxin "" --arg pkh "${buyer2_pkh}" --arg pid "${ipid2}" --arg tkn "${itkn2}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+TXIN=$(jq -r --arg alltxin "" --arg pkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
+script_tx_in=${TXIN::-8}
+echo Script UTXO: ${script_tx_in}
 
 
-# connect teh pythong script to calculate the amounts
+lovelace_value=$(jq -r --arg pkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
+# echo Current Lovelace: $lovelace_value
+current_have_value=$(jq -r --arg pkh "${buyer_pkh}" --arg pid "${hpid}" --arg tkn "${htkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+# echo Current Have: $current_have_value
+current_want_value=$(jq -r --arg pkh "${buyer_pkh}" --arg pid "${wpid}" --arg tkn "${wtkn}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+# echo Current Want: $current_want_value
 
-if [[ $current_have_value1 -le 0 && $current_incentive_value1 -le 0 ]]; then
-    exit
-elif [[ $current_have_value1 -le 0 && $current_incentive_value1 -gt 0 ]]; then
-    exit
-elif [[ $current_have_value1 -gt 0 && $current_incentive_value1 -le 0 ]]; then
-    exit
+if [ "$current_have_value" = "null" ]; then
+    # echo "Value is null"
+    have_token=""
 else
-    script_address_out1="${script_address} + ${lovelace_value1} + ${first_assets}"
+    # echo "Value is not null or empty: $current_have_value"
+    have_token=" + ${current_have_value} ${hpid}.${htkn}"
 fi
-echo First UTxO: $script_tx_in1
-echo "Complete OUTPUT 1: "${script_address_out1}
 
-if [[ $current_have_value2 -le 0 && $current_incentive_value2 -le 0 ]]; then
-    exit
-elif [[ $current_have_value2 -le 0 && $current_incentive_value2 -gt 0 ]]; then
-    exit
-elif [[ $current_have_value2 -gt 0 && $current_incentive_value2 -le 0 ]]; then
-    exit
+if [ "$current_want_value" = "null" ]; then
+    # echo "Value is null"
+    want_token=""
 else
-    script_address_out2="${script_address} + ${lovelace_value2} + ${second_assets}"
+    # echo "Value is not null or empty: $current_want_value"
+    want_token=" + ${current_want_value} ${wpid}.${wtkn}"
+
 fi
-echo
-echo Second UTxO: $script_tx_in2
-echo "Complete OUTPUT 2: "${script_address_out2}
+
+buyer_address_out="${buyer_address} + ${lovelace_value}${have_token}${want_token}"
+echo Buyer Out: ${buyer_address_out}
 
 echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -140,7 +101,7 @@ TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' 
 batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
 batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add' ../tmp/batcher_utxo.json)
 batcher_tx_in=${TXIN::-8}
-echo Batcher UTXO ${batcher_tx_in}
+echo Batcher UTXO: ${batcher_tx_in}
 
 incentive="$((${current_incentive_value1} + ${current_incentive_value2} + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
@@ -169,14 +130,14 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/order-book-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-cpu_steps=950000000
-mem_steps=3000000
+cpu_steps=550000000
+mem_steps=2000000
 
 order_book_execution_unts="(${cpu_steps}, ${mem_steps})"
 order_book_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 order_book_computation_fee_int=$(printf "%.0f" "$order_book_computation_fee")
 
-computational_fee=$((2 * ${order_book_computation_fee_int}))
+computational_fee=$((1 * ${order_book_computation_fee_int}))
 # echo Tx Fee: $computational_fee
 
 # exit
@@ -189,23 +150,14 @@ ${cli} transaction build-raw \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${batcher_tx_in} \
-    --tx-in ${script_tx_in1} \
+    --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${order_book_execution_unts}" \
-    --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer1.json \
-    --tx-in ${script_tx_in2} \
-    --spending-tx-in-reference="${script_ref_utxo}#1" \
-    --spending-plutus-script-v2 \
-    --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-execution-units="${order_book_execution_unts}" \
-    --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer2.json \
+    --spending-reference-tx-in-redeemer-file ../data/order_book/refund-redeemer.json \
     --tx-out="${batcher_address_out}" \
-    --tx-out="${script_address_out1}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum1.json  \
-    --tx-out="${script_address_out2}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum2.json  \
+    --tx-out="${buyer_address_out}" \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee 400000
@@ -213,22 +165,11 @@ ${cli} transaction build-raw \
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 total_fee=$((${fee} + ${computational_fee}))
+echo Tx Fee: $total_fee
 
-if (( total_fee % 2 == 0 )); then
-  final_fee=$total_fee
-else
-  final_fee=$((1 + ${total_fee}))
-fi
+buyer_address_out="${buyer_address} + $((${lovelace_value} - ${total_fee}))${have_token}${want_token}"
 
-split_fee=$((${final_fee} / 2))
-
-echo Tx Fee: $final_fee
-
-script_address_out1="${script_address} + $((${lovelace_value1} - ${split_fee})) + ${first_assets}"
-script_address_out2="${script_address} + $((${lovelace_value2} - ${split_fee})) + ${second_assets}"
-
-echo "OUTPUT 1: "${script_address_out1}
-echo "OUTPUT 2: "${script_address_out2}
+echo "Buyer OUTPUT: "${buyer_address_out}
 
 ${cli} transaction build-raw \
     --babbage-era \
@@ -237,26 +178,17 @@ ${cli} transaction build-raw \
     --tx-in-collateral="${collat_utxo}" \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${batcher_tx_in} \
-    --tx-in ${script_tx_in1} \
+    --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-execution-units="${order_book_execution_unts}" \
-    --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer1.json \
-    --tx-in ${script_tx_in2} \
-    --spending-tx-in-reference="${script_ref_utxo}#1" \
-    --spending-plutus-script-v2 \
-    --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-execution-units="${order_book_execution_unts}" \
-    --spending-reference-tx-in-redeemer-file ../data/order_book/complete-redeemer2.json \
+    --spending-reference-tx-in-redeemer-file ../data/order_book/refund-redeemer.json \
     --tx-out="${batcher_address_out}" \
-    --tx-out="${script_address_out1}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum1.json  \
-    --tx-out="${script_address_out2}" \
-    --tx-out-inline-datum-file ../data/order_book/order-book-datum2.json  \
+    --tx-out="${buyer_address_out}" \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --fee ${final_fee}
+    --fee ${total_fee}
 
 #
 # exit
