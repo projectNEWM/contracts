@@ -46,6 +46,7 @@ pub fn refund_validation(
       ref_datum.contracts.stake,
     )
   let sale_input = find.input_by_addr(tx.reference_inputs, sale_addr)
+  let sale_out_ref = sale_input.output_reference
   // the current value on the sale utxo, need this for return calculation
   let sale_value = sale_input.output.value
   // the sale datum
@@ -120,6 +121,14 @@ pub fn refund_validation(
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs
     count.outputs_by_addr(tx.outputs, script_addr, 0),
+    // tx must be spending the certificate of batcher authenticity
+    types.prove_existence_of_batcher(
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      tx.inputs,
+      output_reference,
+      sale_out_ref,
+    )?,
   }
 }
 
@@ -222,5 +231,13 @@ pub fn purchase_validation(
     count.inputs_by_addr(tx.inputs, sale_addr, 1),
     // one sale script output
     count.outputs_by_addr(tx.outputs, sale_addr, 1),
+    // tx must be spending the certificate of batcher authenticity
+    types.prove_existence_of_batcher(
+      ref_datum.batcher_info.batcher_pid,
+      ref_datum.batcher_info.batcher_tkn,
+      tx.inputs,
+      output_reference,
+      sale_out_ref,
+    )?,
   }
 }
