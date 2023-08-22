@@ -117,19 +117,13 @@ pub fn burn_validation(
 ) -> Bool {
   // the input being validated
   let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
-  let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
   // check if something is being minted here
   let mint =
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()
   and {
-    // owner must sign it
-    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
-    // owner must get the utxo back
-    payout.exact(owner_addr, validating_value, tx.outputs),
     // single script input
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs

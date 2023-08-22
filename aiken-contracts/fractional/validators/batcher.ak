@@ -6,8 +6,8 @@ use assist/count
 use assist/data
 use assist/find
 use fractional/types.{
-  BatcherTokenRedeemer, BurnBand, BurnBatcherToken, MintBand, MintBatcherToken,
-  ReferenceDatum,
+  BandLockUpRedeemer, BatcherTokenRedeemer, BurnBand, BurnBatcherToken, MintBand,
+  MintBatcherToken, ReferenceDatum,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -38,27 +38,38 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         when redeemer is {
           // must spend 1 thing from the band contract and use the mint band redeemer
           MintBatcherToken -> {
-            expect _: MintBand =
+            expect that_redeemer: BandLockUpRedeemer =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
+            let correct_redeemer =
+              when that_redeemer is {
+                MintBand -> True
+                _ -> False
+              }
             and {
               // single script input
               count.inputs_by_addr(tx.inputs, band_addr, 1),
               // single script output
               count.outputs_by_addr(tx.outputs, band_addr, 1),
               ref_value_check,
+              correct_redeemer,
             }
           }
-
           // must spend 1 thing from the band contract and use the burn band redeemer
           BurnBatcherToken -> {
-            expect _: BurnBand =
+            expect that_redeemer: BandLockUpRedeemer =
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
+            let correct_redeemer =
+              when that_redeemer is {
+                BurnBand -> True
+                _ -> False
+              }
             and {
               // single script input
               count.inputs_by_addr(tx.inputs, band_addr, 1),
               // single script output
-              count.outputs_by_addr(tx.outputs, band_addr, 1),
+              count.outputs_by_addr(tx.outputs, band_addr, 0),
               ref_value_check,
+              correct_redeemer,
             }
           }
         }

@@ -20,10 +20,13 @@ sale_script_address=$(${cli} address build --payment-script-file ${sale_script_p
 queue_script_path="../contracts/queue_contract.plutus"
 queue_script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
-# queue contract
+# order book contract
 order_book_script_path="../contracts/order_book_contract.plutus"
 order_book_script_address=$(${cli} address build --payment-script-file ${order_book_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
+# band lock contract
+band_lock_script_path="../contracts/band_lock_contract.plutus"
+band_lock_script_address=$(${cli} address build --payment-script-file ${band_lock_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # staked smart contract address
 ref_script_path="../contracts/reference_contract.plutus"
@@ -40,14 +43,17 @@ ${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magi
 # update the data folder with the current reference datum
 ${cli} query utxo --address ${ref_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_reference_utxo.json
 jq -r 'to_entries[] | .value.inlineDatum' tmp/current_reference_utxo.json > data/reference/current-reference-datum.json
+
 #
 echo -e "\033[1;35m\nCIP68 Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${cip68_script_address} \033[0m \n";
 ${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_magic}
+
 #
 echo -e "\033[1;35m\nBundle Sale Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${sale_script_address} \033[0m \n";
 ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic}
+
 #
 echo -e "\033[1;35m\nQueue Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${queue_script_address} \033[0m \n";
@@ -55,10 +61,16 @@ ${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_ma
 ${cli} query utxo --address ${queue_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_queue_utxo.json
 
 #
-echo -e "\033[1;35m\nOrderBook Script Address: \033[0m" 
+echo -e "\033[1;35m\nOrder Book Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${order_book_script_address} \033[0m \n";
 ${cli} query utxo --address ${order_book_script_address} --testnet-magic ${testnet_magic}
 ${cli} query utxo --address ${order_book_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_order_book_utxo.json
+
+#
+echo -e "\033[1;35m\nBand Lock Up Script Address: \033[0m" 
+echo -e "\n \033[1;32m ${band_lock_script_address} \033[0m \n";
+${cli} query utxo --address ${band_lock_script_address} --testnet-magic ${testnet_magic}
+
 
 # Loop through each -wallet folder
 for wallet_folder in wallets/*-wallet; do
