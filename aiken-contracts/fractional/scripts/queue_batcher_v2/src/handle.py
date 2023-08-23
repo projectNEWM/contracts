@@ -8,7 +8,7 @@ def create_folder_if_not_exists(folder_path: str) -> None:
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
-def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True) -> bool:
+def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug: bool = True) -> bool:
     # the tx hash of this transaction
     input_utxo = data['tx_input']['tx_id'] + '#' + str(data['tx_input']['index'])
     
@@ -33,7 +33,7 @@ def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True
         return True
     return False
 
-def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug:bool = True) -> bool:
+def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug: bool = True) -> bool:
     # do something here
     context = data['context']
     # timestamp for ordering, equal timestamps use the tx_idx to order
@@ -84,7 +84,7 @@ def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict,
             return True
     return False
     
-def rollback(data:dict, debug:bool = True) -> bool:
+def rollback(data: dict, debug: bool = True) -> bool:
     """TODO"""
     # do something here
     context = data['context']

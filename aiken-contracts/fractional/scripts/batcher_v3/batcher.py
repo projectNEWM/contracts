@@ -6,8 +6,6 @@ from flask import Flask, request
 from src import db_manager_redis, json_file, query
 from src.handle import Handle
 
-# from src import db_manager_redis, handle, json_file, query
-
 # start the redis database
 db = db_manager_redis.DatabaseManager()
 
@@ -34,11 +32,12 @@ SUBMIT_DEBUG = False
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """The webhook for oura. This is where all the db logic and batcher logic
+    """
+        The webhook for oura. This is where all the db logic and batcher logic
     needs to go.
 
     Returns:
-        str: A success string
+        str: A success string.
     """
     data = request.get_json()  # Get the JSON data from the request
     
@@ -62,7 +61,7 @@ def webhook():
         if block_number is not None:
             if int(block_number) > latest_block_number:
                 print(f"\nBlock Number: {int(block_number) }")
-                # handle.order_fulfillment(db, sorted_queue_orders, constants, SUBMIT_DEBUG)
+                Handle.Queue.fulfillment(db, sorted_queue_orders, constants, SUBMIT_DEBUG)
             else:
                 print(f"Blocks Left To Sync: {latest_block_number - int(block_number) }")
     
@@ -85,6 +84,8 @@ def webhook():
             Handle.Book.tx_output(db, constants, data, UTXO_DEBUG)
     except Exception:
         return 'Webhook deserialization failure'
+    
+    # all good
     return 'Webhook received successfully'
 
 def flask_process(start_event):
@@ -121,5 +122,4 @@ def start_processes():
         daemon_proc.join()
 
 if __name__ == '__main__':
-    pass
-    # start_processes()
+    start_processes()

@@ -1,12 +1,16 @@
-from src import db_manager_redis, parsing, sorting
+import os
+
+from src import (db_manager_redis, parsing, query, queue_purchase,
+                 queue_refund, sorting, transaction, validate)
 
 
 class Handle:
-    """General class to handle all queue and order book fulfillment.
+    """
+        General class to handle all queue and order book fulfillment.
     """
     
     @staticmethod
-    def rollback(data:dict, debug:bool = True) -> bool:
+    def rollback(data: dict, debug: bool = True) -> bool:
         """TODO"""
         # do something here
         
@@ -16,6 +20,7 @@ class Handle:
             print("DO SOME THING HERE\n")
             print(data)
             exit(1)
+        
         # assume rollback fails until we know how to properly handle this case for all cases.
         return False
     
@@ -23,7 +28,107 @@ class Handle:
         """Handle all queue logic."""
         
         @staticmethod
-        def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True) -> bool:
+        def fulfillment(db: db_manager_redis.DatabaseManager, sorted_sale_to_order_dict: dict, constants: dict, debug: bool = True) -> None:
+            # loop the sorted sales and start batching
+            
+            # there needs to be at least a single batcher record
+            try:
+                batcher_info = db.read_all_batcher_records()[0][1]
+            except IndexError:
+                return
+            
+            this_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(this_dir)
+            out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
+            mempool_file_path = os.path.join(parent_dir, "tmp/mempool.json")
+            signed_purchase_tx = os.path.join(parent_dir, "tmp/purchase-tx.signed")
+            signed_refund_tx = os.path.join(parent_dir, "tmp/refund-tx.signed")
+            batcher_skey_path = os.path.join(parent_dir, "key/batcher.skey")
+            collat_skey_path = os.path.join(parent_dir, "key/collat.skey")
+            
+            for sale in sorted_sale_to_order_dict:
+                sale_info = db.read_sale_record(sale)
+                sale_orders = sorted_sale_to_order_dict[sale]
+                for order in sale_orders:
+                    order_hash = order[0]
+                    order_info = db.read_queue_record(order_hash)
+                    if order_info is None:
+                        print("nonthing")
+                        continue
+                    # merklize the sale and order
+                    tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
+                    # check if the tag has been seen before
+                    
+                    # I think this is breaking shit
+                    if db.read_seen_record(tag) is True:
+                        # print("already seen")
+                        continue
+                    
+                    # check if this sale-order combo hash been seen
+                    # check the order info for current state
+                    state = validate.utxo(sale_info, order_info)
+                    if state is None:
+                        print("BAD STATE")
+                        # can not refund nor purchase
+                        # user must cancel order manually
+                        continue
+                    elif state is True:
+                        # build the purchase tx
+                        sale_info, order_info, batcher_info = queue_purchase.build_tx(sale_info, order_info, batcher_info, constants)
+                        # sign tx
+                        transaction.sign(out_file_path, signed_purchase_tx, constants['network'], batcher_skey_path, collat_skey_path)
+                        
+                        # is the purchase tx already submitted?
+                        intermediate_txid = transaction.txid(out_file_path)
+                        mempool_check = query.does_tx_exists_in_mempool(constants['socket_path'], intermediate_txid, mempool_file_path, constants['network'])
+                        if mempool_check is True:
+                            continue
+                        
+                        # build the refund tx
+                        sale_info, order_info, batcher_info = queue_refund.build_tx(sale_info, order_info, batcher_info, constants)
+                        # sign tx
+                        transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
+                        
+                        # is the refund tx already submitted?
+                        intermediate_txid = transaction.txid(out_file_path)
+                        mempool_check = query.does_tx_exists_in_mempool(constants['socket_path'], intermediate_txid, mempool_file_path, constants['network'])
+                        if mempool_check is True:
+                            continue
+                        
+                        # submit tx
+                        purchase_result, purchase_output = transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
+                        # if successful add to the seen record
+                        if purchase_result is True:
+                            db.create_seen_record(tag)
+                        else:
+                            continue
+                        refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                        # if successful add to the seen record
+                        if refund_result is True:
+                            tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
+                            db.create_seen_record(tag)
+                        
+                        # needs better debug
+                        if debug is True:
+                            print(f"Purchase: {purchase_result}")
+                            print(f"Refund: {refund_result}")
+                        
+                    else:
+                        # # build the refund tx
+                        sale_info, order_info, batcher_info = queue_refund.build_tx(sale_info, order_info, batcher_info, constants)
+                        # # sign tx
+                        transaction.sign(out_file_path, signed_refund_tx, constants['network'], batcher_skey_path, collat_skey_path)
+                        # # submit refund
+                        refund_result, refund_output = transaction.submit(signed_refund_tx, constants['socket_path'], constants['network'])
+                        if refund_result is True:
+                            db.create_seen_record(tag)
+                        
+                        # needs better debug
+                        if debug is True:
+                            print(f"Refund: {refund_result}")
+        
+        @staticmethod
+        def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug: bool = True) -> bool:
             # the tx hash of this transaction
             input_utxo = data['tx_input']['tx_id'] + '#' + str(data['tx_input']['index'])
             
@@ -49,7 +154,7 @@ class Handle:
             return False
 
         @staticmethod
-        def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug:bool = True) -> bool:
+        def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug: bool = True) -> bool:
             # do something here
             context = data['context']
             # timestamp for ordering, equal timestamps use the tx_idx to order
@@ -132,12 +237,12 @@ class Handle:
         """Handle all order book logic."""
 
         @staticmethod
-        def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug:bool = True) -> bool:
+        def tx_input(db: db_manager_redis.DatabaseManager, data: dict, debug: bool = True) -> bool:
             """TODO"""
             return True
         
         @staticmethod
-        def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug:bool = True) -> bool:
+        def tx_output(db: db_manager_redis.DatabaseManager, constants: dict, data: dict, debug: bool = True) -> bool:
             """TODO"""
             return True
         

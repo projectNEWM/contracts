@@ -8,7 +8,7 @@ class DatabaseManager:
     """
         CRUD for the batcher db.
     """
-    def __init__(self, host: str = 'localhost', port: int = 8008, db: int = 0):
+    def __init__(self, host: str = 'localhost', port: int = 6379, db: int = 0):
         self.conn = redis.StrictRedis(host=host, port=port, db=db)
 
     def clear_database(self) -> None:
