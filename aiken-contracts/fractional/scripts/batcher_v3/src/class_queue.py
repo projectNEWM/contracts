@@ -34,6 +34,7 @@ class Queue:
                 order_info = db.read_queue_record(order_hash)
                 if order_info is None:
                     print("NOTHING FOUND")
+                    # a queue item left the queue
                     continue
                 # merklize the sale and order
                 tag = parsing.sha3_256(parsing.sha3_256(str(sale)) + parsing.sha3_256(str(order_info)))
