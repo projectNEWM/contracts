@@ -250,3 +250,7 @@ class Handle:
         def fifo_order(db: db_manager_redis.DatabaseManager) -> dict:
             """TODO"""
             return {}
+        
+        @staticmethod
+        def fulfillment(db: db_manager_redis.DatabaseManager, sorted_order_to_order_dict: dict, constants: dict, debug: bool = True) -> None:
+            pass

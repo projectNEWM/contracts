@@ -26,7 +26,6 @@ app = Flask(__name__)
 latest_block_number = query.get_latest_block_number(constants['socket_path'], 'tmp/tip.json', constants['network'])
 
 # This probably should be in the env file or something
-# or even just ahve the debug go to a log folder
 UTXO_DEBUG = True
 SUBMIT_DEBUG = False
 
@@ -62,6 +61,7 @@ def webhook():
             if int(block_number) > latest_block_number:
                 print(f"\nBlock Number: {int(block_number) }")
                 Handle.Queue.fulfillment(db, sorted_queue_orders, constants, SUBMIT_DEBUG)
+                Handle.Book.fulfillment(db, sorted_book_orders, constants, SUBMIT_DEBUG)
             else:
                 print(f"Blocks Left To Sync: {latest_block_number - int(block_number) }")
     
