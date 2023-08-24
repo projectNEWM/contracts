@@ -5,7 +5,7 @@ magic = "preprod"
 
 [source.intersect]
 type = "Point"
-value = [36890237, "0f294def7d623bba63f54910ae3ce054c6dd4c8c0308ec08f585e85d154b5c74"]
+value = [37038451, "eabf8f2304e96d06fdc2124ab23313a775ab84e40ccdffcc18fd3eee8bc8c3cc"]
 
 [source.mapper]
 include_transaction_details = true

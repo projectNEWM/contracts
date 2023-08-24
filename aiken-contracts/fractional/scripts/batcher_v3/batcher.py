@@ -4,7 +4,7 @@ import subprocess
 
 from flask import Flask, request
 from src import db_manager_redis, json_file, query
-from src.handle import Handle
+from src.class_handle import Handle
 
 # start the redis database
 db = db_manager_redis.DatabaseManager()
@@ -75,11 +75,15 @@ def webhook():
         
         # tx inputs
         if variant == 'TxInput':
+            Handle.Batcher.tx_input(db, data, UTXO_DEBUG)
+            Handle.Sale.tx_input(db, data, UTXO_DEBUG)
             Handle.Queue.tx_input(db, data, UTXO_DEBUG)
             Handle.Book.tx_input(db, data, UTXO_DEBUG)
         
         # tx outputs
         if variant == 'TxOutput':
+            Handle.Batcher.tx_output(db, constants, data, UTXO_DEBUG)
+            Handle.Sale.tx_output(db, constants, data, UTXO_DEBUG)
             Handle.Queue.tx_output(db, constants, data, UTXO_DEBUG)
             Handle.Book.tx_output(db, constants, data, UTXO_DEBUG)
     except Exception:

@@ -126,6 +126,11 @@ class DatabaseManager:
     #
     # Helpers
     #
+    def find_order_by_utxo(self, txid: str):
+        records = self.conn.hgetall('order_book')
+        matches = [key.decode('utf-8') for key, value in records.items() if json.loads(value)['txid'] == txid]
+        return matches
+        
     def find_sale_by_utxo(self, txid: str) -> List[str]:
         records = self.conn.hgetall('sale')
         matches = [key.decode('utf-8') for key, value in records.items() if json.loads(value)['txid'] == txid]

@@ -129,6 +129,7 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     ]
     
     result = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # print(result)
     
     # update the sale, queue, and batcher info for the next stepz
     

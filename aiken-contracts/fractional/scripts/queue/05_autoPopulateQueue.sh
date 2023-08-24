@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-MAX_NUMBER_OF_TX=50
+MAX_NUMBER_OF_TX=250
 
 export CARDANO_NODE_SOCKET_PATH=$(cat ../data/path_to_socket.sh)
 cli=$(cat ../data/path_to_cli.sh)
