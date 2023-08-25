@@ -63,7 +63,7 @@ def webhook():
                 Handle.Queue.fulfillment(db, sorted_queue_orders, constants, SUBMIT_DEBUG)
                 Handle.Book.fulfillment(db, sorted_book_orders, constants, SUBMIT_DEBUG)
             else:
-                print(f"Blocks Left To Sync: {latest_block_number - int(block_number) }")
+                print(f"Blocks Left To Sync: {latest_block_number - int(block_number)}")
     
     # now lets try to handle the parsing of the data
     try:

@@ -21,8 +21,8 @@ class Queue:
         parent_dir = os.path.dirname(this_dir)
         out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
         mempool_file_path = os.path.join(parent_dir, "tmp/mempool.json")
-        signed_purchase_tx = os.path.join(parent_dir, "tmp/purchase-tx.signed")
-        signed_refund_tx = os.path.join(parent_dir, "tmp/refund-tx.signed")
+        signed_purchase_tx = os.path.join(parent_dir, "tmp/queue-purchase-tx.signed")
+        signed_refund_tx = os.path.join(parent_dir, "tmp/queue-refund-tx.signed")
         batcher_skey_path = os.path.join(parent_dir, "key/batcher.skey")
         collat_skey_path = os.path.join(parent_dir, "key/collat.skey")
         

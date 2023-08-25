@@ -59,9 +59,6 @@ def order_fifo_sort(orders: list) -> list:
                 p2 = Fraction(price2['fields'][0]['int'], price2['fields'][1]['int'])
                 s2 = Fraction(slip2['fields'][0]['int'], slip2['fields'][1]['int'])
                 
-                # print('p1',p1)
-                # print('p2',p2)
-                
                 low1 = p1 - s1
                 high1 = p1 + s1
                 
@@ -76,9 +73,6 @@ def order_fifo_sort(orders: list) -> list:
                     except KeyError:
                         continue
                     
-                    # print('amt1', amt1)
-                    # print('amt2', amt2)
-                    
                     # check if the minimum threshold will be met for the potential swap
                     geometric_mean_price1 = Fraction(
                         int(math.sqrt(p1.numerator * p2.denominator)),
@@ -90,47 +84,27 @@ def order_fifo_sort(orders: list) -> list:
                     get1 = int(amt1*geometric_mean_price2)
                     get2 = int(amt2*geometric_mean_price1)
                     
-                    # print('get1', get1)
-                    # print('get2', get2)
-                    
                     if amt1 - get2 >= Fraction(0):
                         getting2 = get2
-                        # print('getting2', getting2)
                     else:
                         getting2 = amt1
-                        # print('getting2', getting2)
                         
                     if amt2 - get1 >= Fraction(0):
                         getting1 = get1
-                        # print('getting1', getting1)
                     else:
                         getting1 = amt2
-                        # print('getting1', getting1)
                     
-                    # print()
-                    # print('getting1', getting1)
-                    # print('getting2', getting2)
-                    
-                
                     have_thres1 = order1[1]['datum']['fields'][2]['fields'][3]['int']
                     want_thres1 = order1[1]['datum']['fields'][2]['fields'][4]['int']
-                    # print(have_thres1, want_thres1)
                     
                     have_thres2 = order2[1]['datum']['fields'][2]['fields'][3]['int']
                     want_thres2 = order2[1]['datum']['fields'][2]['fields'][4]['int']
-                    # print(have_thres2, want_thres2)
                     
                     # we need to check if both orders are meeting their threshold for trade
                     if getting1 >= want_thres1 and int(amt1) - getting2 >= have_thres1:
                         if getting2 >= want_thres2 and int(amt2) - getting1 >= have_thres2:
                             order_pairs = add_unique_tuple((order1[0],order2[0]), order_pairs)
                         
-                
-                    # print('price1', p1)
-                    # print('slip1', s1)
-                    # print('price2', p2)
-                    # print('slip2', s2)
-
     # return the sorted list of ordered pairs
     return order_pairs
 
