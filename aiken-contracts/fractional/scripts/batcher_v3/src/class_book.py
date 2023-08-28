@@ -3,7 +3,7 @@ import math
 import os
 from fractions import Fraction
 
-from src import (db_manager_redis, dicts, parsing, query, queue_purchase,
+from src import (book_purchase, db_manager_redis, dicts, parsing, query,
                  queue_refund, sorting, transaction, validate)
 
 
@@ -193,6 +193,15 @@ class Book:
             print(f"Order 2 Output: {order2_out}")
             
             # build the purchase tx
+            
+            order1 = {'datum': datum1, 'txid': txid1, 'output': order1_out}
+            order2 = {'datum': datum2, 'txid': txid2, 'output': order2_out}
+            batcher_info['output'] = batcher_out
+            order1, order2, batcher_info = book_purchase.build_tx(order1, order2, batcher_info, constants)
+            transaction.sign(out_file_path, signed_purchase_tx, constants['network'], batcher_skey_path, collat_skey_path)
+            # purchase_result, purchase_output = transaction.submit(signed_purchase_tx, constants['socket_path'], constants['network'])
+            # print(purchase_result, purchase_output)
+            
             
             # check who needs the refund tx
             
