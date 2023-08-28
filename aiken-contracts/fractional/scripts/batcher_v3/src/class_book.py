@@ -1,3 +1,4 @@
+import copy
 import math
 import os
 from fractions import Fraction
@@ -71,11 +72,6 @@ class Book:
         batcher_value = batcher_info['value']
         batcher_address = constants['batcher_address']
         
-        print()
-        print(batcher_txid)
-        print(batcher_value)
-        print(batcher_address)
-        
         this_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(this_dir)
         out_file_path = os.path.join(parent_dir, "tmp/tx.draft")
@@ -84,16 +80,11 @@ class Book:
         signed_refund_tx = os.path.join(parent_dir, "tmp/book-refund-tx.signed")
         batcher_skey_path = os.path.join(parent_dir, "key/batcher.skey")
         collat_skey_path = os.path.join(parent_dir, "key/collat.skey")
-        
 
         order_book_execution_unts="(950000000, 3000000)"
-        order_fee = {"":{"":720588//2}}
-        
-        print(f"Assumed Fee Per Order: {order_fee}")
+        order_fee = {"lovelace": 720588//2}
         
         order_book_address = constants["order_book_address"]
-        print()
-        print(order_book_address)
         for order in sorted_order_to_order_list:
             o1 = db.read_order_book_record(order[0])
             if o1 is None:
@@ -103,26 +94,14 @@ class Book:
             datum1 = o1['datum']
             
             price1 = datum1['fields'][2]['fields'][1]
-            slip1 = datum1['fields'][2]['fields'][2]
             p1 = Fraction(price1['fields'][0]['int'], price1['fields'][1]['int'])
-            s1 = Fraction(slip1['fields'][0]['int'], slip1['fields'][1]['int'])
             
             ipid1 = datum1['fields'][3]['fields'][0]['bytes']
             itkn1 = datum1['fields'][3]['fields'][1]['bytes']
             iamt1 = datum1['fields'][3]['fields'][2]['int']
             i1 = {ipid1: {itkn1: iamt1}}
-            print(f"Incentive 1: {iamt1} {ipid1}.{itkn1}")
-            
+            i11 = copy.deepcopy(i1)
             value1 = o1['value']
-            
-            v11 = dicts.subtract(value1, i1)
-            
-
-            print()
-            print(txid1)
-            print(datum1)
-            print(value1)
-            print(p1,s1)
             
             o2 = db.read_order_book_record(order[1])
             if o2 is None:
@@ -132,28 +111,16 @@ class Book:
             datum2 = o2['datum']
             
             price2 = datum2['fields'][2]['fields'][1]
-            slip2 = datum2['fields'][2]['fields'][2]
             p2 = Fraction(price2['fields'][0]['int'], price2['fields'][1]['int'])
-            s2 = Fraction(slip2['fields'][0]['int'], slip2['fields'][1]['int'])
             
             ipid2 = datum2['fields'][3]['fields'][0]['bytes']
             itkn2 = datum2['fields'][3]['fields'][1]['bytes']
             iamt2 = datum2['fields'][3]['fields'][2]['int']
             i2 = {ipid2: {itkn2: iamt2}}
-            print(f"Incentive 2: {iamt2} {ipid2}.{itkn2}")
+            i22 = copy.deepcopy(i2)
             
             value2 = o2['value']
-            
-            v21 = dicts.subtract(value2, i2)
-            
-            print()
-            print(txid2)
-            print(datum2)
-            print(value2)
-            print(p2,s2)
-            
             total_incentive = dicts.add(i1, i2)
-            print("total incentive:", total_incentive)
             
             # check if the minimum threshold will be met for the potential swap
             geometric_mean_price1 = Fraction(
@@ -169,9 +136,7 @@ class Book:
             # the prices exist in the correct range
             try:
                 amt1 = Fraction(value1[have1['fields'][0]['bytes']][have1['fields'][1]['bytes']])
-                print(f"Order 1 Has {amt1} {have1['fields'][0]['bytes']}.{have1['fields'][1]['bytes']}")
                 amt2 = Fraction(value2[have2['fields'][0]['bytes']][have2['fields'][1]['bytes']])
-                print(f"Order 2 Has {amt2} {have2['fields'][0]['bytes']}.{have2['fields'][1]['bytes']}")
                 
             except KeyError:
                 continue
@@ -189,10 +154,47 @@ class Book:
             else:
                 getting1 = amt2
             
-            print(f"Order 1 Gets {getting1} {have2['fields'][0]['bytes']}.{have2['fields'][1]['bytes']}")
-            print(f"Order 2 Gets {getting2} {have1['fields'][0]['bytes']}.{have1['fields'][1]['bytes']}")
+            getting1_value = {have1['fields'][0]['bytes']: {have1['fields'][1]['bytes']: getting2}}
+            getting2_value = {have2['fields'][0]['bytes']: {have2['fields'][1]['bytes']: getting1}}
             
-            tag = parsing.sha3_256(parsing.sha3_256(str(order[0])) + parsing.sha3_256(str(order[1])))
-            print(tag)
+            tag1 = parsing.sha3_256(parsing.sha3_256(str(order[0])) + parsing.sha3_256(str(order[1])))
+            tag2 = parsing.sha3_256(parsing.sha3_256(str(order[1])) + parsing.sha3_256(str(order[0])))
+            print(f"Unique Tag 1: {tag1}")
+            print(f"Unique Tag 2: {tag2}")
             
-            # so try to build out the 
+            # so try to build out the tx
+            # batcher stuff
+            bv1 = dicts.add(batcher_value, total_incentive)
+            batcher_out = parsing.process_output(batcher_address, bv1)
+            print(f"Batcher Output: {batcher_out}")
+
+            # order 1 stuff
+            # subtract the incentive
+            v11 = dicts.subtract(value1, i11)
+            # subtract the fee
+            v12 = dicts.subtract(v11, order_fee)
+            # subtract order 1 have
+            v13 = dicts.subtract(v12, getting1_value)
+            # add order 2 have
+            v14 = dicts.add(v13, getting2_value)
+            order1_out = parsing.process_output(order_book_address, v14)
+            print(f"Order 1 Output: {order1_out}")
+            
+            # order 2 stuff
+            # subtract the incentive
+            v21 = dicts.subtract(value2, i22)
+            # subtract the fee
+            v22 = dicts.subtract(v21, order_fee)
+            # subtract order 2 have
+            v23 = dicts.subtract(v22, getting2_value)
+            # add order 1 have
+            v24 = dicts.add(v23, getting1_value)
+            order2_out = parsing.process_output(order_book_address, v24)
+            print(f"Order 2 Output: {order2_out}")
+            
+            # build the purchase tx
+            
+            # check who needs the refund tx
+            
+            # build the refund tx
+            
