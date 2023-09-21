@@ -68,7 +68,6 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
               ),
             }
-          // sale_validators.update_validation(datum, tx, output_reference)
           // Owner can remove their UTxO by burning the pointer
           RemoveSale -> and {
               // must be the correct reference data
