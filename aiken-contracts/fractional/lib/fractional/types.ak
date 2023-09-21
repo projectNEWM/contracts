@@ -8,9 +8,8 @@ use aiken/transaction.{Input, OutputReference}
 use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
-// (555) pointer token prefix (NOT IMPLEMENTED IN CIP68)
-// TODO THIS NEEDS TO BE REMOVED
-pub const prefix_555 = #"0022bfb0"
+// pointer token prefix
+pub const prefix_555 = #"a110ca7ab1e000"
 
 // metadata
 pub const metadata_key = #"6d65746164617461"

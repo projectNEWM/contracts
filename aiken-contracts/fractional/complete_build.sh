@@ -9,7 +9,6 @@ function cat_file_or_empty() {
   fi
 }
 
-
 # create directories if dont exist
 mkdir -p contracts
 mkdir -p hashes
@@ -26,11 +25,13 @@ echo -e "\033[1;34m Building Contracts \033[0m"
 aiken build --keep-traces
 
 # random string
-ran=$(jq -r '.random' start_info.json)
-ran_cbor=$(python ./convert_to_cbor.py ${ran})
+ranD=$(jq -r '.randomData' start_info.json)
+ranS=$(jq -r '.randomStake' start_info.json)
+ranD_cbor=$(python ./convert_to_cbor.py ${ranD})
+ranS_cbor=$(python ./convert_to_cbor.py ${ranS})
 
 echo -e "\033[1;33m Convert Reference Contract \033[0m"
-aiken blueprint apply -o plutus.json -v data_reference.params "${ran_cbor}"
+aiken blueprint apply -o plutus.json -v data_reference.params "${ranD_cbor}"
 aiken blueprint convert -v data_reference.params > contracts/reference_contract.plutus
 cardano-cli transaction policyid --script-file contracts/reference_contract.plutus > hashes/reference_contract.hash
 
@@ -40,7 +41,6 @@ ref=$(cat hashes/reference_contract.hash)
 # the reference token
 pid=$(jq -r '.starterPid' start_info.json)
 tkn=$(jq -r '.starterTkn' start_info.json)
-
 
 # cbor representation
 ref_cbor=$(python ./convert_to_cbor.py ${ref})
@@ -62,7 +62,7 @@ echo -e "\033[1;33m Convert Stake Contract \033[0m"
 aiken blueprint apply -o plutus.json -v staking.params "${pid_cbor}"
 aiken blueprint apply -o plutus.json -v staking.params "${tkn_cbor}"
 aiken blueprint apply -o plutus.json -v staking.params "${ref_cbor}"
-aiken blueprint apply -o plutus.json -v staking.params "${ran_cbor}"
+aiken blueprint apply -o plutus.json -v staking.params "${ranS_cbor}"
 aiken blueprint convert -v staking.params > contracts/stake_contract.plutus
 cardano-cli transaction policyid --script-file contracts/stake_contract.plutus > hashes/stake.hash
 cardano-cli stake-address registration-certificate --stake-script-file contracts/stake_contract.plutus --out-file certs/stake.cert

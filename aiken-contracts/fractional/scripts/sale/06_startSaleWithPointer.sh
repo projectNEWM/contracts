@@ -67,7 +67,7 @@ if [ ! -z "$POINTER_VALUE" ]; then
     echo "UTxO has pointer."
     exit 1
 fi
-prefix_555="0022bfb0"
+prefix_555="a110ca7ab1e000"
 
 echo "NEWM UTxO:" $newm_tx_in
 first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
