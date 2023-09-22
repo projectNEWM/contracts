@@ -38,6 +38,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
+          // mint a pointer token to start a sale
+          // this can not have destination validation due to lexico cbor
           MintTokens -> and {
               // hot key must sign
               signing.verify_sig(tx.extra_signatories, signer),
@@ -48,6 +50,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               // data reference must be holding correct token
               ref_value_check,
             }
+          // burn a single pointer token
           BurnTokens { burn_amt } -> and {
               burn_amt == 0,
               // must burn 1 pointer token
@@ -57,9 +60,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 // non standard prefix
                 types.prefix_555,
                 -1,
-              )?,
+              ),
               // data reference must be holding correct token
-              ref_value_check?,
+              ref_value_check,
             }
         }
       // Minting Only

@@ -87,7 +87,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               ref_value_check,
             }
         }
-      // Minting Only
+      // anything else fails
       _ -> False
     }
   }

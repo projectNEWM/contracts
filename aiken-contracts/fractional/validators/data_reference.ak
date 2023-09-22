@@ -10,6 +10,7 @@ use fractional/types.{
   UpdateFeeInfo, UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
 }
 
+// random_string is for initilizing different stake keys attached to the same starter token
 validator(_random_string: ByteArray) {
   fn params(
     datum: ReferenceDatum,

@@ -43,6 +43,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 output_reference,
               )?,
             }
+          // mint a pointer token to start off a sale
           StartSale { pointer } -> and {
               // must be the correct reference data
               ref_value_check,
@@ -55,7 +56,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
               )?,
             }
-          // Extract profit back to wallet
+          // Extract profit back to seller wallet
           ExtractSale { profit } -> and {
               // must be the correct reference data
               ref_value_check,
@@ -81,7 +82,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               )?,
             }
         }
-      // spending only
+      // anything else fails
       _ -> False
     }
   }
