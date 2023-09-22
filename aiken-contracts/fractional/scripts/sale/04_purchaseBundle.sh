@@ -15,6 +15,7 @@ sale_script_address=$(${cli} address build --payment-script-file ${sale_script_p
 # bundle sale contract
 queue_script_path="../../contracts/queue_contract.plutus"
 queue_script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+queue_script_address2=$(${cli} address build --payment-script-file ${queue_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
 #
@@ -29,8 +30,8 @@ artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 #
-buyer_address=$(cat ../wallets/buyer1-wallet/payment.addr)
-buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
+buyer_address=$(cat ../wallets/buyer2-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer2-wallet/payment.vkey)
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -50,6 +51,7 @@ fi
 
 TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
 batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
+batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add' ../tmp/batcher_utxo.json)
 batcher_tx_in=${TXIN::-8}
 echo Batcher UTXO ${batcher_tx_in}
 # exit
@@ -129,18 +131,26 @@ bundle_value="${buyAmt} ${pid}.${tkn}"
 
 returning_asset="${retAmt} ${pid}.${tkn}"
 
-incentive="1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
-batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive}"
+echo INCENT $batcher_starting_incentive
+incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+echo $incentive
+
+token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+batcher_policy_id=$(cat ../../hashes/batcher.hash)
+batcher_token="1 ${batcher_policy_id}.${token_name}"
+batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive} + ${batcher_token}"
 
 # need better way for this
-cost_value="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+cost_value="10000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
 # queue contract return
 # the cost value is ada
 queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
 sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
-queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
-sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
+# queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
+queue_ada_return=$((${queue_utxo_value}))
+# sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
+sale_ada_return=$((${sale_utxo_value}))
 if [ -z "$cost_value" ]; then
     echo "cost value is empty"
 
@@ -165,9 +175,9 @@ else
     fi
 fi
 
-echo "Batcher OUTPUT: "${batcher_address_out}
-echo "Sale Script OUTPUT: "${sale_script_address_out}
-echo "Queue Script OUTPUT: "${queue_script_address_out}
+echo -e "\nBatcher OUTPUT: "${batcher_address_out}
+echo -e "\nSale Script OUTPUT: "${sale_script_address_out}
+echo -e "\nQueue Script OUTPUT: "${queue_script_address_out}
 #
 # exit
 #
@@ -189,7 +199,6 @@ script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.s
 queue_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-
 cpu_steps=300000000
 mem_steps=1000000
 
@@ -202,11 +211,6 @@ mem_steps=3000000
 queue_execution_unts="(${cpu_steps}, ${mem_steps})"
 queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
 queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
-
-# Add metadata to this build function for nfts with data
-echo -e "\033[0;36m Building Tx \033[0m"
-# change_value=$((${queue_ada_return} - 375629))
-# queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \
@@ -247,8 +251,6 @@ change_value=$((${queue_ada_return} - ${total_fee}))
 queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
 echo "Without Fee: Queue Script OUTPUT: "${queue_script_address_out}
 
-# exit
-
 ${cli} transaction build-raw \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
@@ -277,12 +279,35 @@ ${cli} transaction build-raw \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}
 
+# # Add metadata to this build function for nfts with data
+# echo -e "\033[0;36m Building Tx \033[0m"
+# FEE=$(${cli} transaction build \
+#     --babbage-era \
+#     --out-file ../tmp/tx.draft \
+#     --change-address ${batcher_address} \
+#     --tx-in-collateral="${collat_utxo}" \
+#     --read-only-tx-in-reference="${data_ref_utxo}#0" \
+#     --tx-in ${batcher_tx_in} \
+#     --tx-in ${sale_tx_in} \
+#     --spending-tx-in-reference="${script_ref_utxo}#1" \
+#     --spending-plutus-script-v2 \
+#     --spending-reference-tx-in-inline-datum-present \
+#     --spending-reference-tx-in-redeemer-file ../data/sale/purchase-redeemer.json \
+#     --tx-in ${queue_tx_in} \
+#     --spending-tx-in-reference="${queue_ref_utxo}#1" \
+#     --spending-plutus-script-v2 \
+#     --spending-reference-tx-in-inline-datum-present \
+#     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
+#     --tx-out="${batcher_address_out}" \
+#     --tx-out="${sale_script_address_out}" \
+#     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
+#     --tx-out="${queue_script_address_out}" \
+#     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
+#     --required-signer-hash ${batcher_pkh} \
+#     --required-signer-hash ${collat_pkh} \
+#     --testnet-magic ${testnet_magic})
+# exit
 
-
-# IFS=':' read -ra VALUE <<< "${FEE}"
-# IFS=' ' read -ra FEE <<< "${VALUE[1]}"
-# FEE=${FEE[1]}
-# echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 # exit
 #

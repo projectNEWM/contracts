@@ -1,6 +1,6 @@
-name = "aiken-lang/fractional-minter"
-version = "1.0.0"
-license = "Apache-2.0"
+name = "projectNEWM/fractional-minter"
+version = "2.0.0"
+license = "GPLv3"
 description = "Aiken contracts for Project NEWM"
 
 [repository]

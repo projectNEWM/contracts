@@ -1,0 +1,62 @@
+{
+    "txid": "f425ba8f63cc24cf209321dc54baf4ec255166b713d84c66bc1baf32c0ff85aa#0",
+    "tkn": "0022bfb0012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3",
+    "datum": {
+        "constructor": 0,
+        "fields": [
+            {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "bytes": "0d28d4a2e4c1504b8bf77f7db89561ca6421eef8ee1ea5a99300e88e"
+                    },
+                    {
+                        "bytes": ""
+                    }
+                ]
+            },
+            {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "bytes": "4d6d1192d39a48f4c80edbe52a5c480bec0a4e0711a998ca016b81a5"
+                    },
+                    {
+                        "bytes": "001bc280012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3"
+                    }
+                ]
+            },
+            {
+                "int": 10
+            },
+            {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "bytes": "698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"
+                    },
+                    {
+                        "bytes": "7444524950"
+                    },
+                    {
+                        "int": 1000000
+                    }
+                ]
+            },
+            {
+                "bytes": "0022bfb0012d10b217cfcb37e65e78a3b803ae220ba7800c6cb62a30aed734c3"
+            }
+        ]
+    },
+    "value": {
+        "015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d": {
+            "43757272656e6379": 20000000
+        },
+        "698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d": {
+            "7444524950": 1000000
+        },
+        "lovelace": 4198100
+    },
+    "timestamp": 1689800721,
+    "tx_idx": 1
+}

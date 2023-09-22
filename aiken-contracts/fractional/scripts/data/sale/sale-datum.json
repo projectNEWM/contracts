@@ -16,10 +16,10 @@
       "constructor": 0,
       "fields": [
         {
-          "bytes": "bb822c7a59b0ca2d97319ef56ef52420e8e5dfd1992570291f315757"
+          "bytes": "85510e059114a9dcdf7c1d842a1b8fdfd2438cd31ef1b3edcf6d5d67"
         },
         {
-          "bytes": "001bc28001d2a9edce8d52a95599c04664336800a5ce64cdf2ff24d991db2e95"
+          "bytes": "001bc280002699546a3f2b852e6d2543659ede8722ea06251ef1e7fd94aeae27"
         },
         {
           "int": 1000000

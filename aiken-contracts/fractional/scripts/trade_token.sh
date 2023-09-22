@@ -1,36 +1,36 @@
 #!/usr/bin/bash
 set -e
 #
-rm tmp/tx.signed || True
+rm tmp/tx.signed || true
 export CARDANO_NODE_SOCKET_PATH=$(cat ./data/path_to_socket.sh)
 cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/buyer1-wallet/"
+sender_path="wallets/batcher-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
+# receiver_address=${sender_address}
 receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
 
-data="./tmp/${sender_address}.json"
-lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
-echo "Lovelace: " ${lovelace}
+# data="./tmp/${sender_address}.json"
+# lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
+# echo "Lovelace: " ${lovelace}
 
+# assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
+# # echo $assets
+# if [ -z "$assets" ]; then  # check if the result is an empty string
+#     echo "Result is empty. Exiting."
+#     # exit 1  # exit the script with an error code
+# fi
 
-assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
-# echo $assets
-if [ -z "$assets" ]; then  # check if the result is an empty string
-    echo "Result is empty. Exiting."
-    # exit 1  # exit the script with an error code
-fi
-
+assets="1 3170096858801d4e86bc3ea138964f009da93c5e3ecdc8c86aef0c7e.5ca1ab1e000affab1e000ca11ab1e0005e77ab1e + 86000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} + 5000000 + ${assets}" | tr -dc '0-9')
 
 tokens_to_be_traded="${receiver_address} + ${min_utxo} + ${assets}"
-
 echo -e "\nTrading Tokens:\n" ${tokens_to_be_traded}
 #
 # exit

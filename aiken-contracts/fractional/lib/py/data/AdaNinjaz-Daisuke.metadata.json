@@ -1,0 +1,93 @@
+{
+    "721":
+    {
+        "<policy_id_hex>":
+        {
+            "<asset_name_ascii>":
+            {
+                "image": "ar://GlMlqHIPjwUtlPUfQxDdX1jWSjlKK1BCTBIekXgA66A",
+                "mediaType": "image/webp",
+                "name": "Daisuke",
+                "artists":
+                [
+                    {
+                        "name": "Danketsu"
+                    },
+                    {
+                        "name": "Mirai Music"
+                    },
+                    {
+                        "name": "NSTASIA"
+                    }
+                ],
+                "album_title": "Daisuke",
+                "track_number": 1,
+                "song_title": "Daisuke",
+                "song_duration": "PT3M20S",
+                "genres":
+                [
+                    "Pop",
+                    "House",
+                    "Tribal"
+                ],
+                "mood": "Spiritual",
+                "copyright":
+                [
+                    "© Mirai Music Publishing",
+                    "℗ Danketsu, Mirai Music, NSTASIA"
+                ],
+                "release_type": "Single",
+                "music_metadata_version": 1,
+                "contributing_artists":
+                [
+                    "Jeff MacMillan"
+                ],
+                "lyricists":
+                [
+                    "Aaron Ortiz",
+                    "Aled Williams",
+                    "Kahmeil Brown",
+                    "Elijah Boac",
+                    "Tommy Bui",
+                    "Kyle Kim",
+                    "Ashley Nastasia Griffin",
+                    "Riccardo Lovatto"
+                ],
+                "lyrics": "ar://7vQTHTkgybn8nVLDlukGiBazy2NZVhWP6HZdJdmPH00",
+                "release_date": "2023-02-03",
+                "publication_date": "2023-02-03",
+                "isrc": "QZ-NW7-23-57511",
+                "language": "en-US",
+                "metadata_language": "en-US",
+                "distributor": "https://newm.io",
+                "mix_engineer": "Jacopo Mazza",
+                "recording_engineer": "Lukas Cuman",
+                "mastering_engineer": "Pietro Caramelli",
+                "producer": "Mirai Music",
+                "files":
+                [
+                    {
+                        "name": "Daisuke",
+                        "mediaType": "audio/x-flac",
+                        "src": "ar://QpgjmWmAHNeRVgx_Ylwvh16i3aWd8BBgyq7f16gaUu0"
+                    },
+                    {
+                        "name": "Streaming Royalty Share Agreement",
+                        "mediaType": "application/pdf",
+                        "src": "ar://eK8gAPCvJ-9kbiP3PrSMwLGAk38aNyxPDudzzbGypxE"
+                    }
+                ],
+                "links":
+                {
+                    "websites":
+                    [
+                        "https://danketsu.io",
+                        "https://miraimusicproductions.com",
+                        "https://www.nstasia.com"
+                    ]
+                }
+            }
+        },
+        "version": 1
+    }
+}

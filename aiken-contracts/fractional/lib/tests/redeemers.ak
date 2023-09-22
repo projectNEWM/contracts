@@ -9,13 +9,11 @@ fn buy_b() -> BuyAmount {
 }
 
 test good_bundle_size() {
-  let max_bundle_size: Int =
-    10
-  types.valid_bundle_size(buy_a().amt, max_bundle_size) == True
+  let max_bundle_size: Int = 10
+  types.valid_number_of_bundles(buy_a().amt, max_bundle_size) == True
 }
 
 test bad_bundle_size() {
-  let max_bundle_size: Int =
-    10
-  types.valid_bundle_size(buy_b().amt, max_bundle_size) == False
+  let max_bundle_size: Int = 10
+  types.valid_number_of_bundles(buy_b().amt, max_bundle_size) == False
 }

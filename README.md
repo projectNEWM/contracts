@@ -2,9 +2,39 @@
 
 A collection of smart contracts for Project NEWM.
 
-# v1.0.0
+# V2.0.0 (Aiken)
 
-The v1.0.0 contract version assume NEWM holds a special wallet that will regulate the minting of tokenized tokens and minting and burning fractionalized tokens. A multisig regulates the burning of tokenized tokens.
+- TODO
+
+### assist lib
+
+A library of specialized Aiken functions for smart contracts on Cardano.
+
+https://github.com/logicalmechanism/assist
+
+## Flow
+
+- TODO
+
+## Fractionalization With CIP68
+
+- TODO
+
+## Building
+
+```bash
+./complete_build.sh  
+```
+
+## Testing
+
+```bash
+aiken check
+```
+
+# v1.0.0 (PlutusV2)
+
+The v1.0.0 plutus contract version assume NEWM holds a special wallet that will regulate the minting of tokenized tokens and minting and burning fractionalized tokens. A multisig regulates the burning of tokenized tokens.
 
 ### useful-funcs
 

@@ -8,3 +8,5 @@ docs/
 hashes/
 certs/
 contracts/
+__pycache__/
+eval/

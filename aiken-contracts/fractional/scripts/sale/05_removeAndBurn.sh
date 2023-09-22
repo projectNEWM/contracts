@@ -77,14 +77,17 @@ fi
 
 # this needs to be dynamic
 # utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
 
-default_asset="${total_amt} ${pid}.${tkn}"
+# default_asset="${total_amt} ${pid}.${tkn}"
+
+variable=0; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
+mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 
 # artist_address_out="${artist_address} + ${utxo_value}"
 artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
 # artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-echo "Return OUTPUT: "${artist_address_out}
+# echo "Return OUTPUT: "${artist_address_out}
 #
 # exit
 #
@@ -133,7 +136,6 @@ FEE=$(${cli} transaction build \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
     --spending-reference-tx-in-redeemer-file ../data/sale/remove-redeemer.json \
-    --tx-out="${artist_address_out}" \
     --mint="${pointer_asset}" \
     --mint-tx-in-reference="${pointer_ref_utxo}#1" \
     --mint-plutus-script-v2 \

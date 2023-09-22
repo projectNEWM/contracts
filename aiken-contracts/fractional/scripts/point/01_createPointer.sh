@@ -53,7 +53,7 @@ first_utxo=$(jq -r 'keys[0]' ../tmp/newm_utxo.json)
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
-prefix_555="0022bfb0"
+prefix_555="a110ca7ab1e000"
 
 pointer_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_555}')")
 

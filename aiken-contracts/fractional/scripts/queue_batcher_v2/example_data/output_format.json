@@ -1,0 +1,87 @@
+{
+    "context": {
+        "block_hash": "31e1b1f579ebe82beb1ca108c3f252f5baf6c29040b8052fbf3919f2ff3dbb65",
+        "block_number": 1185861,
+        "slot": 34273358,
+        "timestamp": 1689956558,
+        "tx_idx": 0,
+        "tx_hash": "85f7737ffddfb58c6c64ea3d803a1a38d92d2c34158f2dac9b1b43cbd7cdd2fa",
+        "input_idx": None,
+        "output_idx": 1,
+        "output_address": None,
+        "certificate_idx": None
+    },
+    "tx_output": {
+        "address": "addr_test1xrjt6qa00jt7flvn9pxvtqkzpdd7rmzhd3p79cllvx7x2lz7u28ms30s2ztydr7yllthvj5lmr3lxhf22uaukcs3l2wq7unzj7",
+        "amount": 3004150,
+        "assets": [
+            {
+                "policy": "4d6d1192d39a48f4c80edbe52a5c480bec0a4e0711a998ca016b81a5",
+                "asset": "001bc28001047a0269ba71359397cf9b3dd1124cbed1b1454cee335ab7ef91f8",
+                "asset_ascii": None,
+                "amount": 100000000
+            }
+        ],
+        "datum_hash": "c67d13d0f8cb13e8430423419f4bbb583d30cb66dac8ac10cf1893462b4cac05",
+        "inline_datum": {
+            "datum_hash": "c67d13d0f8cb13e8430423419f4bbb583d30cb66dac8ac10cf1893462b4cac05",
+            "plutus_data": {
+                "constructor": 0,
+                "fields": [
+                    {
+                        "constructor": 0,
+                        "fields": [
+                            {
+                                "bytes": "39f29cfe6ab0765578a6e0d8871e1a3bc18f5d277b257095aabf1cd8"
+                            },
+                            {
+                                "bytes": ""
+                            }
+                        ]
+                    },
+                    {
+                        "constructor": 0,
+                        "fields": [
+                            {
+                                "bytes": "4d6d1192d39a48f4c80edbe52a5c480bec0a4e0711a998ca016b81a5"
+                            },
+                            {
+                                "bytes": "001bc28001047a0269ba71359397cf9b3dd1124cbed1b1454cee335ab7ef91f8"
+                            },
+                            {
+                                "int": 1000000
+                            }
+                        ]
+                    },
+                    {
+                        "map": [
+                            {
+                                "k": {
+                                    "bytes": "015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"
+                                },
+                                "v": {
+                                    "map": [
+                                        {
+                                            "k": {
+                                                "bytes": "43757272656e6379"
+                                            },
+                                            "v": {
+                                                "int": 2000000
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "int": 10
+                    }
+                ]
+            }
+        }
+    },
+    "fingerprint": None,
+    "variant": "TxOutput",
+    "timestamp": 1689956558000
+}

@@ -1,0 +1,138 @@
+{
+    "constructor": 0,
+    "fields": [
+      {
+        "map": [
+          {
+            "k": {
+              "bytes": "6d65746164617461"
+            },
+            "v": {
+              "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+            }
+          },
+          {
+            "k": {
+              "bytes": "6d696e746572"
+            },
+            "v": {
+              "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+            }
+          },
+          {
+            "k": {
+              "bytes": "706f696e746572"
+            },
+            "v": {
+              "bytes": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd"
+            }
+          }
+        ]
+      },
+      {
+        "constructor": 0,
+        "fields": [
+          {
+            "list": [
+              {
+                "bytes": "d858ecf3e73e18bef8383a16e856778e033cfd1c8867c70dc9b68b42"
+              },
+              {
+                "bytes": "10a20db9464d89dab407b3397e67facf83db8d442e601b627c0a351f"
+              },
+              {
+                "bytes": "121ce13907d40c7a598d182ed751d39279cf30d50decb17151b3a587"
+              }
+            ]
+          },
+          {
+            "int": 2
+          }
+        ]
+      },
+      {
+        "constructor": 0,
+        "fields": [
+          {
+            "bytes": "bd66ac291ac521deaf22141fb0e5e2f0ed3da63159b9f49e1f500acf"
+          },
+          {
+            "bytes": "8f7b0ce283a92df9a3b69ac0b8f10d8bc8bcf8fbd1fe72596ee8bd6c"
+          },
+          {
+            "bytes": ""
+          }
+        ]
+      },
+      {
+        "constructor": 0,
+        "fields": [
+          {
+            "bytes": "bdaf2ba03f6d3be2d4e1e4b7e13ef4193d1ed4e4bea44cb5693377ca"
+          },
+          {
+            "bytes": "2553e1b78d9632860272b6c7cb6c07f6ec9cfc54104cc852ec664cd6"
+          },
+          {
+            "bytes": "10c05cedbb9899b4854bdf49a56a8797975c11eaa894dbb6874b56f4"
+          },
+          {
+            "bytes": "f346a49e3869bd83598aafdf40ec7234923221b9b70fb8cbb55a494b"
+          },
+          {
+            "bytes": "703e620a868cb3f224a92bc837249197408c24b57805a4c0f7047969"
+          }
+        ]
+      },
+      {
+        "constructor": 0,
+        "fields": [
+          {
+            "int": 1000000
+          },
+          {
+            "int": 1000000
+          },
+          {
+            "int": 1000000
+          },
+          {
+            "int": 1000000
+          },
+          {
+            "int": 1000000
+          }
+        ]
+      },
+      {
+        "bytes": "4ae4b3904272b13b2a7c291a84adaae11b65fbbcbb152ddd1eabdb6a"
+      },
+      {
+        "constructor": 0,
+        "fields": [
+          {
+            "bytes": "7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3"
+          },
+          {
+            "list": [
+              {
+                "bytes": "44455631"
+              },
+              {
+                "bytes": "44455632"
+              },
+              {
+                "bytes": "44455633"
+              }
+            ]
+          },
+          {
+            "bytes": "365922a8e880966b5c370d2c0854db7b1be960e894f078adea0348f2"
+          },
+          {
+            "bytes": "5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+          }
+        ]
+      }
+    ]
+  }

@@ -1,0 +1,21 @@
+{
+    "context": {
+        "block_hash": "3864e27cb0b12c48bb22abc27c5f191a39ffe5604d410662b9550264968305da",
+        "block_number": 1185768,
+        "slot": 34271728,
+        "timestamp": 1689954928,
+        "tx_idx": 19,
+        "tx_hash": "6ce624c62f8717f89c8ec60d572c8aec9f8ed815e818daeab35634dded42fd7c",
+        "input_idx": 0,
+        "output_idx": None,
+        "output_address": None,
+        "certificate_idx": None
+    },
+    "tx_input": {
+        "tx_id": "5a268f0ae77d20baeb70c23a2c75980b3b6c6a837fb68b7068a43dedc3a6a726",
+        "index": 1
+    },
+    "fingerprint": None,
+    "variant": "TxInput",
+    "timestamp": 1689954928000
+}
