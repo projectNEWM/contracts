@@ -30,6 +30,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     when context.purpose is {
       Spend(output_reference) ->
         when redeemer is {
+          // a batcher can complete a purchase from the queue
           QueuePurchase -> and {
               // check if correct reference data
               ref_value_check,
@@ -39,8 +40,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              )?,
+              ),
             }
+          // a batcher can auto refund a completed queue item
           QueueRefund -> and {
               // check if correct reference data
               ref_value_check,
@@ -50,12 +52,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              )?,
+              ),
             }
+          // a buyer may always remove their queue item at any time
           QueueCancel ->
             // this is available at all times for queue items
             queue_validators.cancel_validation(datum, tx, output_reference)
         }
+      // anything else fails
       _ -> False
     }
   }

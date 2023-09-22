@@ -4,21 +4,13 @@ A collection of smart contracts for Project NEWM.
 
 # V2.0.0 (Aiken)
 
-- TODO
+The v2.0.0 contract version is a complete rewrite and expansion of the v1.0.0 contracts using Aiken. The system now controls minting, burning, staking, bundle sales, order books, and batcher regulation. The tokenization and fractionalization processes have been simplified, streamlined and updated into CIP68 compliant tokens.
 
-### assist lib
+### assist library
 
-A library of specialized Aiken functions for smart contracts on Cardano.
+Project newm usings the Assist libray, a library of specialized Aiken functions for smart contracts on Cardano.
 
 https://github.com/logicalmechanism/assist
-
-## Flow
-
-- TODO
-
-## Fractionalization With CIP68
-
-- TODO
 
 ## Building
 

@@ -76,7 +76,7 @@ validator(
           // deregistration fails and anything else but changing delegation
           _ -> False
         }
-      // no other script purposes
+      // anything else fails
       _ -> False
     }
   }

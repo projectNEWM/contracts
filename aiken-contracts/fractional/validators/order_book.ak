@@ -20,10 +20,13 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     when context.purpose is {
       Spend(output_reference) ->
         when redeemer is {
+          // a seller can remove their order at any time
           RemoveOrder ->
             order_book_validators.remove_validation(datum, tx, output_reference)
+          // a seller may need to update the order price or slippage
           UpdateOrder ->
             order_book_validators.update_validation(datum, tx, output_reference)
+          // the batcher needs to be auto refund an order back to the seller
           RefundOrder -> {
             // data reference stuff
             expect ref_hash: ValidatorHash = ref_hash_data
@@ -48,6 +51,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               ),
             }
           }
+          // a batcher can complete an order for an incentive
           CompleteOrder(txid) -> {
             // data reference stuff
             expect ref_hash: ValidatorHash = ref_hash_data
@@ -74,8 +78,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             }
           }
         }
-
-      // spending only
+      // anything else fails
       _ -> False
     }
   }

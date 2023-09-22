@@ -73,7 +73,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
             }
           }
         }
-      // anthing else fails
+      // anything else fails
       _ -> False
     }
   }
