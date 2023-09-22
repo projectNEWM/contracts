@@ -11,7 +11,7 @@ def token_name(txHash, index, prefix):
     if "x" in x:
         x = x.replace("x", "0")
     txHash = prefix + x + txHash
-    # print(txHash[0:64])
+    print(txHash[0:64])
     return txHash[0:64]
 
 if __name__ == "__main__":

@@ -90,6 +90,8 @@ FRACTION_ASSET="100000000 ${policy_id}.${frac_name}"
 
 MINT_ASSET="1 ${policy_id}.${ref_name} + 100000000 ${policy_id}.${frac_name}"
 
+# echo Minting: ${MINT_ASSET}
+
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
@@ -105,6 +107,10 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
 self_start_fee=1000000
 min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
 fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
+
+# just send it to some address for testing
+# test_wallet_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
+# fraction_address_out="${test_wallet_address} + ${min_ada} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}
