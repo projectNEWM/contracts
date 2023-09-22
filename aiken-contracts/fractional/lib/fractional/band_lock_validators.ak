@@ -58,7 +58,7 @@ pub fn add_member_validation(
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs
     count.outputs_by_addr(tx.outputs, script_addr, 1),
-    // can not have a full set
+    // assume logical entry tx, can not have a full set
     datum.full_flag == 0,
   }
 }
@@ -128,13 +128,14 @@ pub fn burn_validation(
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs
     count.outputs_by_addr(tx.outputs, script_addr, 0),
-    // mint exactly 1 batcher token
+    // burn exactly 1 batcher token
     minting.exact(
       mint,
       ref_datum.batcher_info.batcher_pid,
       ref_datum.batcher_info.batcher_tkn,
       -1,
     ),
+    // we assume logical off chain for entry, must have full set
     datum.full_flag == 1,
   }
 }

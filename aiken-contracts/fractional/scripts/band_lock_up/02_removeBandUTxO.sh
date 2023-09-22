@@ -25,12 +25,12 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/band_lock/band-lock-datum.json \
-    --tx-out="${script_address} + 5000000 + ${assets}" | tr -dc '0-9')
-    # --tx-out="${script_address} + 5000000" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000" | tr -dc '0-9')
+    # --tx-out="${script_address} + 5000000 + ${assets}" | tr -dc '0-9')
 
 # this assumes no entry tokens
-# batcher_address_out="${batcher_address} + ${min_utxo}"
-batcher_address_out="${batcher_address} + ${min_utxo} + ${assets}"
+batcher_address_out="${batcher_address} + ${min_utxo}"
+# batcher_address_out="${batcher_address} + ${min_utxo} + ${assets}"
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
