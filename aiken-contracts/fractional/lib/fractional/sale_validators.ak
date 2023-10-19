@@ -7,7 +7,7 @@ use assist/minting
 use assist/payout
 use assist/signing
 use assist/values
-use fractional/types.{QueuePurchase, ReferenceDatum, SaleDatum}
+use fractional/types.{QueuePurchase, QueueRedeemer, ReferenceDatum, SaleDatum}
 
 /// Handle the purchasing of a bundle(s)
 pub fn purchase_validation(
@@ -33,15 +33,17 @@ pub fn purchase_validation(
   expect outbound_datum: SaleDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data serialization
-  expect _: QueuePurchase = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
-  // expect that_redeemer: QueueRedeemer = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
-  // let correct_redeemer =
-  //   when that_redeemer is {
-  //     QueuePurchase -> True
-  //     _ -> False
-  //   }
+  expect that_redeemer: QueueRedeemer =
+    find.redeemer_by_ref(tx.redeemers, queue_out_ref)
+  let correct_redeemer =
+    when that_redeemer is {
+      QueuePurchase -> True
+      _ -> False
+    }
   // purchasing requires a constant datum and 1 in /  1 out from the queue contract
   and {
+    // correct redeemer on the queue side
+    correct_redeemer?,
     // single script input
     count.inputs_by_addr(tx.inputs, queue_addr, 1),
     // single script output

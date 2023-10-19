@@ -258,6 +258,9 @@ pub type MintRedeemer {
 pub type QueuePurchase =
   Void
 
+pub type QueueCancel =
+  Void
+
 /// Queue things
 pub type QueueRedeemer {
   QueuePurchase

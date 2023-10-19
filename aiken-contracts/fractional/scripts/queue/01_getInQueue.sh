@@ -93,6 +93,8 @@ else
     script_address_out="${script_address} + ${adaPay} + ${queue_value}"
 fi
 
+# script_address_out="${script_address} + 20000000"
+
 echo "Script OUTPUT: "${script_address_out}
 #
 # exit
