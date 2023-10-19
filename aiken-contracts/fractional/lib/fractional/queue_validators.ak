@@ -20,6 +20,14 @@ pub fn cancel_validation(
   let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
   let seller_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
+  // this should fail for bad data
+  expect _: QueueCancel = find.redeemer_by_ref(tx.redeemers, output_reference)
+  // expect that_redeemer: QueueRedeemer = find.redeemer_by_ref(tx.redeemers, output_reference)
+  // let correct_redeemer =
+  //   when that_redeemer is {
+  //     QueueCancel -> True
+  //     _ -> False
+  //   }
   and {
     // owner must sign it
     signing.verify_sig(tx.extra_signatories, datum.owner.pkh)?,
@@ -209,6 +217,12 @@ pub fn purchase_validation(
     find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data
   expect _: Purchase = find.redeemer_by_ref(tx.redeemers, sale_out_ref)
+  // expect that_redeemer: SaleRedeemer = find.redeemer_by_ref(tx.redeemers, sale_out_ref)
+  // let correct_redeemer =
+  //   when that_redeemer is {
+  //     Purchase -> True
+  //     _ -> False
+  //   }
   // the incentive is left open for whoever completes the tx to take
   and {
     // check if official sale

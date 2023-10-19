@@ -34,6 +34,12 @@ pub fn purchase_validation(
     find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data serialization
   expect _: QueuePurchase = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
+  // expect that_redeemer: QueueRedeemer = find.redeemer_by_ref(tx.redeemers, queue_out_ref)
+  // let correct_redeemer =
+  //   when that_redeemer is {
+  //     QueuePurchase -> True
+  //     _ -> False
+  //   }
   // purchasing requires a constant datum and 1 in /  1 out from the queue contract
   and {
     // single script input
