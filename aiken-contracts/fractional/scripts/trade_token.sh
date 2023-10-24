@@ -24,7 +24,7 @@ receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9
 #     # exit 1  # exit the script with an error code
 # fi
 
-assets="1 3170096858801d4e86bc3ea138964f009da93c5e3ecdc8c86aef0c7e.5ca1ab1e000affab1e000ca11ab1e0005e77ab1e + 86000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455631313032 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455632393835 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455633313032"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
