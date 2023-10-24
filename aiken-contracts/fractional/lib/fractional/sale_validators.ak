@@ -157,3 +157,39 @@ pub fn remove_validation(
     count.outputs_by_addr(tx.outputs, script_addr, 0),
   }
 }
+
+// Update the bundle size and price
+pub fn update_validation(
+  datum: SaleDatum,
+  tx: Transaction,
+  output_reference: OutputReference,
+  lovelace: Int,
+) -> Bool {
+  // the input being validated
+  let validating_input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value = validating_input.output.value
+  let cont_value =
+    value.add(
+      validating_value,
+      value.ada_policy_id,
+      value.ada_asset_name,
+      lovelace,
+    )
+  // this is the sale script
+  let script_addr = validating_input.output.address
+  // the datum going back to the contract
+  expect outbound_datum: SaleDatum =
+    find.output_datum_by_addr(tx.outputs, script_addr)
+  and {
+    // the owner must sign it
+    signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
+    // value must go back to script
+    payout.exact(script_addr, cont_value, tx.outputs)?,
+    // the datum can not change
+    types.valid_sale_datum_update(datum, outbound_datum)?,
+    // single script input
+    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    // single script output
+    count.outputs_by_addr(tx.outputs, script_addr, 1),
+  }
+}

@@ -63,11 +63,31 @@ pub type Purchase =
 pub type RemoveSale =
   Void
 
+pub type UpdateSale =
+  Void
+
 pub type SaleRedeemer {
   Purchase
   StartSale { pointer: Value }
   ExtractSale { profit: Value }
   RemoveSale
+  UpdateSale { lovelace: Int }
+}
+
+pub fn valid_sale_datum_update(old: SaleDatum, new: SaleDatum) -> Bool {
+  and {
+    // the owner can't change
+    old.owner == new.owner,
+    // can't change bundle pid or tkn
+    old.bundle.pid == new.bundle.pid,
+    old.bundle.tkn == new.bundle.tkn,
+    // can't set the bundle size to zero
+    new.bundle.amt > 0,
+    // the cost can't be zero (empty dict)
+    new.cost != value.zero(),
+    // the max bundle size can't be zero
+    new.max_bundle_size > 0,
+  }
 }
 
 // greater than zero and less than or equal to the max bundle size
