@@ -210,10 +210,12 @@ pub fn purchase_validation(
   expect outbound_datum: QueueDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   // this should fail for bad data
+  // the redeemer is now the general redeemer type that we seek out the specific sub redeemer
   expect that_redeemer: SaleRedeemer =
     find.redeemer_by_ref(tx.redeemers, sale_out_ref)
   let correct_redeemer =
     when that_redeemer is {
+      // only the purchase redeemer is allowed
       Purchase -> True
       _ -> False
     }

@@ -2,7 +2,6 @@ use aiken/transaction.{Mint, ScriptContext}
 use aiken/transaction/credential
 use aiken/transaction/value
 use assist/addresses
-use assist/count
 use assist/data
 use assist/find
 use fractional/types.{
@@ -23,13 +22,15 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     // Get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
+    // create the band lock address
     let band_addr =
       addresses.create_script_address(
         ref_datum.contracts.band,
         ref_datum.contracts.stake,
       )
-    // find the first queue input input
+    // find the first band input
     let band_input = find.input_by_addr(tx.inputs, band_addr)
+    // get the reference
     let band_out_ref = band_input.output_reference
 
     when context.purpose is {
@@ -42,16 +43,15 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
             let correct_redeemer =
               when that_redeemer is {
+                // must mint the batcher
                 MintBand -> True
                 _ -> False
               }
             and {
-              // single script input
-              count.inputs_by_addr(tx.inputs, band_addr, 1),
-              // single script output
-              count.outputs_by_addr(tx.outputs, band_addr, 1),
-              ref_value_check,
-              correct_redeemer,
+              // check if the correct reference data is being used
+              ref_value_check?,
+              // check that something is being spent from the band lock
+              correct_redeemer?,
             }
           }
           // must spend 1 thing from the band contract and use the burn band redeemer
@@ -60,16 +60,15 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
             let correct_redeemer =
               when that_redeemer is {
+                // must burn the batcher
                 BurnBand -> True
                 _ -> False
               }
             and {
-              // single script input
-              count.inputs_by_addr(tx.inputs, band_addr, 1),
-              // single script output
-              count.outputs_by_addr(tx.outputs, band_addr, 0),
-              ref_value_check,
-              correct_redeemer,
+              // check if the correct reference data is being used
+              ref_value_check?,
+              // check that something is being spent from the band lock
+              correct_redeemer?,
             }
           }
         }

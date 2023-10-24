@@ -89,13 +89,13 @@ pub fn mint_validation(
     // owner must sign it
     signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
     // owner must get the utxo back
-    payout.exact(script_addr, validating_value, tx.outputs),
+    payout.exact(script_addr, validating_value, tx.outputs)?,
     // single script input
     count.inputs_by_addr(tx.inputs, script_addr, 1),
-    // no script outputs
+    // single script outputs
     count.outputs_by_addr(tx.outputs, script_addr, 1),
     // must have a full set
-    types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns),
+    types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns)?,
     // the full flag is now set
     types.set_full_flag(datum, outbound_datum),
     // mint exactly 1 batcher token
@@ -104,7 +104,7 @@ pub fn mint_validation(
       ref_datum.batcher_info.batcher_pid,
       ref_datum.batcher_info.batcher_tkn,
       1,
-    ),
+    )?,
   }
 }
 
@@ -117,13 +117,18 @@ pub fn burn_validation(
 ) -> Bool {
   // the input being validated
   let validating_input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value = validating_input.output.value
   let script_addr = validating_input.output.address
+  // owner of the band
+  let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
   // check if something is being minted here
   let mint =
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()
   and {
+    // owner must get the utxo back
+    payout.exact(owner_addr, validating_value, tx.outputs)?,
     // single script input
     count.inputs_by_addr(tx.inputs, script_addr, 1),
     // no script outputs
@@ -134,7 +139,7 @@ pub fn burn_validation(
       ref_datum.batcher_info.batcher_pid,
       ref_datum.batcher_info.batcher_tkn,
       -1,
-    ),
+    )?,
     // we assume logical off chain for entry, must have full set
     datum.full_flag == 1,
   }

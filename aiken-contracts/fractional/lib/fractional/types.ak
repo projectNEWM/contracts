@@ -145,6 +145,7 @@ pub type FeeInfoData {
 
 pub type BatcherData {
   monster_pid: ByteArray,
+  // these are the monster prefix token names
   monster_tkns: List<ByteArray>,
   batcher_pid: ByteArray,
   batcher_tkn: ByteArray,
@@ -167,6 +168,7 @@ pub fn has_tokens(
         has_tokens(token_names, prefixes)
       } else {
         // missing something from the set
+        // or something that isn't part of the set
         False
       }
   }
