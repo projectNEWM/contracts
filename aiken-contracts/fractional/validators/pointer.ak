@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/transaction.{Mint, ScriptContext}
 use aiken/transaction/credential
 use aiken/transaction/value
@@ -25,7 +24,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     // get tx info
     let first_index = find.first_input_index(tx.inputs)
     let first_tx_hash = find.first_input_txid(tx.inputs)
-    // use the pointer prefix but its not official
+    // use the pointer prefix 555
     let pointer_tkn =
       values.unique_token_name(first_tx_hash, first_index, types.prefix_555)
     let mint =
@@ -34,39 +33,37 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         |> value.flatten()
     // the job that signs this, 
     let signer = types.find_worker(ref_datum.hot_key, types.pointer_key)
+    // let signer = ref_datum.hot_key
     when context.purpose is {
       // Mint 1 ref token and 100M fractions
       Mint(own_currency_symbol) ->
         when redeemer is {
-          MintTokens ->
-            list.and(
-              [
-                // hot key must sign
-                signing.verify_sig(tx.extra_signatories, signer),
-                // prevent roll over double nft attack
-                first_index < 256,
-                // must mint 1 pointer token
-                minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
-                // data reference must be holding correct token
-                ref_value_check,
-              ],
-            )
-          BurnTokens { burn_amt } ->
-            list.and(
-              [
-                burn_amt == 0,
-                // must burn 1 pointer token
-                minting.by_prefix(
-                  mint,
-                  own_currency_symbol,
-                  // non standard prefix
-                  types.prefix_555,
-                  -1,
-                )?,
-                // data reference must be holding correct token
-                ref_value_check?,
-              ],
-            )
+          // mint a pointer token to start a sale
+          // this can not have destination validation due to lexico cbor
+          MintTokens -> and {
+              // hot key must sign
+              signing.verify_sig(tx.extra_signatories, signer),
+              // prevent roll over double nft attack
+              first_index < 256,
+              // must mint 1 pointer token
+              minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
+              // data reference must be holding correct token
+              ref_value_check,
+            }
+          // burn a single pointer token
+          BurnTokens { burn_amt } -> and {
+              burn_amt == 0,
+              // must burn 1 pointer token
+              minting.by_prefix(
+                mint,
+                own_currency_symbol,
+                // non standard prefix
+                types.prefix_555,
+                -1,
+              ),
+              // data reference must be holding correct token
+              ref_value_check,
+            }
         }
       // Minting Only
       _ -> False

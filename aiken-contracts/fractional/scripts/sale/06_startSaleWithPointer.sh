@@ -67,7 +67,7 @@ if [ ! -z "$POINTER_VALUE" ]; then
     echo "UTxO has pointer."
     exit 1
 fi
-prefix_555="0022bfb0"
+prefix_555="a110ca7ab1e000"
 
 echo "NEWM UTxO:" $newm_tx_in
 first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
@@ -168,6 +168,7 @@ ${cli} transaction build-raw \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee 400000
+
 
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)

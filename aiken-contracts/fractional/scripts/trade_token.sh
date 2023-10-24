@@ -7,30 +7,30 @@ cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/issuer-wallet/"
+sender_path="wallets/batcher-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
-receiver_address=${sender_address}
-# receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
+# receiver_address=${sender_address}
+receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
 
-data="./tmp/${sender_address}.json"
-lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
-echo "Lovelace: " ${lovelace}
+# data="./tmp/${sender_address}.json"
+# lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
+# echo "Lovelace: " ${lovelace}
 
-assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
-# echo $assets
-if [ -z "$assets" ]; then  # check if the result is an empty string
-    echo "Result is empty. Exiting."
-    # exit 1  # exit the script with an error code
-fi
+# assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
+# # echo $assets
+# if [ -z "$assets" ]; then  # check if the result is an empty string
+#     echo "Result is empty. Exiting."
+#     # exit 1  # exit the script with an error code
+# fi
 
+assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455631313032 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455632393835 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455633313032"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \
     --tx-out="${receiver_address} + 5000000 + ${assets}" | tr -dc '0-9')
 
 tokens_to_be_traded="${receiver_address} + ${min_utxo} + ${assets}"
-
 echo -e "\nTrading Tokens:\n" ${tokens_to_be_traded}
 #
 # exit

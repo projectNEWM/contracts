@@ -9,3 +9,6 @@ hashes/
 certs/
 contracts/
 __pycache__/
+eval/
+# this file is causing headaches so just ignore it and code will autogenerate it upon opening the source
+aiken.lock

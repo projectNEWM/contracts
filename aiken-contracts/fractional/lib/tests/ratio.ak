@@ -1,4 +1,3 @@
-use aiken/list
 use aiken/math/rational
 use aiken/transaction/value
 use fractional/types.{Ratio}
@@ -46,7 +45,10 @@ test find_simple3() {
   expect Some(p1) = rational.new(3, 4)
   expect Some(p2) = rational.new(4, 3)
   // types.find_best(x, p2, b) == types.find_best(b, p1, x)
-  list.and([types.find_best(x, p2, b) == 74, types.find_best(b, p1, x) == 56])
+  and {
+    types.find_best(x, p2, b) == 74,
+    types.find_best(b, p1, x) == 56,
+  }
 }
 
 test find_simple4() {

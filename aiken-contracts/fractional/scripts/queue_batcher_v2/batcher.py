@@ -1,7 +1,8 @@
 import logging
-from flask import Flask, request
 import multiprocessing
 import subprocess
+
+from flask import Flask, request
 from src import db_manager_redis, handle, json_file, query
 
 # start the redis database
@@ -49,7 +50,7 @@ def webhook():
         db.create_block_record(block_number)
         return 'Webhook received successfully'
     elif block_number == db_number:
-        # still in the block getting data
+        # we are still parsing data from the block
         pass
     else:
         db.create_block_record(block_number)

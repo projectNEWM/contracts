@@ -56,7 +56,7 @@ IFS='#' read -ra array <<< "$string"
 
 prefix_100="000643b0"
 prefix_444="001bc280"
-prefix_555="0022bfb0"
+prefix_555="a110ca7ab1e000"
 
 ref_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_100}')")
 frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_444}')")

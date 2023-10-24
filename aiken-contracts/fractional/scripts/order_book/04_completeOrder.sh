@@ -20,7 +20,6 @@ batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 buyer1_address=$(cat ../wallets/buyer1-wallet/payment.addr)
 buyer1_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer1-wallet/payment.vkey)
 
-
 buyer2_address=$(cat ../wallets/buyer2-wallet/payment.addr)
 buyer2_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer2-wallet/payment.vkey)
 
@@ -124,9 +123,7 @@ fi
 echo
 echo Second UTxO: $script_tx_in2
 echo "Complete OUTPUT 2: "${script_address_out2}
-#
-# exit
-#
+
 echo -e "\033[0;36m Gathering Batcher UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${batcher_address} \
@@ -141,11 +138,21 @@ fi
 
 TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
 batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
-# this needs to be dynamic
-incentive="46000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
-batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive}"
+batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add' ../tmp/batcher_utxo.json)
 batcher_tx_in=${TXIN::-8}
-# echo Batcher UTXO ${batcher_tx_in}
+echo Batcher UTXO ${batcher_tx_in}
+
+incentive="$((${current_incentive_value1} + ${current_incentive_value2} + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+
+token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+batcher_policy_id=$(cat ../../hashes/batcher.hash)
+batcher_token="1 ${batcher_policy_id}.${token_name}"
+batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive} + ${batcher_token}"
+echo -e "\nBatcher OUTPUT: "${batcher_address_out}
+
+#
+# exit
+#
 
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -162,8 +169,8 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/order-book-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-cpu_steps=850000000
-mem_steps=2000000
+cpu_steps=950000000
+mem_steps=3000000
 
 order_book_execution_unts="(${cpu_steps}, ${mem_steps})"
 order_book_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
@@ -252,7 +259,7 @@ ${cli} transaction build-raw \
     --fee ${final_fee}
 
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

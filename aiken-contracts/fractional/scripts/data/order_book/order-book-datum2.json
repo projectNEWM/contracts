@@ -16,10 +16,10 @@
       "constructor": 0,
       "fields": [
         {
-          "bytes": "6effa18e41008cd0b13f3959a5a4af40b92ca936bb7669f40d3b1f81"
+          "bytes": "79b4b03d86b337231a3a861dba925675bf4edcce3169ad237feb0d14"
         },
         {
-          "bytes": "5468697349734f6e6553746172746572546f6b656e466f7254657374696e6732"
+          "bytes": "6c6f76656c616365"
         }
       ]
     },
@@ -41,7 +41,7 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 35331
+              "int": 71331
             },
             {
               "int": 1000
@@ -52,12 +52,18 @@
           "constructor": 0,
           "fields": [
             {
-              "int": 7
+              "int": 71331
             },
             {
-              "int": 3
+              "int": 10000
             }
           ]
+        },
+        {
+          "int": 0
+        },
+        {
+          "int": 0
         }
       ]
     },
