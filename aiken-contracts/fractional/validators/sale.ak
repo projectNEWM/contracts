@@ -6,7 +6,7 @@ use assist/values
 use fractional/sale_validators
 use fractional/types.{
   ExtractSale, Purchase, ReferenceDatum, RemoveSale, SaleDatum, SaleRedeemer,
-  StartSale, ValidatorHash,
+  StartSale, UpdateSale, ValidatorHash,
 }
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
@@ -81,6 +81,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
               )?,
             }
+          // update the size or price of a sale
+          UpdateSale { lovelace } ->
+            sale_validators.update_validation(
+              datum,
+              tx,
+              output_reference,
+              lovelace,
+            )?
         }
       // anything else fails
       _ -> False
