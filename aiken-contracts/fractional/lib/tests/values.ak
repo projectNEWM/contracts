@@ -85,7 +85,7 @@ test asc_list_value2() {
   let tokens2 = dict.from_ascending_list([(#"fade", 101)], bytearray.compare)
   let result =
     dict.from_ascending_list(
-      [(#"", tokens0), (#"acab", tokens1), (#"acab", tokens2)],
+      [(#"", tokens0), (#"acab", tokens1), (#"cafe", tokens2)],
       bytearray.compare,
     )
   cost_value == result
