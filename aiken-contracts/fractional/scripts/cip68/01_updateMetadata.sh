@@ -29,14 +29,18 @@ asset="1 ${pid}.${tkn}"
 current_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
+    --tx-out-datum-embed-cbor-file /home/westbam/haskell/metadata-datum.cbor \
     --tx-out="${cip68_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+
+#    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
 
 updated_min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
+    --tx-out-datum-embed-cbor-file /home/westbam/haskell/updated-metadata-datum.cbor \
     --tx-out="${cip68_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+
+#    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
 
 difference=$((${updated_min_utxo} - ${current_min_utxo}))
 
@@ -101,6 +105,7 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" --arg policy_id "$pid" --arg name "$tkn" 'to_entries[] | select(.value.value[$policy_id][$name] == 1) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
+
 # collat info
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -130,13 +135,16 @@ FEE=$(${cli} transaction build \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
-    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-datum-cbor-file /home/westbam/haskell/metadata-datum.cbor \
     --spending-reference-tx-in-redeemer-file ../data/cip68/update-redeemer.json \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
+    --tx-out-datum-embed-cbor-file /home/westbam/haskell/updated-metadata-datum.cbor \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
+
+#    --spending-reference-tx-in-inline-datum-present \
+#    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
 
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -154,7 +162,7 @@ ${cli} transaction sign \
     --out-file ../tmp/tx.signed \
     --testnet-magic ${testnet_magic}
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \

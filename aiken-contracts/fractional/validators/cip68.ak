@@ -1,8 +1,7 @@
-use aiken/transaction.{ScriptContext, Spend}
+use aiken/transaction.{DatumHash, InlineDatum, ScriptContext, Spend, find_datum}
 use aiken/transaction/credential
 use aiken/transaction/value
 use assist/count
-use assist/data
 use assist/find
 use assist/payout
 use assist/signing
@@ -28,7 +27,16 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_value_check =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
-    expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
+    expect ref_datum: ReferenceDatum =
+      when ref_input.output.datum is {
+        InlineDatum(inbound_datum) -> inbound_datum
+        DatumHash(datum_hash) ->
+          when find_datum([], tx.datums, datum_hash) is {
+            Some(inbound_datum) -> inbound_datum
+            _ -> fail @"No Input Datum"
+          }
+        _ -> fail @"No Input Datum"
+      }
     // the job that signs this, 
     // 6d65746164617461 == metadata
     let signer = types.find_worker(ref_datum.hot_key, types.metadata_key)
