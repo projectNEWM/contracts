@@ -7,10 +7,12 @@ use assist/minting
 use assist/signing
 use assist/types/hashes.{PublicKeyHash, TxHash, ValidatorHash}
 use assist/values
-use fractional/types.{BurnTokens, MintRedeemer, MintTokens, ReferenceDatum}
+use fractional/types.{
+  BurnPointerToken, MintPointerRedeemer, MintPointerToken, ReferenceDatum,
+}
 
 validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
-  fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
+  fn params(redeemer: MintPointerRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
     let tx: Transaction = context.transaction
     // data reference stuff
@@ -18,7 +20,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     let ref_addr: Address = credential.from_script(ref_hash)
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
-    let ref_value_check: Bool =
+    let is_correct_ref_utxo: Bool =
       value.quantity_of(ref_input.output.value, starter_pid, starter_tkn) == 1
     // Get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
@@ -42,7 +44,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         when redeemer is {
           // mint a pointer token to start a sale
           // this can not have destination validation due to lexico cbor
-          MintTokens -> and {
+          MintPointerToken -> and {
               // hot key must sign
               signing.verify_sig(tx.extra_signatories, signer),
               // prevent roll over double nft attack
@@ -50,12 +52,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               // must mint 1 pointer token
               minting.exact(mint, own_currency_symbol, pointer_tkn, 1),
               // data reference must be holding correct token
-              ref_value_check,
+              is_correct_ref_utxo,
             }
           // burn a single pointer token
-          BurnTokens { burn_amt } -> and {
-              // set it to zero on the mint type
-              burn_amt == 0,
+          BurnPointerToken -> and {
               // must burn 1 pointer token
               minting.by_prefix(
                 mint,
@@ -65,7 +65,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 -1,
               ),
               // data reference must be holding correct token
-              ref_value_check,
+              is_correct_ref_utxo,
             }
         }
       // Minting Only

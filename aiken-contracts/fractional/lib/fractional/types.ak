@@ -277,6 +277,11 @@ pub type MintRedeemer {
   BurnTokens { burn_amt: Int }
 }
 
+pub type MintPointerRedeemer {
+  MintPointerToken
+  BurnPointerToken
+}
+
 pub type QueuePurchase =
   Void
 

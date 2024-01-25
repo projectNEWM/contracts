@@ -23,7 +23,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     // find the first reference input
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
-    let ref_value_check: Bool =
+    let is_correct_ref_utxo: Bool =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
@@ -33,7 +33,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // a batcher can complete a purchase from the queue
           QueuePurchase -> and {
               // check if correct reference data
-              ref_value_check,
+              is_correct_ref_utxo,
               // purchase it
               queue_validators.purchase_validation(
                 datum,
@@ -45,7 +45,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // a batcher can auto refund a completed queue item
           QueueRefund -> and {
               // check if correct reference data
-              ref_value_check,
+              is_correct_ref_utxo,
               // refund it
               queue_validators.refund_validation(
                 datum,

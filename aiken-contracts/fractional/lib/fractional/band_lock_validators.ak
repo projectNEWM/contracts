@@ -1,6 +1,7 @@
 use aiken/dict
-use aiken/transaction.{OutputReference, Transaction}
-use aiken/transaction/value.{Value}
+use aiken/transaction.{Input, OutputReference, Transaction}
+use aiken/transaction/credential.{Address}
+use aiken/transaction/value.{AssetName, PolicyId, Value}
 use assist/addresses
 use assist/count
 use assist/find
@@ -16,19 +17,19 @@ pub fn remove_validation(
   output_reference: OutputReference,
 ) -> Bool {
   // the input being validated
-  let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  let validating_value = validating_input.output.value
-  let script_addr = validating_input.output.address
-  let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
+  let validating_input: Input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value: Value = validating_input.output.value
+  let owner_addr: Address =
+    addresses.create_address(datum.owner.pkh, datum.owner.sc)
   and {
     // owner must sign it
     signing.verify_sig(tx.extra_signatories, datum.owner.pkh),
     // owner must get the utxo back
     payout.exact(owner_addr, validating_value, tx.outputs),
     // single script input
-    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    count.inputs_by_vkh(tx.inputs, 1),
     // no script outputs
-    count.outputs_by_addr(tx.outputs, script_addr, 0),
+    count.outputs_by_vkh(tx.outputs, 0),
     // can not have a full set
     datum.full_flag == 0,
   }
@@ -42,9 +43,10 @@ pub fn add_member_validation(
   member: Value,
 ) -> Bool {
   // the input being validated
-  let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  let validating_value = validating_input.output.value |> value.merge(member)
-  let script_addr = validating_input.output.address
+  let validating_input: Input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value: Value =
+    validating_input.output.value |> value.merge(member)
+  let script_addr: Address = validating_input.output.address
   expect outbound_datum: BandLockUpDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   and {
@@ -55,9 +57,9 @@ pub fn add_member_validation(
     // owner must get the utxo back
     payout.exact(script_addr, validating_value, tx.outputs),
     // single script input
-    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    count.inputs_by_vkh(tx.inputs, 1),
     // no script outputs
-    count.outputs_by_addr(tx.outputs, script_addr, 1),
+    count.outputs_by_vkh(tx.outputs, 1),
     // assume logical entry tx, can not have a full set
     datum.full_flag == 0,
   }
@@ -71,17 +73,17 @@ pub fn mint_validation(
   output_reference: OutputReference,
 ) -> Bool {
   // the input being validated
-  let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  let validating_value = validating_input.output.value
-  let script_addr = validating_input.output.address
+  let validating_input: Input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value: Value = validating_input.output.value
+  let script_addr: Address = validating_input.output.address
   // get the list of token names from the monster pid
-  let token_names =
+  let token_names: List<AssetName> =
     value.tokens(validating_value, ref_datum.batcher_info.monster_pid)
       |> dict.keys()
   expect outbound_datum: BandLockUpDatum =
     find.output_datum_by_addr(tx.outputs, script_addr)
   // check if something is being minted here
-  let mint =
+  let mint: List<(PolicyId, AssetName, Int)> =
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()
@@ -91,9 +93,9 @@ pub fn mint_validation(
     // owner must get the utxo back
     payout.exact(script_addr, validating_value, tx.outputs)?,
     // single script input
-    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    count.inputs_by_vkh(tx.inputs, 1),
     // single script outputs
-    count.outputs_by_addr(tx.outputs, script_addr, 1),
+    count.outputs_by_vkh(tx.outputs, 1),
     // must have a full set
     types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns)?,
     // the full flag is now set
@@ -116,13 +118,14 @@ pub fn burn_validation(
   output_reference: OutputReference,
 ) -> Bool {
   // the input being validated
-  let validating_input = find.input_by_ref(tx.inputs, output_reference)
-  let validating_value = validating_input.output.value
-  let script_addr = validating_input.output.address
+  let validating_input: Input = find.input_by_ref(tx.inputs, output_reference)
+  let validating_value: Value = validating_input.output.value
+  let script_addr: Address = validating_input.output.address
   // owner of the band
-  let owner_addr = addresses.create_address(datum.owner.pkh, datum.owner.sc)
+  let owner_addr: Address =
+    addresses.create_address(datum.owner.pkh, datum.owner.sc)
   // check if something is being minted here
-  let mint =
+  let mint: List<(PolicyId, AssetName, Int)> =
     tx.mint
       |> value.from_minted_value()
       |> value.flatten()

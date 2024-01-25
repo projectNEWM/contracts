@@ -23,7 +23,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     // find the first reference input
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
-    let ref_value_check: Bool =
+    let is_correct_ref_utxo: Bool =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
@@ -34,7 +34,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // Buyer can purchase a bundle from the UTxO
           Purchase -> and {
               // must be the correct reference data
-              ref_value_check,
+              is_correct_ref_utxo,
               // purchase sale validation
               sale_validators.purchase_validation(
                 datum,
@@ -46,7 +46,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // mint a pointer token to start off a sale
           StartSale { pointer } -> and {
               // must be the correct reference data
-              ref_value_check,
+              is_correct_ref_utxo,
               // start the sale off
               sale_validators.start_validation(
                 datum,
@@ -59,7 +59,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // Extract profit back to seller wallet
           ExtractSale { profit } -> and {
               // must be the correct reference data
-              ref_value_check,
+              is_correct_ref_utxo,
               // extract profit from sale
               sale_validators.extract_validation(
                 datum,
@@ -72,7 +72,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           // Owner can remove their UTxO by burning the pointer
           RemoveSale -> and {
               // must be the correct reference data
-              ref_value_check?,
+              is_correct_ref_utxo?,
               // remove validation logic
               sale_validators.remove_validation(
                 datum,
