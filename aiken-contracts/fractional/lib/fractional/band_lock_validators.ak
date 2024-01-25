@@ -120,7 +120,6 @@ pub fn burn_validation(
   // the input being validated
   let validating_input: Input = find.input_by_ref(tx.inputs, output_reference)
   let validating_value: Value = validating_input.output.value
-  let script_addr: Address = validating_input.output.address
   // owner of the band
   let owner_addr: Address =
     addresses.create_address(datum.owner.pkh, datum.owner.sc)
@@ -133,9 +132,9 @@ pub fn burn_validation(
     // owner must get the utxo back
     payout.exact(owner_addr, validating_value, tx.outputs)?,
     // single script input
-    count.inputs_by_addr(tx.inputs, script_addr, 1),
+    count.inputs_by_vkh(tx.inputs, 1),
     // no script outputs
-    count.outputs_by_addr(tx.outputs, script_addr, 0),
+    count.outputs_by_vkh(tx.outputs, 0),
     // burn exactly 1 batcher token
     minting.exact(
       mint,

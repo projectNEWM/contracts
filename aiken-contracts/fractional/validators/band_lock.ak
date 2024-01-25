@@ -33,7 +33,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         when redeemer is {
           // remove utxo back to owner if not full
           RemoveBand ->
-            band_lock_validators.remove_validation(datum, tx, output_reference)
+            band_lock_validators.remove_validation(datum, tx, output_reference)?
           // add some memebers to the band if not full
           AddToBand { member } ->
             band_lock_validators.add_member_validation(
@@ -41,7 +41,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               tx,
               output_reference,
               member,
-            )
+            )?
           // mint nft and lock full band
           MintBand -> and {
               band_lock_validators.mint_validation(
@@ -49,7 +49,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              ),
+              )?,
               is_correct_ref_utxo,
             }
           // burn nft and unlock full band back to owner
@@ -59,7 +59,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              ),
+              )?,
               is_correct_ref_utxo,
             }
         }
