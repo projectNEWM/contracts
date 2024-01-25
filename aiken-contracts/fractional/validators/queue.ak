@@ -1,5 +1,5 @@
-use aiken/transaction.{ScriptContext, Spend}
-use aiken/transaction/credential
+use aiken/transaction.{Input, ScriptContext, Spend, Transaction}
+use aiken/transaction/credential.{Address}
 use assist/data
 use assist/find
 use assist/values
@@ -16,14 +16,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     context: ScriptContext,
   ) -> Bool {
     // the transaction being validated
-    let tx = context.transaction
+    let tx: Transaction = context.transaction
     // data reference stuff
     expect ref_hash: ValidatorHash = ref_hash_data
-    let ref_addr = credential.from_script(ref_hash)
+    let ref_addr: Address = credential.from_script(ref_hash)
     // find the first reference input
-    let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
-    let ref_value_check =
+    let ref_value_check: Bool =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)

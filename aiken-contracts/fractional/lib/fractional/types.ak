@@ -9,7 +9,7 @@ use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
 // pointer token prefix
-pub const prefix_555 = #"a110ca7ab1e000"
+pub const pointer_prefix = #"a110ca7ab1e000"
 
 // metadata
 pub const metadata_key = #"6d65746164617461"
@@ -68,7 +68,7 @@ pub type UpdateSale =
 
 pub type SaleRedeemer {
   Purchase
-  StartSale { pointer: Value }
+  StartSale { pointer: TokenInfo }
   ExtractSale { profit: Value }
   RemoveSale
   UpdateSale { lovelace: Int }
@@ -311,8 +311,8 @@ pub fn prove_existence_of_incentive(
   and {
     // The incentive must exist
     value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
-    // the amount cant be zero
-    the_incentive.amt != 0,
+    // the amount must be greater than zero
+    the_incentive.amt > 0,
   }
 }
 

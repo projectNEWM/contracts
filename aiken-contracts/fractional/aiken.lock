@@ -3,26 +3,24 @@
 
 [[requirements]]
 name = "aiken-lang/stdlib"
-version = "main"
+version = "1.7.0"
 source = "github"
 
 [[requirements]]
 name = "logicalmechanism/assist"
-version = "main"
+version = "v0.4.3"
 source = "github"
 
 [[packages]]
 name = "aiken-lang/stdlib"
-version = "main"
+version = "1.7.0"
 requirements = []
 source = "github"
 
 [[packages]]
 name = "logicalmechanism/assist"
-version = "main"
+version = "v0.4.3"
 requirements = []
 source = "github"
 
 [etags]
-"aiken-lang/stdlib@main" = [{ secs_since_epoch = 1700072639, nanos_since_epoch = 417332364 }, "cf946239d3dd481ed41f20e56bf24910b5229ea35aa171a708edc2a47fc20a7b"]
-"logicalmechanism/assist@main" = [{ secs_since_epoch = 1700072639, nanos_since_epoch = 549697837 }, "8bb70b89431719f453e1cc3df41f04a6719f42b8c443c9a0a4aaff9d29be9627"]
