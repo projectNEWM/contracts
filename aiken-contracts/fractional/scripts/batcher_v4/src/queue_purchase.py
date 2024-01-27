@@ -31,8 +31,8 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     # this needs to be dynamic here
     FEE_VALUE = {"lovelace": FEE}
     # [{"mem": 518944, "cpu": 190266843}, {"mem": 1506909, "cpu": 587212169}]
-    sale_execution_units = "(199266843, 618944)"
-    queue_execution_units = "(597212169, 2506909)"
+    sale_execution_units = "(290266843, 618944)"
+    queue_execution_units = "(687212169, 2506909)"
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(this_dir)
@@ -98,6 +98,10 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     batcher_out = parsing.process_output(constants['batcher_address'], bv1)
     sale_out = parsing.process_output(constants['sale_address'], sv2)
     queue_out = parsing.process_output(constants['queue_address'], qv4)
+
+    # print(batcher_out)
+    # print(sale_out)
+    # print(queue_out)
 
     func = [
         "cardano-cli", "transaction", "build-raw",

@@ -1,0 +1,15 @@
+{
+    "sale_address": "addr_test1xpa8h52wzp634xuq030l4r23drhu0kw7k40pels7pkev2rd77kxf9f4azcy30z8zufp39mkgzqvg6vyjfsgqflsaxxqqy5z2r2",
+    "queue_address": "addr_test1xzfklpyqquy540p4msdqptlwxk2m8yysl7td8hwpa3wfxt977kxf9f4azcy30z8zufp39mkgzqvg6vyjfsgqflsaxxqq94g2ge",
+    "batcher_address": "addr_test1vrs4fk7ea6rg2fvd00sa8um5unp0rt474kngwpc38v2z9vqujprdk",
+    "batcher_pkh": "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0",
+    "collat_pkh": "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee",
+    "collat_utxo": "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0",
+    "fraction_policy": "6c3ea4307dde3c61c874a4ef89f6b5eee5ca580d34eb52798377ef04",
+    "pointer_policy": "a0655eab783984081505d81823d14c8f19f1f33058190a7b7b283d5f",
+    "network": "--testnet-magic 1",
+    "socket_path": "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-testnet/node.socket",
+    "data_ref_utxo": "ce80d33009265015f10e1e925ddc731726ef37f55aa880728e630046895dc2f8#0",
+    "sale_ref_utxo": "22d3b80a8a7d6387e01dc704f3612bf72f2a0c1ae94834c78bd13a1d2ffe576c#1",
+    "queue_ref_utxo": "2f727408c1907a015914a07f3c7732a4d3d9d2beb86a141561638252ad965600#1"
+}
