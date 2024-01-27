@@ -9,7 +9,7 @@ use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
 // pointer token prefix
-pub const pointer_prefix = #"a110ca7ab1e000"
+pub const pointer_prefix = #"ca7ab1e0"
 
 // metadata
 pub const metadata_key = #"6d65746164617461"
@@ -166,7 +166,7 @@ pub type FeeInfoData {
 pub type BatcherData {
   monster_pid: ByteArray,
   // these are the monster prefix token names
-  monster_tkns: List<ByteArray>,
+  monster_prefixes: List<ByteArray>,
   batcher_pid: ByteArray,
   batcher_tkn: ByteArray,
 }
@@ -176,9 +176,9 @@ pub type BatcherData {
 ///
 pub fn has_tokens(
   token_names: List<ByteArray>,
-  monster_tkns: List<ByteArray>,
+  tkn_prefixes: List<ByteArray>,
 ) -> Bool {
-  when monster_tkns is {
+  when tkn_prefixes is {
     // I found all of them
     [] -> True
     // go through all the prefixes from the set

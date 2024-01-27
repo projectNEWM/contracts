@@ -18,11 +18,16 @@ mkdir -p certs
 rm contracts/* || true
 rm hashes/* || true
 rm certs/* || true
+rm -fr build/ || true
 
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
+
+# remove and filter all traces
 # aiken build
-aiken build --keep-traces
+
+# keep the traces for testing if required
+aiken build --trace-level compact --filter-traces all
 
 # random string
 ranD=$(jq -r '.randomData' start_info.json)

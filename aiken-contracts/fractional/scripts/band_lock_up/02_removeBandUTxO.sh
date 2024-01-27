@@ -30,6 +30,7 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
 
 # this assumes no entry tokens
 batcher_address_out="${batcher_address} + ${min_utxo}"
+# this has tokens
 # batcher_address_out="${batcher_address} + ${min_utxo} + ${assets}"
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"

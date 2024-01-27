@@ -15,5 +15,5 @@ source = "github"
 
 [[dependencies]]
 name = "logicalmechanism/assist"
-version = "v0.4.3"
+version = "main"
 source = "github"

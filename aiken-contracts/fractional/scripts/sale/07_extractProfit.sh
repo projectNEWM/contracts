@@ -44,7 +44,29 @@ echo Script UTxO: $script_tx_in
 LOVELACE_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
 utxo_value=$LOVELACE_VALUE
 echo LOVELACE: $LOVELACE_VALUE
-script_address_out="${script_address} + ${LOVELACE_VALUE} + 1 ${pointer_pid}.${pointer_tkn}"
+
+pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+default_asset="${total_amt} ${pid}.${tkn}"
+CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+echo REMAINING: $CURRENT_VALUE ${pid}.${tkn}
+
+
+script_address_out="${script_address} + ${LOVELACE_VALUE} + 1 ${pointer_pid}.${pointer_tkn} + $CURRENT_VALUE ${pid}.${tkn}"
+
+
+sale_profit_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/script_utxo.json)
+echo $sale_profit_amount
+if [ -z "$sale_profit_amount" ]; then
+    echo No Profit yet
+    exit
+else
+    profit="$((${sale_profit_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+fi
+echo Current Profit: $profit
+
+variable=${sale_profit_amount}; jq --argjson variable "$variable" '.fields[0].map[0].v.map[0].v.int=$variable' ../data/sale/extract-redeemer.json > ../data/sale/extract-redeemer-new.json
+mv ../data/sale/extract-redeemer-new.json ../data/sale/extract-redeemer.json
 
 echo "Return OUTPUT: "${script_address_out}
 #

@@ -30,8 +30,8 @@ pub fn remove_validation(
     count.inputs_by_vkh(tx.inputs, 1),
     // no script outputs
     count.outputs_by_vkh(tx.outputs, 0),
-    // can not have a full set
-    datum.full_flag == 0,
+    // anything but a full set flag
+    datum.full_flag != 1,
   }
 }
 
@@ -97,7 +97,7 @@ pub fn mint_validation(
     // single script outputs
     count.outputs_by_vkh(tx.outputs, 1),
     // must have a full set
-    types.has_tokens(token_names, ref_datum.batcher_info.monster_tkns)?,
+    types.has_tokens(token_names, ref_datum.batcher_info.monster_prefixes)?,
     // the full flag is now set
     types.set_full_flag(datum, outbound_datum),
     // mint exactly 1 batcher token

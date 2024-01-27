@@ -8,7 +8,7 @@ source = "github"
 
 [[requirements]]
 name = "logicalmechanism/assist"
-version = "v0.4.3"
+version = "main"
 source = "github"
 
 [[packages]]
@@ -19,8 +19,9 @@ source = "github"
 
 [[packages]]
 name = "logicalmechanism/assist"
-version = "v0.4.3"
+version = "main"
 requirements = []
 source = "github"
 
 [etags]
+"logicalmechanism/assist@main" = [{ secs_since_epoch = 1706311382, nanos_since_epoch = 988950392 }, "338b11c258a127164e28fa59fc9e6274cce7a653225b0a35182030b61742fc68"]

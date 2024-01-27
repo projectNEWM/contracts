@@ -38,9 +38,12 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               queue_validators.purchase_validation(
                 datum,
                 ref_datum,
-                tx,
+                tx.inputs,
+                tx.outputs,
+                tx.redeemers,
+                tx.fee,
                 output_reference,
-              ),
+              )?,
             }
           // a batcher can auto refund a completed queue item
           QueueRefund -> and {
@@ -50,14 +53,23 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               queue_validators.refund_validation(
                 datum,
                 ref_datum,
-                tx,
+                tx.reference_inputs,
+                tx.inputs,
+                tx.outputs,
+                tx.fee,
                 output_reference,
-              ),
+              )?,
             }
           // a buyer may always remove their queue item at any time
           QueueCancel ->
             // this is available at all times for queue items
-            queue_validators.cancel_validation(datum, tx, output_reference)
+            queue_validators.cancel_validation(
+              datum,
+              tx.inputs,
+              tx.outputs,
+              tx.extra_signatories,
+              output_reference,
+            )?
         }
       // anything else fails
       _ -> False

@@ -39,7 +39,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               sale_validators.purchase_validation(
                 datum,
                 ref_datum,
-                tx,
+                tx.inputs,
+                tx.outputs,
+                tx.redeemers,
                 output_reference,
               )?,
             }
@@ -50,7 +52,10 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               // start the sale off
               sale_validators.start_validation(
                 datum,
-                tx,
+                tx.inputs,
+                tx.outputs,
+                tx.fee,
+                tx.mint,
                 output_reference,
                 pointer,
                 ref_datum,
@@ -63,20 +68,25 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               // extract profit from sale
               sale_validators.extract_validation(
                 datum,
-                tx,
+                tx.inputs,
+                tx.outputs,
+                tx.extra_signatories,
                 output_reference,
                 profit,
                 ref_datum,
-              ),
+              )?,
             }
           // Owner can remove their UTxO by burning the pointer
           RemoveSale -> and {
               // must be the correct reference data
-              is_correct_ref_utxo?,
+              is_correct_ref_utxo,
               // remove validation logic
               sale_validators.remove_validation(
                 datum,
-                tx,
+                tx.inputs,
+                tx.outputs,
+                tx.mint,
+                tx.extra_signatories,
                 output_reference,
                 ref_datum,
               )?,
@@ -85,7 +95,9 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
           UpdateSale { lovelace } ->
             sale_validators.update_validation(
               datum,
-              tx,
+              tx.inputs,
+              tx.outputs,
+              tx.extra_signatories,
               output_reference,
               lovelace,
             )?

@@ -30,8 +30,9 @@ artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 #
-buyer_address=$(cat ../wallets/buyer2-wallet/payment.addr)
-buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/buyer2-wallet/payment.vkey)
+which_buyer="buyer1"
+buyer_address=$(cat ../wallets/${which_buyer}-wallet/payment.addr)
+buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${which_buyer}-wallet/payment.vkey)
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -94,6 +95,11 @@ TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}"
 sale_tx_in=$TXIN
 echo SALE UTXO ${sale_tx_in}
 
+cp ../tmp/sale_script_utxo.json ../tmp/script_utxo.json
+returning_asset=$(python3 ../py/token_string.py)
+
+# exit
+
 pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pointer_tkn=$(cat ../tmp/pointer.token)
 pointer_asset="1 ${pointer_pid}.${pointer_tkn}"
@@ -128,52 +134,47 @@ fi
 
 # buyer info
 bundle_value="${buyAmt} ${pid}.${tkn}"
-
 returning_asset="${retAmt} ${pid}.${tkn}"
 
-echo INCENT $batcher_starting_incentive
-incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
-echo $incentive
+echo Buyer Bundle: $bundle_value
+echo Sale Return: $returning_asset
 
+sale_profit_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/sale_script_utxo.json)
+queue_payment_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/queue_script_utxo.json)
+if [ -z "$sale_profit_amount" ]; then
+    profit="$((${queue_payment_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+else
+    profit="$((${sale_profit_amount} + ${queue_payment_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+fi
+echo Current Profit: $profit
+
+echo Batcher Incentive: $batcher_starting_incentive
+incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+return_incentive="1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
 batcher_policy_id=$(cat ../../hashes/batcher.hash)
 batcher_token="1 ${batcher_policy_id}.${token_name}"
 batcher_address_out="${batcher_address} + ${batcher_starting_lovelace} + ${incentive} + ${batcher_token}"
 
-# need better way for this
-cost_value="10000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+
 
 # queue contract return
 # the cost value is ada
 queue_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/queue_script_utxo.json)
 sale_utxo_value=$(jq -r '.[].value.lovelace' ../tmp/sale_script_utxo.json)
-# queue_ada_return=$((${queue_utxo_value} - ${payAmt}))
 queue_ada_return=$((${queue_utxo_value}))
-# sale_ada_return=$((${sale_utxo_value} + ${payAmt}))
 sale_ada_return=$((${sale_utxo_value}))
-if [ -z "$cost_value" ]; then
-    echo "cost value is empty"
 
-    if [[ retAmt -le 0 ]] ; then
+if [[ retAmt -le 0 ]] ; then
         # echo "THIS CLEANS THE SALE OUT"
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${pointer_asset}"
-        queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${pointer_asset} + ${profit}"
+        queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value} + ${return_incentive}"
         # echo $sale_script_address_out
         # exit
     else
-        # echo "somethig to continue" ${returning_asset}
-        queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${pointer_asset}"
+        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${pointer_asset} + ${profit}"
+        queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value} + ${return_incentive}"
     fi
-else
-    echo "cost value isnt empty"
-    queue_script_address_out="${queue_script_address} + ${queue_ada_return} + ${bundle_value}"
-    if [[ retAmt -le 0 ]] ; then
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${cost_value} + ${pointer_asset}"
-    else
-        sale_script_address_out="${sale_script_address} + ${sale_ada_return} + ${returning_asset} + ${cost_value} + ${pointer_asset}"
-    fi
-fi
 
 echo -e "\nBatcher OUTPUT: "${batcher_address_out}
 echo -e "\nSale Script OUTPUT: "${sale_script_address_out}
@@ -199,18 +200,8 @@ script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.s
 queue_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-cpu_steps=300000000
-mem_steps=1000000
 
-sale_execution_unts="(${cpu_steps}, ${mem_steps})"
-sale_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
-sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
-
-cpu_steps=1000000000
-mem_steps=3000000
-queue_execution_unts="(${cpu_steps}, ${mem_steps})"
-queue_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
-queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
+execution_unts="(0, 0)"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \
@@ -224,13 +215,13 @@ ${cli} transaction build-raw \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-execution-units="${sale_execution_unts}" \
+    --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/sale/purchase-redeemer.json \
     --tx-in ${queue_tx_in} \
     --spending-tx-in-reference="${queue_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-execution-units="${queue_execution_unts}" \
+    --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
     --tx-out="${batcher_address_out}" \
     --tx-out="${sale_script_address_out}" \
@@ -239,16 +230,35 @@ ${cli} transaction build-raw \
     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --fee 400000
+    --fee 0
 
+python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation import from_file; exe_units=from_file('../tmp/tx.draft', False);print(json.dumps(exe_units))" > ../data/exe_units.json
 
+cat ../data/exe_units.json
+
+cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[0].mem' ../data/exe_units.json)
+
+sale_execution_unts="(${cpu}, ${mem})"
+sale_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
+sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
+
+cpu=$(jq -r '.[1].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[1].mem' ../data/exe_units.json)
+
+queue_execution_unts="(${cpu}, ${mem})"
+queue_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
+queue_computation_fee_int=$(printf "%.0f" "$queue_computation_fee")
+#
+# exit
+#
 FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
 total_fee=$((${fee} + ${sale_computation_fee_int} + ${queue_computation_fee_int}))
 echo Tx Fee: $total_fee
 change_value=$((${queue_ada_return} - ${total_fee}))
-queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}"
+queue_script_address_out="${queue_script_address} + ${change_value} + ${bundle_value}  + ${return_incentive}"
 echo "Without Fee: Queue Script OUTPUT: "${queue_script_address_out}
 
 ${cli} transaction build-raw \
@@ -278,35 +288,6 @@ ${cli} transaction build-raw \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}
-
-# # Add metadata to this build function for nfts with data
-# echo -e "\033[0;36m Building Tx \033[0m"
-# FEE=$(${cli} transaction build \
-#     --babbage-era \
-#     --out-file ../tmp/tx.draft \
-#     --change-address ${batcher_address} \
-#     --tx-in-collateral="${collat_utxo}" \
-#     --read-only-tx-in-reference="${data_ref_utxo}#0" \
-#     --tx-in ${batcher_tx_in} \
-#     --tx-in ${sale_tx_in} \
-#     --spending-tx-in-reference="${script_ref_utxo}#1" \
-#     --spending-plutus-script-v2 \
-#     --spending-reference-tx-in-inline-datum-present \
-#     --spending-reference-tx-in-redeemer-file ../data/sale/purchase-redeemer.json \
-#     --tx-in ${queue_tx_in} \
-#     --spending-tx-in-reference="${queue_ref_utxo}#1" \
-#     --spending-plutus-script-v2 \
-#     --spending-reference-tx-in-inline-datum-present \
-#     --spending-reference-tx-in-redeemer-file ../data/queue/purchase-redeemer.json \
-#     --tx-out="${batcher_address_out}" \
-#     --tx-out="${sale_script_address_out}" \
-#     --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
-#     --tx-out="${queue_script_address_out}" \
-#     --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
-#     --required-signer-hash ${batcher_pkh} \
-#     --required-signer-hash ${collat_pkh} \
-#     --testnet-magic ${testnet_magic})
-# exit
 
 #
 # exit

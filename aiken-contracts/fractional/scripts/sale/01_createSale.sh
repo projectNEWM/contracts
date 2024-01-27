@@ -25,12 +25,18 @@ total_amt=100000000
 default_asset="${total_amt} ${pid}.${tkn}"
 pointer_asset="${total_amt} ${pointer_pid}.${tkn}"
 
+# cost value + incentive + bundle
+worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
++ 9223372036854775807 115d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
++ 9223372036854775807 215d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
+"
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset} + ${pointer_asset}" | tr -dc '0-9')
-self_start_fee=1000000
+    --tx-out="${script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
+
+self_start_fee=$(jq '.fields[4].fields[2].int' ../data/reference/reference-datum.json)
 min_ada=$((${utxo_value} + ${self_start_fee}))
 
 script_address_out="${script_address} + ${min_ada} + ${default_asset}"

@@ -64,7 +64,7 @@ if [[ -z $pSize ]]; then
 fi
 payAmt=$((${bundleSize} * ${pSize}))
 
-incentive=" + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+incentive=" + 2000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
 queue_value="${buyer_assets}${incentive}"
 
@@ -74,26 +74,18 @@ rub=$(jq '.fields[4].fields[1].int' ../data/reference/reference-datum.json)
 gas=$((${pub} + ${rub}))
 echo "Maximum Gas Fee:" $gas
 
-# check if its ada or not
-if [ -z "$queue_value" ]; then
-    min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
+# cost value + incentive + bundle
+worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
++ 9223372036854775807 115d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
++ 9223372036854775807 215d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
+"
+min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
         --babbage-era \
         --protocol-params-file ../tmp/protocol.json \
         --tx-out-inline-datum-file ../data/queue/queue-datum.json \
-        --tx-out="${script_address} + 5000000" | tr -dc '0-9')
-    adaPay=$((${min_utxo_value} + ${payAmt} + ${gas}))
-    script_address_out="${script_address} + ${adaPay}"
-else
-    min_utxo_value=$(${cli} transaction calculate-min-required-utxo \
-        --babbage-era \
-        --protocol-params-file ../tmp/protocol.json \
-        --tx-out-inline-datum-file ../data/queue/queue-datum.json \
-        --tx-out="${script_address} + 5000000 + ${queue_value}" | tr -dc '0-9')
-    adaPay=$((${min_utxo_value} + ${payAmt} + ${gas}))
-    script_address_out="${script_address} + ${adaPay} + ${queue_value}"
-fi
-
-# script_address_out="${script_address} + 20000000"
+        --tx-out="${script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
+adaPay=$((${min_utxo_value} + ${payAmt} + ${gas}))
+script_address_out="${script_address} + ${adaPay} + ${queue_value}"
 
 echo "Script OUTPUT: "${script_address_out}
 #

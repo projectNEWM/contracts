@@ -1,5 +1,7 @@
-use aiken/transaction.{Input, OutputReference, Transaction}
-use aiken/transaction/credential.{Address}
+use aiken/dict.{Dict}
+use aiken/hash.{Blake2b_224, Hash}
+use aiken/transaction.{Input, Output, OutputReference, Redeemer, ScriptPurpose}
+use aiken/transaction/credential.{Address, VerificationKey}
 use aiken/transaction/value.{Value}
 use assist/addresses
 use assist/count
@@ -15,24 +17,25 @@ use fractional/types.{
 /// Remove item from queue at any point at owner's expense
 pub fn cancel_validation(
   queue_datum: QueueDatum,
-  tx: Transaction,
+  inputs: List<Input>,
+  outputs: List<Output>,
+  signers: List<Hash<Blake2b_224, VerificationKey>>,
   queue_out_ref: OutputReference,
 ) -> Bool {
   // the input being validated
-  let queue_input: Input = find.input_by_ref(tx.inputs, queue_out_ref)
+  let queue_input: Input = find.input_by_ref(inputs, queue_out_ref)
   let queue_value: Value = queue_input.output.value
   let owner_addr: Address =
     addresses.create_address(queue_datum.owner.pkh, queue_datum.owner.sc)
   and {
     // owner must sign it
-    signing.verify_sig(tx.extra_signatories, queue_datum.owner.pkh),
+    signing.verify_sig(signers, queue_datum.owner.pkh),
     // owner must get the utxo back
-    payout.exact(owner_addr, queue_value, tx.outputs),
+    payout.exact(owner_addr, queue_value, outputs),
     // single script input
-    count.inputs_by_vkh(tx.inputs, 1),
-    count.inputs_by_datum(tx.inputs, 1),
+    count.inputs_by_vkh(inputs, 1),
     // no script outputs
-    count.outputs_by_vkh(tx.outputs, 0),
+    count.outputs_by_vkh(outputs, 0),
   }
 }
 
@@ -40,7 +43,10 @@ pub fn cancel_validation(
 pub fn refund_validation(
   queue_datum: QueueDatum,
   ref_datum: ReferenceDatum,
-  tx: Transaction,
+  ref_inputs: List<Input>,
+  inputs: List<Input>,
+  outputs: List<Output>,
+  fee: Value,
   queue_out_ref: OutputReference,
 ) -> Bool {
   // the sale address
@@ -50,13 +56,13 @@ pub fn refund_validation(
       ref_datum.contracts.stake,
     )
   // get the sale input from the reference inputs
-  let sale_input: Input = find.input_by_addr(tx.reference_inputs, sale_addr)
+  let sale_input: Input = find.input_by_addr(ref_inputs, sale_addr)
   let sale_out_ref: OutputReference = sale_input.output_reference
   // the current value on the sale utxo
   let sale_value: Value = sale_input.output.value
   // the sale datum
   expect sale_datum: SaleDatum = data.input_datum(sale_input)
-  // official sale?
+  // official sale
   let is_correct_sale_utxo: Bool =
     value.quantity_of(
       sale_value,
@@ -73,7 +79,7 @@ pub fn refund_validation(
       queue_datum.bundle.tkn,
     )
   // the input being validated
-  let queue_input: Input = find.input_by_ref(tx.inputs, queue_out_ref)
+  let queue_input: Input = find.input_by_ref(inputs, queue_out_ref)
   let queue_value: Value = queue_input.output.value
   // The sale datum bundle info and the queue pointer info must equal
   // A sale must exist for the refund action to take place
@@ -95,7 +101,7 @@ pub fn refund_validation(
     
       // The validating value does contain the cost value.
       //
-      // Does the current sale have enough tokens for at least 1 bundle?
+      // Does the current sale have enough tokens for at least 1 bundle
       if cur_bundle_tkn_amt >= sale_datum.bundle.amt {
         // the sale has at least one bundle
         //
@@ -120,7 +126,7 @@ pub fn refund_validation(
   // subtract the fee from the value being spent
   // the incentive is paid to refund it back
   let outbound_value: Value =
-    value.merge(queue_value, value.negate(tx.fee))
+    value.merge(queue_value, value.negate(fee))
       |> value.add(
            queue_datum.incentive.pid,
            queue_datum.incentive.tkn,
@@ -128,28 +134,28 @@ pub fn refund_validation(
          )
   and {
     // check if official sale
-    is_correct_sale_utxo?,
+    is_correct_sale_utxo,
     // check if the pointer is equal to the bundle
-    is_correct_sale?,
+    is_correct_sale,
     // check if utxo has cost and check if cant make sale
-    is_refund_allowed?,
+    is_refund_allowed,
     // The transaction fee can not exceed an upperbound
-    types.valid_tx_fee(tx.fee, ref_datum.fee_info.refund_queue_bound)?,
+    types.valid_tx_fee(fee, ref_datum.fee_info.refund_queue_bound),
     // owner must get the utxo back
-    payout.exact(owner_addr, outbound_value, tx.outputs)?,
+    payout.exact(owner_addr, outbound_value, outputs)?,
     // single script input
-    count.inputs_by_addr(tx.inputs, queue_addr, 1),
-    count.inputs_by_datum(tx.inputs, 1),
+    count.inputs_by_addr(inputs, queue_addr, 1),
+    count.inputs_by_datum(inputs, 1),
     // no script outputs
-    count.outputs_by_vkh(tx.outputs, 0),
+    count.outputs_by_vkh(outputs, 0),
     // tx must be spending the certificate of batcher authenticity
     types.prove_existence_of_batcher(
       ref_datum.batcher_info.batcher_pid,
       ref_datum.batcher_info.batcher_tkn,
-      tx.inputs,
+      inputs,
       queue_out_ref,
       sale_out_ref,
-    )?,
+    ),
   }
 }
 
@@ -157,7 +163,10 @@ pub fn refund_validation(
 pub fn purchase_validation(
   queue_datum: QueueDatum,
   ref_datum: ReferenceDatum,
-  tx: Transaction,
+  inputs: List<Input>,
+  outputs: List<Output>,
+  redeemers: Dict<ScriptPurpose, Redeemer>,
+  fee: Value,
   queue_out_ref: OutputReference,
 ) -> Bool {
   // the sale contract address
@@ -167,13 +176,13 @@ pub fn purchase_validation(
       ref_datum.contracts.stake,
     )
   // get the sale utxo, do some checks, and get some data
-  let sale_input: Input = find.input_by_addr(tx.inputs, sale_addr)
+  let sale_input: Input = find.input_by_addr(inputs, sale_addr)
   let sale_out_ref: OutputReference = sale_input.output_reference
   // The value on the sale utxo, we need this for the change calculation
   let sale_value: Value = sale_input.output.value
   // the sale datum
   expect sale_datum: SaleDatum = data.input_datum(sale_input)
-  // official sale?, must hold pointer token made by newm
+  // official sale, must hold pointer token made by newm
   let is_correct_sale_utxo: Bool =
     if
     value.quantity_of(
@@ -214,7 +223,7 @@ pub fn purchase_validation(
       queue_datum.number_of_bundles
     }
   // get the queue utxo, get the value and do the swap
-  let queue_input: Input = find.input_by_ref(tx.inputs, queue_out_ref)
+  let queue_input: Input = find.input_by_ref(inputs, queue_out_ref)
   let queue_value: Value = queue_input.output.value
   // this script address we are current spending from
   let queue_addr: Address = queue_input.output.address
@@ -234,7 +243,7 @@ pub fn purchase_validation(
   // add the bundle value
   let return_queue_value: Value =
     value.merge(queue_value, value.negate(total_cost_value))
-      |> value.merge(value.negate(tx.fee))
+      |> value.merge(value.negate(fee))
       |> value.add(
            sale_datum.bundle.pid,
            sale_datum.bundle.tkn,
@@ -247,11 +256,11 @@ pub fn purchase_validation(
          )
   // the queue_datum going back to the queue contract
   expect outbound_datum: QueueDatum =
-    find.output_datum_by_addr(tx.outputs, queue_addr)
+    find.output_datum_by_addr(outputs, queue_addr)
   // this should fail for bad data
   // the redeemer is now the general redeemer type that we seek out the specific sub redeemer
   expect that_redeemer: SaleRedeemer =
-    find.redeemer_by_ref(tx.redeemers, sale_out_ref)
+    find.redeemer_by_ref(redeemers, sale_out_ref)
   let is_corect_redeemer: Bool =
     when that_redeemer is {
       // only the purchase redeemer is allowed
@@ -261,37 +270,38 @@ pub fn purchase_validation(
   // the incentive is left open for whoever completes the tx to take
   and {
     // correct redeemer on the sale contract side
-    is_corect_redeemer?,
+    is_corect_redeemer,
     // check if official sale
-    is_correct_sale_utxo?,
+    is_correct_sale_utxo,
     // must have enough for the sale
-    at_least_one_bundle?,
+    at_least_one_bundle,
     // The transaction fee can not exceed an upperbound
-    types.valid_tx_fee(tx.fee, ref_datum.fee_info.purchase_queue_bound)?,
+    types.valid_tx_fee(fee, ref_datum.fee_info.purchase_queue_bound),
     // prove existance of at least the incentive on the intermediate value
-    types.prove_existence_of_incentive(queue_value, queue_datum.incentive)?,
+    types.prove_existence_of_incentive(queue_value, queue_datum.incentive),
     // valid bundle size
-    types.valid_number_of_bundles(number_of_bundles, sale_datum.max_bundle_size)?,
+    types.valid_number_of_bundles(number_of_bundles, sale_datum.max_bundle_size),
     // just continue the queue_datum
-    (queue_datum == outbound_datum)?,
+    queue_datum == outbound_datum,
     // queue gets the bundle
-    payout.exact(queue_addr, return_queue_value, tx.outputs)?,
+    payout.exact(queue_addr, return_queue_value, outputs)?,
     // sale gets the cost
-    payout.exact(sale_addr, return_sale_value, tx.outputs)?,
+    payout.exact(sale_addr, return_sale_value, outputs)?,
     // single sale script input
-    count.inputs_by_addr(tx.inputs, sale_addr, 1)?,
+    count.inputs_by_addr(inputs, sale_addr, 1),
     // the queue and the sale 
-    count.inputs_by_datum(tx.inputs, 2)?,
+    count.inputs_by_datum(inputs, 2),
     // one sale script output
-    count.outputs_by_addr(tx.outputs, sale_addr, 1)?,
-    count.outputs_by_datum(tx.outputs, 2)?,
+    count.outputs_by_addr(outputs, sale_addr, 1),
+    count.outputs_by_datum(outputs, 2),
     // tx must be spending the certificate of batcher authenticity
     types.prove_existence_of_batcher(
       ref_datum.batcher_info.batcher_pid,
       ref_datum.batcher_info.batcher_tkn,
-      tx.inputs,
+      inputs,
       queue_out_ref,
       sale_out_ref,
-    )?,
+    ),
+    True,
   }
 }
