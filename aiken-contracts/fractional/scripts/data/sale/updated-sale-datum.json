@@ -1,0 +1,54 @@
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "39f29cfe6ab0765578a6e0d8871e1a3bc18f5d277b257095aabf1cd8"
+        },
+        {
+          "bytes": ""
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "85510e059114a9dcdf7c1d842a1b8fdfd2438cd31ef1b3edcf6d5d67"
+        },
+        {
+          "bytes": "001bc280002699546a3f2b852e6d2543659ede8722ea06251ef1e7fd94aeae27"
+        },
+        {
+          "int": 1000000
+        }
+      ]
+    },
+    {
+      "map": [
+        {
+          "k": {
+            "bytes": "015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"
+          },
+          "v": {
+            "map": [
+              {
+                "k": {
+                  "bytes": "43757272656e6379"
+                },
+                "v": {
+                  "int": 2000000
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "int": 10
+    }
+  ]
+}

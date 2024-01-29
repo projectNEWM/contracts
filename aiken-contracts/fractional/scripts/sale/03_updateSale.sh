@@ -24,13 +24,10 @@ pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 total_amt=100000000
 
-default_asset="${total_amt} ${pid}.${tkn}"
+pointer_pid=$(cat ../../hashes/pointer_policy.hash)
+pointer_tkn=$(cat ../tmp/pointer.token)
 
-utxo_value=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
+default_asset="${total_amt} ${pid}.${tkn}"
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -53,10 +50,14 @@ script_tx_in=$TXIN
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
+LOVELACE_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
+utxo_value=$LOVELACE_VALUE
+echo LOVELACE: $LOVELACE_VALUE
+
 if [[ CURRENT_VALUE -le 0 ]] ; then
     script_address_out="${script_address} + ${utxo_value}"
 else
-    script_address_out="${script_address} + ${utxo_value} + ${returning_asset}"
+    script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + 1 ${pointer_pid}.${pointer_tkn}"
 fi
 
 echo "Update OUTPUT: "${script_address_out}
@@ -106,14 +107,15 @@ TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}"
 script_tx_in=$TXIN
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
+data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
     --out-file ../tmp/tx.draft \
     --change-address ${artist_address} \
+    --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${artist_tx_in} \
     --tx-in ${script_tx_in} \

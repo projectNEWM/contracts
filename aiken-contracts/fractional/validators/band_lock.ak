@@ -1,5 +1,5 @@
-use aiken/transaction.{ScriptContext, Spend}
-use aiken/transaction/credential
+use aiken/transaction.{Input, ScriptContext, Spend, Transaction}
+use aiken/transaction/credential.{Address}
 use assist/data
 use assist/find
 use assist/values
@@ -16,14 +16,14 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
     context: ScriptContext,
   ) -> Bool {
     // the transaction being validated
-    let tx = context.transaction
+    let tx: Transaction = context.transaction
     // data reference stuff
     expect ref_hash: ValidatorHash = ref_hash_data
-    let ref_addr = credential.from_script(ref_hash)
+    let ref_addr: Address = credential.from_script(ref_hash)
     // find the first reference input
-    let ref_input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // ref utxo must have starter token
-    let ref_value_check =
+    let is_correct_ref_utxo: Bool =
       values.prove_exact_nft(starter_pid, starter_tkn, ref_input.output.value)
     // the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
@@ -33,7 +33,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
         when redeemer is {
           // remove utxo back to owner if not full
           RemoveBand ->
-            band_lock_validators.remove_validation(datum, tx, output_reference)
+            band_lock_validators.remove_validation(datum, tx, output_reference)?
           // add some memebers to the band if not full
           AddToBand { member } ->
             band_lock_validators.add_member_validation(
@@ -41,7 +41,7 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
               tx,
               output_reference,
               member,
-            )
+            )?
           // mint nft and lock full band
           MintBand -> and {
               band_lock_validators.mint_validation(
@@ -49,8 +49,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              ),
-              ref_value_check,
+              )?,
+              is_correct_ref_utxo,
             }
           // burn nft and unlock full band back to owner
           BurnBand -> and {
@@ -59,8 +59,8 @@ validator(starter_pid: ByteArray, starter_tkn: ByteArray, ref_hash_data: Data) {
                 ref_datum,
                 tx,
                 output_reference,
-              ),
-              ref_value_check,
+              )?,
+              is_correct_ref_utxo,
             }
         }
       // Anything else fails

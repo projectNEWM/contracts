@@ -13,7 +13,7 @@ queue_script_path="../../contracts/queue_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, buyer, reference
-buyer="buyer2"
+buyer="buyer1"
 buyer_address=$(cat ../wallets/${buyer}-wallet/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer}-wallet/payment.vkey)
 
@@ -43,7 +43,7 @@ batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6e
 batcher_tx_in=${TXIN::-8}
 echo Batcher UTXO ${batcher_tx_in}
 
-incentive="${batcher_starting_incentive} 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 
 token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
 batcher_policy_id=$(cat ../../hashes/batcher.hash)
@@ -124,17 +124,9 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/queue-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
-# last_sale_utxo=$(${cli} transaction txid --tx-file ../tmp/last-sale-utxo.signed )
-last_sale_utxo="41271d8cb8f70339dae0230ff7acafad89a3467fd337b13cc57c0ce65edb158c"
+last_sale_utxo=$(${cli} transaction txid --tx-file ../tmp/last-sale-utxo.signed )
 
-cpu_steps=600000000
-mem_steps=2000000
-
-execution_unts="(${cpu_steps}, ${mem_steps})"
-
-# computation_fee=$((0.0000721*230000000 + 0.0577*700000))
-computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
-computation_fee_int=$(printf "%.0f" "$computation_fee")
+execution_unts="(0, 0)"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \
@@ -155,9 +147,22 @@ ${cli} transaction build-raw \
     --tx-out="${buyer_address_out}" \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --fee 400000
+    --fee 0
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 1 --tx-out-count 1 --witness-count 2)
+python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation import from_file; exe_units=from_file('../tmp/tx.draft', False);print(json.dumps(exe_units))" > ../data/exe_units.json
+
+cat ../data/exe_units.json
+
+# exit
+
+cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[0].mem' ../data/exe_units.json)
+
+execution_unts="(${cpu}, ${mem})"
+computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
+computation_fee_int=$(printf "%.0f" "$computation_fee")
+
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 2 --tx-out-count 2 --witness-count 2)
 # echo $FEE
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 

@@ -12,12 +12,13 @@ stake_script_path="../../contracts/stake_contract.plutus"
 sale_script_path="../../contracts/sale_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
+# pointer minter key
+newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
+
 # collat, artist, reference
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
-# pointer minter key
-newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
 
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -67,29 +68,24 @@ if [ ! -z "$POINTER_VALUE" ]; then
     echo "UTxO has pointer."
     exit 1
 fi
-prefix_555="a110ca7ab1e000"
+prefix_555="ca7ab1e0"
 
-echo "NEWM UTxO:" $newm_tx_in
 first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 
-point_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_555}')")
-echo -n $point_name > ../tmp/pointer.token
+pointer_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTokenName import token_name; token_name('${array[0]}', ${array[1]}, '${prefix_555}')")
+echo -n $pointer_name > ../tmp/pointer.token
 
-pointer_asset="1 ${pointer_pid}.${point_name}"
-
-# echo '{"${pointer_pid}":{"${point_name}": 1}}' > ../data/sale/pointer.json
-echo "{\"${pointer_pid}\":{\"${point_name}\": 1}}" > ../data/sale/pointer.json
-
-
-# the cost of a bundle is defined in the sale data folder
-value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/pointer.json')")
+pointer_asset="1 ${pointer_pid}.${pointer_name}"
 
 # update the value map inside the start redeemer
 jq \
---argjson value_map "$value_map" \
-'.fields[0].map=$value_map' \
+--arg pid "$pointer_pid" \
+--arg tkn "$pointer_name" \
+'.fields[0].fields[0].bytes=$pid |
+.fields[0].fields[1].bytes=$tkn |
+.fields[0].fields[2].int=1' \
 ../data/sale/start-redeemer.json | sponge ../data/sale/start-redeemer.json
 
 # compute the correct start redeemer 
@@ -99,7 +95,8 @@ echo $script_address_out
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Seller UTxO Information  \033[0m"
+
+echo -e "\033[0;36m Gathering Artist UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \
     --address ${artist_address} \
@@ -129,20 +126,7 @@ script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.s
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 
-# CPU MEM UNITS
-cpu_steps=350000000
-mem_steps=1000000
-# sale
-sale_execution_unts="(${cpu_steps}, ${mem_steps})"
-sale_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
-sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
-
-cpu_steps=150000000
-mem_steps=500000
-# pointer minter
-pointer_execution_unts="(${cpu_steps}, ${mem_steps})"
-pointer_computation_fee=$(echo "0.0000721*${cpu_steps} + 0.0577*${mem_steps}" | bc)
-pointer_computation_fee_int=$(printf "%.0f" "$pointer_computation_fee")
+execution_unts="(0, 0)"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 ${cli} transaction build-raw \
@@ -155,7 +139,7 @@ ${cli} transaction build-raw \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-execution-units="${sale_execution_unts}" \
+    --spending-reference-tx-in-execution-units="${execution_unts}" \
     --spending-reference-tx-in-redeemer-file ../data/sale/start-redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
@@ -163,20 +147,38 @@ ${cli} transaction build-raw \
     --mint-tx-in-reference="${pointer_ref_utxo}#1" \
     --mint-plutus-script-v2 \
     --policy-id="${pointer_pid}" \
-    --mint-reference-tx-in-execution-units="${pointer_execution_unts}" \
-    --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
+    --mint-reference-tx-in-execution-units="${execution_unts}" \
+    --mint-reference-tx-in-redeemer-file ../data/pointer/mint-redeemer.json \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --fee 400000
+    --fee 0
 
+python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation import from_file; exe_units=from_file('../tmp/tx.draft', False);print(json.dumps(exe_units))" > ../data/exe_units.json
 
-FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 3 --tx-out-count 3 --witness-count 2)
+cat ../data/exe_units.json
+
+cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[0].mem' ../data/exe_units.json)
+
+sale_execution_unts="(${cpu}, ${mem})"
+sale_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
+sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
+
+cpu=$(jq -r '.[1].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[1].mem' ../data/exe_units.json)
+
+pointer_execution_unts="(${cpu}, ${mem})"
+pointer_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
+pointer_computation_fee_int=$(printf "%.0f" "$pointer_computation_fee")
+
+FEE=$(${cli} transaction calculate-min-fee --tx-body-file ../tmp/tx.draft --testnet-magic ${testnet_magic} --protocol-params-file ../tmp/protocol.json --tx-in-count 1 --tx-out-count 1 --witness-count 2)
 fee=$(echo $FEE | rev | cut -c 9- | rev)
 
 total_fee=$((${fee} + ${sale_computation_fee_int} + ${pointer_computation_fee_int}))
 echo Tx Fee: $total_fee
 change_value=$((${LOVELACE_VALUE} - ${total_fee}))
 script_address_out="${script_address} + ${change_value} + ${returning_asset} + ${pointer_asset}"
+
 echo "Return OUTPUT: "${script_address_out}
 
 ${cli} transaction build-raw \
@@ -198,7 +200,7 @@ ${cli} transaction build-raw \
     --mint-plutus-script-v2 \
     --policy-id="${pointer_pid}" \
     --mint-reference-tx-in-execution-units="${pointer_execution_unts}" \
-    --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
+    --mint-reference-tx-in-redeemer-file ../data/pointer/mint-redeemer.json \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
     --fee ${total_fee}

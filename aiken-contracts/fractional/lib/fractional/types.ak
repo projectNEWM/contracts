@@ -9,7 +9,7 @@ use aiken/transaction/credential.{PoolId, Script, VerificationKey}
 use aiken/transaction/value.{Value}
 
 // pointer token prefix
-pub const prefix_555 = #"a110ca7ab1e000"
+pub const pointer_prefix = #"ca7ab1e0"
 
 // metadata
 pub const metadata_key = #"6d65746164617461"
@@ -63,11 +63,31 @@ pub type Purchase =
 pub type RemoveSale =
   Void
 
+pub type UpdateSale =
+  Void
+
 pub type SaleRedeemer {
   Purchase
-  StartSale { pointer: Value }
+  StartSale { pointer: TokenInfo }
   ExtractSale { profit: Value }
   RemoveSale
+  UpdateSale { lovelace: Int }
+}
+
+pub fn valid_sale_datum_update(old: SaleDatum, new: SaleDatum) -> Bool {
+  and {
+    // the owner can't change
+    old.owner == new.owner,
+    // can't change bundle pid or tkn
+    old.bundle.pid == new.bundle.pid,
+    old.bundle.tkn == new.bundle.tkn,
+    // can't set the bundle size to zero
+    new.bundle.amt > 0,
+    // the cost can't be zero (empty dict)
+    new.cost != value.zero(),
+    // the max bundle size can't be zero
+    new.max_bundle_size > 0,
+  }
 }
 
 // greater than zero and less than or equal to the max bundle size
@@ -145,7 +165,8 @@ pub type FeeInfoData {
 
 pub type BatcherData {
   monster_pid: ByteArray,
-  monster_tkns: List<ByteArray>,
+  // these are the monster prefix token names
+  monster_prefixes: List<ByteArray>,
   batcher_pid: ByteArray,
   batcher_tkn: ByteArray,
 }
@@ -155,9 +176,9 @@ pub type BatcherData {
 ///
 pub fn has_tokens(
   token_names: List<ByteArray>,
-  monster_tkns: List<ByteArray>,
+  tkn_prefixes: List<ByteArray>,
 ) -> Bool {
-  when monster_tkns is {
+  when tkn_prefixes is {
     // I found all of them
     [] -> True
     // go through all the prefixes from the set
@@ -167,6 +188,7 @@ pub fn has_tokens(
         has_tokens(token_names, prefixes)
       } else {
         // missing something from the set
+        // or something that isn't part of the set
         False
       }
   }
@@ -255,7 +277,15 @@ pub type MintRedeemer {
   BurnTokens { burn_amt: Int }
 }
 
+pub type MintPointerRedeemer {
+  MintPointerToken
+  BurnPointerToken
+}
+
 pub type QueuePurchase =
+  Void
+
+pub type QueueCancel =
   Void
 
 /// Queue things
@@ -286,8 +316,8 @@ pub fn prove_existence_of_incentive(
   and {
     // The incentive must exist
     value.quantity_of(validating_value, the_incentive.pid, the_incentive.tkn) >= the_incentive.amt,
-    // the amount cant be zero
-    the_incentive.amt != 0,
+    // the amount must be greater than zero
+    the_incentive.amt > 0,
   }
 }
 

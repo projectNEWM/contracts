@@ -7,7 +7,7 @@ cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/batcher-wallet/"
+sender_path="wallets/artist-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
 # receiver_address=${sender_address}
@@ -24,7 +24,7 @@ receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9
 #     # exit 1  # exit the script with an error code
 # fi
 
-assets="1 3170096858801d4e86bc3ea138964f009da93c5e3ecdc8c86aef0c7e.5ca1ab1e000affab1e000ca11ab1e0005e77ab1e + 86000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
+assets="100000000 20f604a8cd5f0f88f30719f2951c1993de340dc5f1cafb0e76d4c86f.001bc28001bada37cdb10ef964f34e4602a618dc5d5bde318f18a61bd679a148"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file tmp/protocol.json \

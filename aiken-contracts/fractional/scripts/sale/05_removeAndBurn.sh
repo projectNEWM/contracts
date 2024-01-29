@@ -30,11 +30,6 @@ total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
-# utxo_value=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-#     --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -75,14 +70,6 @@ else
     artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 fi
 
-# this needs to be dynamic
-# utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-# returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
-
-# default_asset="${total_amt} ${pid}.${tkn}"
-
-variable=0; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
-mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 
 # artist_address_out="${artist_address} + ${utxo_value}"
 artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
@@ -140,7 +127,7 @@ FEE=$(${cli} transaction build \
     --mint-tx-in-reference="${pointer_ref_utxo}#1" \
     --mint-plutus-script-v2 \
     --policy-id="${pointer_pid}" \
-    --mint-reference-tx-in-redeemer-file ../data/mint/burn-redeemer.json \
+    --mint-reference-tx-in-redeemer-file ../data/pointer/burn-redeemer.json \
     --required-signer-hash ${artist_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})

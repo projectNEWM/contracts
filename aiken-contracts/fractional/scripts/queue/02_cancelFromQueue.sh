@@ -13,7 +13,7 @@ queue_script_path="../../contracts/queue_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, buyer, reference
-buyer_path="buyer2-wallet"
+buyer_path="buyer1-wallet"
 buyer_address=$(cat ../wallets/${buyer_path}/payment.addr)
 buyer_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/${buyer_path}/payment.vkey)
 #
@@ -33,22 +33,11 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 TXIN=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
-echo $script_tx_in
+script_lovelace=$(jq -r --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-# exit
-# CURRENT_VALUE=$(jq -r --arg alltxin "" --arg buyerPkh "${buyer_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+returning_asset=$(python3 ../py/token_string.py)
 
-# returning_asset="${CURRENT_VALUE} ${pid}.${tkn}
-# if [[ CURRENT_VALUE -le 0 ]] ; then
-#     buyer_address_out="${buyer_address} + ${utxo_value}"
-# else
-# fi
-
-utxo_value=$(jq -r --arg buyerPkh "${buyer_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $buyerPkh) | .value.value.lovelace' ../tmp/script_utxo.json)
-# this needs to be dynamic
-returning_asset="20000000 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379 + 1000000 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
-
-buyer_address_out="${buyer_address} + ${utxo_value} + ${returning_asset}"
+buyer_address_out="${buyer_address} + ${script_lovelace} + ${returning_asset}"
 echo "Return OUTPUT: "${buyer_address_out}
 #
 # exit
