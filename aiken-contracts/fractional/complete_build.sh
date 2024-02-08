@@ -150,15 +150,15 @@ pointerHash=$(cat hashes/pointer_policy.hash)
 batcherHash=$(cat hashes/batcher.hash)
 
 # the purchase upper bound
-pqb=$(jq -r '.purchase_queue_bound' start_info.json)
+pqb=$(jq -r '.purchaseQueueBound' start_info.json)
 # the refund upper bound
-rqb=$(jq -r '.refund_queue_bound' start_info.json)
+rqb=$(jq -r '.refundQueueBound' start_info.json)
 # the start upper bound
-ssb=$(jq -r '.start_sale_bound' start_info.json)
+ssb=$(jq -r '.startSaleBound' start_info.json)
 # the purchase upper bound
-pob=$(jq -r '.purchase_order_bound' start_info.json)
+pob=$(jq -r '.purchaseOrderBound' start_info.json)
 # the refund upper bound
-rob=$(jq -r '.refund_order_bound' start_info.json)
+rob=$(jq -r '.refundOrderBound' start_info.json)
 
 # This needs to be generated from the hot key in start info.
 # Assume the hot key is all the keys for now

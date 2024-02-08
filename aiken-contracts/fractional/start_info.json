@@ -11,9 +11,11 @@
   "__comment5__": "The NEWM hot key",
   "hotKey": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd",
   "__comment6__": "The tx fee upper bounds for purchases and refunds",
-  "purchase_queue_bound": 1000000,
-  "refund_queue_bound": 1000000,
-  "start_sale_bound": 1000000,
-  "purchase_order_bound": 1000000,
-  "refund_order_bound": 1000000
+  "purchaseQueueBound": 1000000,
+  "refundQueueBound": 1000000,
+  "startSaleBound": 1000000,
+  "purchaseOrderBound": 1000000,
+  "refundOrderBound": 1000000,
+  "__comment7__": "Below is data used for building off of existing contracts",
+  "refDataHash": "40b5eb989f1a6849e0de4f1bd7710699711a1b7a1b91fc9c61425eb6"
 }
