@@ -1,6 +1,6 @@
 # Creating an Initial Sale UTxO
 
-An initial sale can be set to start immediately or with a delay. A sale officially starts when it is associated with a pointer token. This token is vital as it allows the queue and batcher systems to identify and interact with an ongoing sale. Without this pointer token, the sale is considered inactive and the tokens involved are unsellable.
+An initial sale can be set to start immediately or with a delay. A sale officially starts when it is associated with a pointer token. This token is vital as it allows the queue and batcher systems to identify and interact with an ongoing sale. Without this pointer token, the sale is considered inactive, and the tokens involved are unsellable.
 
 ## Definition of a Sale
 

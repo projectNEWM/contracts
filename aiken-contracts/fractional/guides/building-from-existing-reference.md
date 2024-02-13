@@ -17,7 +17,7 @@ Ensure you have the following:
     - `starterPid`: The project ID associated with the starter token.
     - `starterTkn`: Information about the starter token.
 
-   These updates ensure that the new contracts are correctly parameterized with the existing deployment's data.
+These updates ensure that the new contracts are correctly parameterized with the existing deployment's data.
 
 ## Building the Contracts
 
