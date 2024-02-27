@@ -24,4 +24,4 @@ requirements = []
 source = "github"
 
 [etags]
-"logicalmechanism/assist@main" = [{ secs_since_epoch = 1706311382, nanos_since_epoch = 988950392 }, "338b11c258a127164e28fa59fc9e6274cce7a653225b0a35182030b61742fc68"]
+"logicalmechanism/assist@main" = [{ secs_since_epoch = 1707859944, nanos_since_epoch = 806560879 }, "855e5eeb866bf4b097481927da6aaa6d3cc4db204d760df31101084d28bf229a"]
