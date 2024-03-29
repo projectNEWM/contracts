@@ -1,6 +1,6 @@
 name = "projectNEWM/fractional-minter"
 version = "2.0.0"
-license = "GPLv3"
+license = "GPL-3.0-or-later"
 description = "Aiken contracts for Project NEWM"
 
 [repository]
