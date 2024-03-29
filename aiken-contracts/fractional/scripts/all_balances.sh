@@ -7,6 +7,8 @@ testnet_magic=$(cat ./data/testnet.magic)
 
 # staking contract
 stake_script_path="../contracts/stake_contract.plutus"
+stake_key="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
+
 
 # cip 68 contract
 cip68_script_path="../contracts/cip68_contract.plutus"
@@ -14,7 +16,7 @@ cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script
 
 # bundle sale contract
 sale_script_path="../contracts/sale_contract.plutus"
-sale_script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+sale_script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-address ${stake_key} --testnet-magic ${testnet_magic})
 
 # queue contract
 queue_script_path="../contracts/queue_contract.plutus"
@@ -30,7 +32,8 @@ band_lock_script_address=$(${cli} address build --payment-script-file ${band_loc
 
 # staked smart contract address
 ref_script_path="../contracts/reference_contract.plutus"
-ref_script_address=$(${cli} address build --payment-script-file ${ref_script_path} --testnet-magic ${testnet_magic})
+# ref_script_address=$(${cli} address build --payment-script-file ${ref_script_path} --testnet-magic ${testnet_magic})
+ref_script_address="addr_test1wzf4m2kgedefm90qg53fatrv9pwc0y3n0w2ay5fuq2dql5qtnw44a"
 
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ./tmp/protocol.json
 ${cli} query tip --testnet-magic ${testnet_magic} | jq

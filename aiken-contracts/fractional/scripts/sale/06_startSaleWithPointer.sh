@@ -19,7 +19,6 @@ newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/ne
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
-
 #
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)

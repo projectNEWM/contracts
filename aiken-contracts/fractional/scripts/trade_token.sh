@@ -13,17 +13,6 @@ sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=${sender_address}
 receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
 
-# data="./tmp/${sender_address}.json"
-# lovelace=$(jq '[.[] | .value."lovelace"] | add' ${data})
-# echo "Lovelace: " ${lovelace}
-
-# assets=$(python3 -c "import sys; sys.path.append('../lib/py/'); from getAllTokens import concatenate_values; concatenate_values('${data}')")
-# # echo $assets
-# if [ -z "$assets" ]; then  # check if the result is an empty string
-#     echo "Result is empty. Exiting."
-#     # exit 1  # exit the script with an error code
-# fi
-
 assets="100000000 20f604a8cd5f0f88f30719f2951c1993de340dc5f1cafb0e76d4c86f.001bc28001bada37cdb10ef964f34e4602a618dc5d5bde318f18a61bd679a148"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -54,9 +43,8 @@ echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
     --out-file tmp/tx.draft \
-    --change-address ${sender_address} \
+    --change-address ${receiver_address} \
     --tx-in ${seller_tx_in} \
-    --tx-out="${tokens_to_be_traded}" \
     --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -79,3 +67,6 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file tmp/tx.signed
+
+tx=$(cardano-cli transaction txid --tx-file tmp/tx.signed)
+echo "Tx Hash:" $tx

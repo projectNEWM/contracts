@@ -6,11 +6,13 @@ cli=$(cat ../data/path_to_cli.sh)
 testnet_magic=$(cat ../data/testnet.magic)
 
 # staking contract
-stake_script_path="../../contracts/stake_contract.plutus"
+# stake_script_path="../../contracts/stake_contract.plutus"
+stake_script_path="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
-script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+# script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-address ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
@@ -74,7 +76,7 @@ fi
 # artist_address_out="${artist_address} + ${utxo_value}"
 artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
 # artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
-# echo "Return OUTPUT: "${artist_address_out}
+echo "Return OUTPUT: "${artist_address_out}
 #
 # exit
 #
@@ -105,7 +107,8 @@ fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
-data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
+# data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
+data_ref_utxo="8472ae5dd6ff4620ec563f7b00ebd05ba24119274fa69a6e7f015bfaa657ebeb"
 pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 
 

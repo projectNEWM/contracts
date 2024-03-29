@@ -7,7 +7,8 @@ testnet_magic=$(cat ../data/testnet.magic)
 
 # staked smart contract address
 script_path="../../contracts/reference_contract.plutus"
-script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+# script_address=$(${cli} address build --payment-script-file ${script_path} --testnet-magic ${testnet_magic})
+script_address="addr_test1wzf4m2kgedefm90qg53fatrv9pwc0y3n0w2ay5fuq2dql5qtnw44a"
 
 # collat
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -84,7 +85,8 @@ fi
 collat_tx_in=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 # script reference utxo
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/data-reference-utxo.signed )
+# script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/data-reference-utxo.signed )
+script_ref_utxo="bb600f9e736d9a92653740cd17452d210e1df17b31d8f923158d247be65c7850"
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -112,7 +114,7 @@ IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
 echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \

@@ -1,17 +1,6 @@
 #!/bin/bash
 set -e
 
-# create directories if dont exist
-mkdir -p contracts
-mkdir -p hashes
-mkdir -p certs
-
-# remove old files
-rm contracts/* || true
-rm hashes/* || true
-rm certs/* || true
-rm -fr build/ || true
-
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
 
@@ -79,11 +68,28 @@ echo Queue: $queueHash
 bandHash=$(cat hashes/band_lock.hash)
 echo Band: $bandHash
 
-# pointer hash
+# pointer policy id
 pointerHash=$(cat hashes/pointer_policy.hash)
 echo Pointer: $pointerHash
+# batcher policy id
 batcherHash=$(cat hashes/batcher.hash)
 echo Batcher: $batcherHash
 
+cp ./scripts/data/reference/reference-datum.json ./scripts/data/reference/backup-reference-datum.json
+# update reference data
+jq \
+--arg saleHash "$saleHash" \
+--arg queueHash "$queueHash" \
+--arg bandHash "$bandHash" \
+--arg pointerHash "$pointerHash" \
+--arg batcherHash "$batcherHash" \
+'.fields[3].fields[1].bytes=$saleHash |
+.fields[3].fields[2].bytes=$queueHash |
+.fields[3].fields[3].bytes=$bandHash
+' \
+./scripts/data/reference/reference-datum.json | sponge ./scripts/data/reference/reference-datum.json
+
+# .fields[5].bytes=$pointerHash |
+# .fields[6].fields[2].bytes=$batcherHash
 # end of build
 echo -e "\033[1;32m Building Complete! \033[0m"

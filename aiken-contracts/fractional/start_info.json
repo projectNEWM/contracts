@@ -1,13 +1,13 @@
 {
   "__comment1__": "This is the starter token for the data reference contract",
-  "starterPid": "4515744a5e564610479c541247676bdec242e957c7c4fee7c91dcf12",
-  "starterTkn": "e253dd227ca75bd28148bc65b7272e19fc2b9352f7ece24d54e5472199343642",
+  "starterPid": "74946c67d2a6afbdfd9450eb9818f202ba26143f821990d7a45b515c",
+  "starterTkn": "4472697070793233303431393830313838",
   "__comment2__": "This is the initial pool id for staking",
   "poolId": "1e3105f23f2ac91b3fb4c35fa4fe301421028e356e114944e902005b",
   "__comment3__": "This is random string for data initialization",
-  "randomData": "23",
+  "randomData": "ca5ebea7",
   "__comment4__": "This is random string for stake initialization",
-  "randomStake": "34",
+  "randomStake": "cea7ba5e",
   "__comment5__": "The NEWM hot key",
   "hotKey": "e6f85717b932788e3b1e57b11e9f8bf190d257c57d369979c18a02dd",
   "__comment6__": "The tx fee upper bounds for purchases and refunds",
@@ -17,5 +17,5 @@
   "purchaseOrderBound": 1000000,
   "refundOrderBound": 1000000,
   "__comment7__": "Below is data used for building off of existing contracts",
-  "refDataHash": "40b5eb989f1a6849e0de4f1bd7710699711a1b7a1b91fc9c61425eb6"
+  "refDataHash": "935daac8cb729d95e045229eac6c285d8792337b95d2513c029a0fd0"
 }
