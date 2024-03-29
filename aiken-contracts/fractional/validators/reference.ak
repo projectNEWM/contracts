@@ -1,119 +1,58 @@
-use aiken/list
-use aiken/transaction.{ScriptContext, Spend}
-use aiken/transaction/value
+use aiken/bytearray
+use aiken/transaction.{Input, ScriptContext, Spend, Transaction}
+use aiken/transaction/credential.{Address}
+use aiken/transaction/value.{Value}
 use assist/count
 use assist/find
 use assist/payout
 use assist/signing
-use fractional/types.{
-  ReferenceDatum, ReferenceRedeemer, UpdateBatcher, UpdateContracts,
-  UpdateFeeInfo, UpdateHotKey, UpdateKeepers, UpdatePointer, UpdateStaking,
-}
+use assist/types/wallet
+use fractional/types/reference.{ReferenceDatum}
 
-// random_string is for initilizing different stake keys attached to the same starter token
+// use a random string here to create many reference contracts if required
 validator(_random_string: ByteArray) {
   fn params(
-    datum: ReferenceDatum,
-    redeemer: ReferenceRedeemer,
+    this_datum: ReferenceDatum,
+    _redeemer: Void,
     context: ScriptContext,
   ) -> Bool {
     when context.purpose is {
       Spend(output_reference) -> {
         // tx being validated
-        let tx = context.transaction
-        let validating_input = find.input_by_ref(tx.inputs, output_reference)
-        let validating_value = validating_input.output.value
-        // assume it has an nft and the min lovelace can be whatever
-        let cont_value = value.without_lovelace(validating_value)
-        let script_addr = validating_input.output.address
-        // the datum cont
-        expect cont_datum: ReferenceDatum =
-          find.output_datum_by_addr(tx.outputs, script_addr)
-        // datum validation
-        let datum_cont_check =
-          when redeemer is {
-            // Update the hot key
-            UpdateHotKey -> and {
-                datum.keepers == cont_datum.keepers,
-                datum.staking == cont_datum.staking,
-                datum.contracts == cont_datum.contracts,
-                datum.fee_info == cont_datum.fee_info,
-                datum.pointer_pid == cont_datum.pointer_pid,
-              }
-            // Update the multisig info
-            UpdateKeepers -> {
-              let l = list.length(cont_datum.keepers.pkhs)
-              let t = cont_datum.keepers.threshold
-              and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.staking == cont_datum.staking,
-                datum.contracts == cont_datum.contracts,
-                datum.fee_info == cont_datum.fee_info,
-                datum.pointer_pid == cont_datum.pointer_pid,
-                // logical thresholds only
-                l >= t,
-                // Must have at least one
-                l > 0,
-              }
-            }
-            // Update stake pool info
-            UpdateStaking -> and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.keepers == cont_datum.keepers,
-                datum.contracts == cont_datum.contracts,
-                datum.fee_info == cont_datum.fee_info,
-                datum.pointer_pid == cont_datum.pointer_pid,
-              }
-            // Update contract hash info
-            UpdateContracts -> and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.keepers == cont_datum.keepers,
-                datum.staking == cont_datum.staking,
-                datum.fee_info == cont_datum.fee_info,
-                datum.pointer_pid == cont_datum.pointer_pid,
-              }
-            // update the fee info
-            UpdateFeeInfo -> and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.keepers == cont_datum.keepers,
-                datum.staking == cont_datum.staking,
-                datum.contracts == cont_datum.contracts,
-                datum.pointer_pid == cont_datum.pointer_pid,
-              }
-            // Update The pointer_pid info
-            UpdatePointer -> and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.keepers == cont_datum.keepers,
-                datum.staking == cont_datum.staking,
-                datum.contracts == cont_datum.contracts,
-                datum.fee_info == cont_datum.fee_info,
-              }
-            // Update the batcher info
-            UpdateBatcher -> and {
-                datum.hot_key == cont_datum.hot_key,
-                datum.keepers == cont_datum.keepers,
-                datum.staking == cont_datum.staking,
-                datum.contracts == cont_datum.contracts,
-                datum.fee_info == cont_datum.fee_info,
-                datum.pointer_pid == cont_datum.pointer_pid,
-              }
-          }
-        // The validaiton criteria
+        let tx: Transaction = context.transaction
+        let this_input: Input = find.input_by_ref(tx.inputs, output_reference)
+        // this should allow the lovelace to change naturally with the updates
+        let that_value: Value =
+          this_input.output.value |> value.without_lovelace
+        let this_addr: Address = this_input.output.address
+        expect that_datum: ReferenceDatum =
+          find.output_datum_by_addr(tx.outputs, this_addr)
+        //
+        // That datum can only update logically and only by the keepers in this
+        // datum. The value validation is such that the lovelace may change
+        // but whatever non-lovelace assets must remain on the UTxO.
+        //
         and {
           // send back to script but allow lovelace increase
-          payout.at_least(script_addr, cont_value, tx.outputs)?,
+          payout.at_least(this_addr, that_value, tx.outputs)?,
           // single script input
-          count.inputs_by_addr(tx.inputs, script_addr, 1)?,
+          count.inputs_by_addr(tx.inputs, this_addr, 1)?,
           // single script output
-          count.outputs_by_addr(tx.outputs, script_addr, 1)?,
+          count.outputs_by_addr(tx.outputs, this_addr, 1)?,
           // only keepers can update the data
           signing.verify_multisig(
             tx.extra_signatories,
-            datum.keepers.pkhs,
-            datum.keepers.threshold,
+            this_datum.keepers.pkhs,
+            this_datum.keepers.threshold,
           )?,
-          // the cont datum check
-          datum_cont_check?,
+          // hot key needs to be valid length
+          (bytearray.length(that_datum.hot_key) == 28)?,
+          // keepers are logical and valid
+          reference.is_valid_keepers(that_datum.keepers)?,
+          // can have a invalid reward wallet
+          wallet.is_valid(that_datum.staking.reward_wallet)?,
+          // contracts either exist or dont
+          reference.is_valid_contracts(that_datum.contracts)?,
         }
       }
       // anything else fails
