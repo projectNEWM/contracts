@@ -6,8 +6,8 @@ use assist/find
 use assist/minting
 use assist/signing
 use assist/types/cip68
+use assist/types/hashes.{TxHash, ValidatorHash}
 use assist/values
-use fractional/types/constants.{TransactionIdHash, ValidatorHash}
 use fractional/types/minter.{BurnTokens, MintRedeemer, MintTokens}
 use fractional/types/reference.{ReferenceDatum}
 
@@ -24,7 +24,7 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // get tx info
     let first_index: Int = find.first_input_index(tx.inputs)
-    let first_tx_hash: TransactionIdHash = find.first_input_txid(tx.inputs)
+    let first_tx_hash: TxHash = find.first_input_txid(tx.inputs)
     // use the ref prefix
     let reference_tkn: AssetName =
       values.unique_token_name(first_tx_hash, first_index, cip68.prefix_100)

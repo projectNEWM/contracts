@@ -6,9 +6,9 @@ use assist/data
 use assist/find
 use assist/payout
 use assist/signing
+use assist/types/hashes.{ValidatorHash}
 use assist/values
 use fractional/types/cip68.{CIP68Datum, CIP68Redeemer, RemoveMeta, UpdateMeta}
-use fractional/types/constants.{ValidatorHash}
 use fractional/types/reference.{ReferenceDatum}
 
 validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {

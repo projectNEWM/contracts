@@ -1,8 +1,8 @@
 use aiken/bytearray
 use aiken/transaction/credential.{PoolId}
 use aiken/transaction/value.{AssetName, PolicyId, Value}
+use assist/types/hashes.{PublicKeyHash, ValidatorHash}
 use assist/types/wallet.{Wallet}
-use fractional/types/constants.{PublicKeyHash, ValidatorHash}
 
 // staking info
 pub type Staking {
@@ -94,50 +94,10 @@ pub fn valid_tx_fee(fee: Value, upper_bound: Int) -> Bool {
 
 pub type BatcherData {
   monster_pid: PolicyId,
-  monster_tkns: List<AssetName>,
+  monster_prefixes: List<ByteArray>,
   batcher_pid: PolicyId,
   batcher_tkn: AssetName,
 }
-
-// /// Token names are from the value or total value. Monster token names are the
-// /// official prefixes for the monster nfts.
-// ///
-// pub fn has_correct_tokens(
-//   tkns_from_value: List<AssetName>,
-//   tkns_for_batcher: List<AssetName>,
-// ) -> Bool {
-//   when tkns_for_batcher is {
-//     // found all of them in the value
-//     [] -> True
-//     // go through all the prefixes from the set
-//     [tkn, ..tkns] ->
-//       if do_has_correct_tokens(tkns_from_value, tkn) {
-//         // found something so go to the next one
-//         has_correct_tokens(tkns_from_value, tkns)
-//       } else {
-//         // missing something from the set
-//         False
-//       }
-//   }
-// }
-
-// fn do_has_correct_tokens(
-//   tkns_from_value: List<AssetName>,
-//   this_tkn: AssetName,
-// ) -> Bool {
-//   when tkns_from_value is {
-//     // something wasn't found
-//     [] -> False
-//     [tkn, ..tkns] ->
-//       if tkn == this_tkn {
-//         // found it
-//         True
-//       } else {
-//         // keep searching
-//         do_has_correct_tokens(tkns, this_tkn)
-//       }
-//   }
-// }
 
 // data to be used inside other contracts
 pub type ReferenceDatum {
