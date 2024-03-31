@@ -6,15 +6,6 @@ use assist/types/wallet.{Wallet}
 // We need some data types for the new monster batcher nft pass
 pub type BandLockUpDatum {
   owner: Wallet,
-  complete: Int,
-}
-
-pub fn set_complete_flag(old: BandLockUpDatum, new: BandLockUpDatum) -> Bool {
-  and {
-    old.owner == new.owner,
-    old.complete != 1,
-    new.complete == 1,
-  }
 }
 
 pub type BandLockUpRedeemer {

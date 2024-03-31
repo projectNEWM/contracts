@@ -42,7 +42,7 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
             let is_correct_redeemer =
               when that_redeemer is {
-                // must mint the batcher
+                // must mint the batcher and complete set tokens
                 MintBand -> True
                 _ -> fail @"Incorrect Band Lock Redeemer"
               }
@@ -63,7 +63,7 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
               find.redeemer_by_ref(tx.redeemers, band_out_ref)
             let is_correct_redeemer =
               when that_redeemer is {
-                // must burn the batcher
+                // must burn the batcher and complete set tokens
                 BurnBand -> True
                 _ -> fail @"Incorrect Band Lock Redeemer"
               }

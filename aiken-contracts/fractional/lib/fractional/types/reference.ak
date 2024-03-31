@@ -1,6 +1,6 @@
 use aiken/bytearray
 use aiken/transaction/credential.{PoolId}
-use aiken/transaction/value.{AssetName, PolicyId, Value}
+use aiken/transaction/value.{PolicyId, Value}
 use assist/types/hashes.{PublicKeyHash, ValidatorHash}
 use assist/types/wallet.{Wallet}
 
@@ -96,7 +96,6 @@ pub type BatcherData {
   monster_pid: PolicyId,
   monster_prefixes: List<ByteArray>,
   batcher_pid: PolicyId,
-  batcher_tkn: AssetName,
 }
 
 // data to be used inside other contracts

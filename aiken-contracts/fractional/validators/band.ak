@@ -11,9 +11,11 @@ use assist/payout
 use assist/signing
 use assist/types/hashes.{ValidatorHash}
 use assist/types/token
+use assist/values
 use fractional/types/band.{
   AddToBand, BandLockUpDatum, BandLockUpRedeemer, BurnBand, MintBand, RemoveBand,
 }
+use fractional/types/constants
 use fractional/types/reference.{ReferenceDatum}
 
 validator(ref_hash_data: Data) {
@@ -30,21 +32,32 @@ validator(ref_hash_data: Data) {
         // the input being validated
         let this_input: Input = find.input_by_ref(tx.inputs, output_reference)
         let this_value: Value = this_input.output.value
+        // data reference stuff
+        expect ref_hash: ValidatorHash = ref_hash_data
+        let ref_addr: Address = credential.from_script(ref_hash)
+        // find the first reference input
+        let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
+        // the reference this_datum
+        expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
         when redeemer is {
           // remove utxo back to owner if not full
           RemoveBand -> {
             let owner_addr: Address = addresses.from_wallet(this_datum.owner)
             and {
               // owner must sign it
-              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh),
+              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
               // owner must get the utxo back
-              payout.exact(owner_addr, this_value, tx.outputs),
+              payout.exact(owner_addr, this_value, tx.outputs)?,
               // single script input
-              count.inputs_by_vkh(tx.inputs, 1),
+              count.inputs_by_vkh(tx.inputs, 1)?,
               // no script outputs
-              count.outputs_by_vkh(tx.outputs, 0),
+              count.outputs_by_vkh(tx.outputs, 0)?,
               // anything but a complete set can be removed
-              this_datum.complete != 1,
+              !values.prove_exact_nft(
+                ref_datum.batcher_data.batcher_pid,
+                constants.complete_set_token_name,
+                this_value,
+              )?,
             }
           }
           // add some memebers to the band if not full
@@ -56,29 +69,25 @@ validator(ref_hash_data: Data) {
               find.output_datum_by_addr(tx.outputs, this_addr)
             and {
               // this_datum cant change
-              this_datum == that_datum,
+              (this_datum == that_datum)?,
               // owner must sign it
-              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh),
+              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
               // owner must get the utxo back
-              payout.exact(this_addr, that_value, tx.outputs),
+              payout.exact(this_addr, that_value, tx.outputs)?,
               // single script input
-              count.inputs_by_vkh(tx.inputs, 1),
+              count.inputs_by_vkh(tx.inputs, 1)?,
               // no script outputs
-              count.outputs_by_vkh(tx.outputs, 1),
-              // assume logical entry tx, can not have a full set
-              this_datum.complete != 1,
+              count.outputs_by_vkh(tx.outputs, 1)?,
+              // anything but a complete set can be updated
+              !values.prove_exact_nft(
+                ref_datum.batcher_data.batcher_pid,
+                constants.complete_set_token_name,
+                this_value,
+              )?,
             }
           }
           // mint nft and lock full band
           MintBand -> {
-            // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
-            let ref_addr: Address = credential.from_script(ref_hash)
-            // find the first reference input
-            let ref_input: Input =
-              find.input_by_addr(tx.reference_inputs, ref_addr)
-            // the reference this_datum
-            expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
             let this_addr: Address = this_input.output.address
             // get the list of token names from the monster pid
             let token_names: List<AssetName> =
@@ -92,27 +101,42 @@ validator(ref_hash_data: Data) {
               tx.mint
                 |> value.from_minted_value()
                 |> value.flatten()
+            // the complete set nft is sent back to the contract
+            let that_value: Value =
+              this_value
+                |> value.add(
+                    ref_datum.batcher_data.batcher_pid,
+                    constants.complete_set_token_name,
+                    1,
+                  )
             and {
+              // datums cant change
+              (this_datum == that_datum)?,
               // owner must sign it
-              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh),
+              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
               // owner must get the utxo back
-              payout.exact(this_addr, this_value, tx.outputs)?,
+              payout.exact(this_addr, that_value, tx.outputs)?,
               // single script input
-              count.inputs_by_vkh(tx.inputs, 1),
+              count.inputs_by_vkh(tx.inputs, 1)?,
               // single script outputs
-              count.outputs_by_vkh(tx.outputs, 1),
+              count.outputs_by_vkh(tx.outputs, 1)?,
               // must have a full set
               band.has_correct_tokens(
                 token_names,
                 ref_datum.batcher_data.monster_prefixes,
               )?,
-              // the full flag is now set
-              band.set_complete_flag(this_datum, that_datum),
               // mint exactly 1 batcher token
               minting.exact(
                 mint,
                 ref_datum.batcher_data.batcher_pid,
-                ref_datum.batcher_data.batcher_tkn,
+                constants.batcher_token_name,
+                1,
+              )?,
+              // mint exactly 1 complete set token
+              minting.exact(
+                mint,
+                ref_datum.batcher_data.batcher_pid,
+                constants.complete_set_token_name,
                 1,
               )?,
             }
@@ -133,22 +157,41 @@ validator(ref_hash_data: Data) {
               tx.mint
                 |> value.from_minted_value()
                 |> value.flatten()
+            // the complete set nft is removed
+            let that_value: Value =
+              this_value
+                |> value.add(
+                    ref_datum.batcher_data.batcher_pid,
+                    constants.complete_set_token_name,
+                    -1,
+                  )
             and {
               // owner must get the utxo back
-              payout.exact(owner_addr, this_value, tx.outputs)?,
+              payout.exact(owner_addr, that_value, tx.outputs)?,
               // single script input
-              count.inputs_by_vkh(tx.inputs, 1),
+              count.inputs_by_vkh(tx.inputs, 1)?,
               // no script outputs
-              count.outputs_by_vkh(tx.outputs, 0),
+              count.outputs_by_vkh(tx.outputs, 0)?,
               // burn exactly 1 batcher token
               minting.exact(
                 mint,
                 ref_datum.batcher_data.batcher_pid,
-                ref_datum.batcher_data.batcher_tkn,
+                constants.batcher_token_name,
                 -1,
               )?,
-              // we assume logical off chain for entry, must have full set
-              this_datum.complete == 1,
+              // mint exactly 1 complete set token
+              minting.exact(
+                mint,
+                ref_datum.batcher_data.batcher_pid,
+                constants.complete_set_token_name,
+                -1,
+              )?,
+              // anything but a complete set can be removed
+              values.prove_exact_nft(
+                ref_datum.batcher_data.batcher_pid,
+                constants.complete_set_token_name,
+                this_value,
+              )?,
             }
           }
         }
