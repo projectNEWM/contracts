@@ -8,7 +8,8 @@ use assist/find
 use assist/payout
 use assist/signing
 use assist/values
-use fractional/types/constants.{Lovelace, ValidatorHash}
+use fractional/types/constants.{Lovelace}
+use assist/types/hashes.{ValidatorHash}
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/staking.{Delegate, Withdraw, WithdrawRedeemer}
 

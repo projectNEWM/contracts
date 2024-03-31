@@ -1,4 +1,4 @@
-use fractional/types/constants.{ValidatorHash}
+use assist/types/hashes.{ValidatorHash}
 
 pub type StakeData {
   stake_cred: ValidatorHash,
