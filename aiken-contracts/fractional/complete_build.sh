@@ -23,11 +23,11 @@ rm -fr build/ || true
 # build out the entire script
 echo -e "\033[1;34m Building Contracts \033[0m"
 
-# remove and filter all traces
-# aiken build
+# remove all traces
+# aiken build --trace-level silent --filter-traces user-defined
 
-# keep the traces for testing if required
-aiken build --trace-level compact --filter-traces all
+# keep the traces
+aiken build --trace-level verbose --filter-traces all
 
 # random string
 ranD=$(jq -r '.randomData' start_info.json)
@@ -36,8 +36,8 @@ ranD_cbor=$(python ./convert_to_cbor.py ${ranD})
 ranS_cbor=$(python ./convert_to_cbor.py ${ranS})
 
 echo -e "\033[1;33m Convert Reference Contract \033[0m"
-aiken blueprint apply -o plutus.json -v data_reference.params "${ranD_cbor}"
-aiken blueprint convert -v data_reference.params > contracts/reference_contract.plutus
+aiken blueprint apply -o plutus.json -v reference.params "${ranD_cbor}"
+aiken blueprint convert -v reference.params > contracts/reference_contract.plutus
 cardano-cli transaction policyid --script-file contracts/reference_contract.plutus > hashes/reference_contract.hash
 
 # reference hash
@@ -102,18 +102,9 @@ aiken blueprint apply -o plutus.json -v pointer.params "${ref_cbor}"
 aiken blueprint convert -v pointer.params > contracts/pointer_contract.plutus
 cardano-cli transaction policyid --script-file contracts/pointer_contract.plutus > hashes/pointer_policy.hash
 
-echo -e "\033[1;33m Convert Order Book Contract \033[0m"
-aiken blueprint apply -o plutus.json -v order_book.params "${pid_cbor}"
-aiken blueprint apply -o plutus.json -v order_book.params "${tkn_cbor}"
-aiken blueprint apply -o plutus.json -v order_book.params "${ref_cbor}"
-aiken blueprint convert -v order_book.params > contracts/order_book_contract.plutus
-cardano-cli transaction policyid --script-file contracts/order_book_contract.plutus > hashes/order_book.hash
-
 echo -e "\033[1;33m Convert Band Lock Contract \033[0m"
-aiken blueprint apply -o plutus.json -v band_lock.params "${pid_cbor}"
-aiken blueprint apply -o plutus.json -v band_lock.params "${tkn_cbor}"
-aiken blueprint apply -o plutus.json -v band_lock.params "${ref_cbor}"
-aiken blueprint convert -v band_lock.params > contracts/band_lock_contract.plutus
+aiken blueprint apply -o plutus.json -v band.params "${ref_cbor}"
+aiken blueprint convert -v band.params > contracts/band_lock_contract.plutus
 cardano-cli transaction policyid --script-file contracts/band_lock_contract.plutus > hashes/band_lock.hash
 
 echo -e "\033[1;33m Convert Batcher Token Contract \033[0m"
@@ -123,6 +114,8 @@ aiken blueprint apply -o plutus.json -v batcher.params "${ref_cbor}"
 aiken blueprint convert -v batcher.params > contracts/batcher_contract.plutus
 cardano-cli transaction policyid --script-file contracts/batcher_contract.plutus > hashes/batcher.hash
 
+# FIX THIS
+exit 
 ###############################################################################
 ############## DATUM AND REDEEMER STUFF #######################################
 ###############################################################################
