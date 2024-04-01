@@ -3,6 +3,7 @@ use aiken/transaction/credential.{PoolId}
 use aiken/transaction/value.{PolicyId, Value}
 use assist/types/hashes.{PublicKeyHash, ValidatorHash}
 use assist/types/wallet.{Wallet}
+use fractional/types/constants.{Lovelace}
 
 // staking info
 pub type Staking {
@@ -81,14 +82,14 @@ pub fn is_valid_contracts(contracts: Contracts) -> Bool {
 }
 
 pub type Fees {
-  purchase_queue_bound: Int,
-  refund_queue_bound: Int,
-  start_sale_bound: Int,
+  purchase_queue_bound: Lovelace,
+  refund_queue_bound: Lovelace,
+  start_sale_bound: Lovelace,
 }
 
 /// The tx fee must be less than equal to the upper bound.
 ///
-pub fn valid_tx_fee(fee: Value, upper_bound: Int) -> Bool {
+pub fn valid_tx_fee(fee: Value, upper_bound: Lovelace) -> Bool {
   value.lovelace_of(fee) <= upper_bound
 }
 
