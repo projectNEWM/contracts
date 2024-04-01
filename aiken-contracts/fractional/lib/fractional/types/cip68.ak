@@ -1,8 +1,7 @@
-use aiken/dict.{Dict}
 use fractional/types/constants.{Lovelace}
 
 pub type CIP68Datum {
-  metadata: Dict<Data, Data>,
+  metadata: List<(Data, Data)>,
   version: Int,
 }
 
