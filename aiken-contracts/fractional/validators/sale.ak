@@ -55,10 +55,10 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
             expect that_datum: SaleDatum =
               find.output_datum_by_addr(tx.outputs, this_address)
             // this should fail for bad data serialization
-            expect this_redeemer: QueueRedeemer =
+            expect that_redeemer: QueueRedeemer =
               find.redeemer_by_ref(tx.redeemers, queue_out_ref)
             let is_correct_redeemer: Bool =
-              when this_redeemer is {
+              when that_redeemer is {
                 QueuePurchase -> True
                 _ -> fail @"Incorrect Queue Redeemer"
               }
