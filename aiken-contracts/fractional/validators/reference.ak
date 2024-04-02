@@ -33,7 +33,7 @@ validator(_random_string: ByteArray) {
         // but whatever non-lovelace assets must remain on the UTxO.
         //
         and {
-          // send back to script but allow lovelace increase
+          // send back to script but allow lovelace increase or decrease
           payout.at_least(this_addr, that_value, tx.outputs)?,
           // single script input
           count.inputs_by_addr(tx.inputs, this_addr, 1)?,
