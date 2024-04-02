@@ -114,14 +114,10 @@ aiken blueprint apply -o plutus.json -v batcher.params "${ref_cbor}"
 aiken blueprint convert -v batcher.params > contracts/batcher_contract.plutus
 cardano-cli transaction policyid --script-file contracts/batcher_contract.plutus > hashes/batcher.hash
 
-# FIX THIS
-exit 
 ###############################################################################
 ############## DATUM AND REDEEMER STUFF #######################################
 ###############################################################################
 echo -e "\033[1;33m Updating Reference Datum \033[0m"
-# # build out the reference datum data
-caPkh=$(cat_file_or_empty ./scripts/wallets/newm-wallet/payment.hash)
 # keepers
 pkh1=$(cat_file_or_empty ./scripts/wallets/keeper1-wallet/payment.hash)
 pkh2=$(cat_file_or_empty ./scripts/wallets/keeper2-wallet/payment.hash)
@@ -148,29 +144,16 @@ pqb=$(jq -r '.purchaseQueueBound' start_info.json)
 rqb=$(jq -r '.refundQueueBound' start_info.json)
 # the start upper bound
 ssb=$(jq -r '.startSaleBound' start_info.json)
-# the purchase upper bound
-pob=$(jq -r '.purchaseOrderBound' start_info.json)
-# the refund upper bound
-rob=$(jq -r '.refundOrderBound' start_info.json)
 
 # This needs to be generated from the hot key in start info.
 # Assume the hot key is all the keys for now
 hotKey=$(jq -r '.hotKey' start_info.json)
-jq \
---arg hotKey "$hotKey" \
-'.map[0].v.bytes=$hotKey |
-.map[1].v.bytes=$hotKey |
-.map[2].v.bytes=$hotKey
-' \
-./scripts/data/reference/workers.json | sponge ./scripts/data/reference/workers.json
-
-# this needs to be placed or auto generated somewhere
-signer_map=$(cat ./scripts/data/reference/workers.json)
 
 cp ./scripts/data/reference/reference-datum.json ./scripts/data/reference/backup-reference-datum.json
+
 # update reference data
 jq \
---argjson signer_map "$signer_map" \
+--arg hotKey "$hotKey" \
 --argjson pkhs "$pkhs" \
 --argjson thres "$thres" \
 --arg poolId "$poolId" \
@@ -184,16 +167,14 @@ jq \
 --argjson pqb "$pqb" \
 --argjson rqb "$rqb" \
 --argjson ssb "$ssb" \
---argjson pob "$pob" \
---argjson rob "$rob" \
 --arg pointerHash "$pointerHash" \
 --arg batcherHash "$batcherHash" \
-'.fields[0]=$signer_map | 
+'.fields[0].bytes=$hotKey | 
 .fields[1].fields[0].list |= ($pkhs | .[0:length]) | 
 .fields[1].fields[1].int=$thres | 
 .fields[2].fields[0].bytes=$poolId |
-.fields[2].fields[1].bytes=$rewardPkh |
-.fields[2].fields[2].bytes=$rewardSc |
+.fields[2].fields[1].fields[0].bytes=$rewardPkh |
+.fields[2].fields[1].fields[1].bytes=$rewardSc |
 .fields[3].fields[0].bytes=$cip68Hash |
 .fields[3].fields[1].bytes=$saleHash |
 .fields[3].fields[2].bytes=$queueHash |
@@ -202,8 +183,6 @@ jq \
 .fields[4].fields[0].int=$pqb |
 .fields[4].fields[1].int=$rqb |
 .fields[4].fields[2].int=$ssb |
-.fields[4].fields[3].int=$pob |
-.fields[4].fields[4].int=$rob |
 .fields[5].bytes=$pointerHash |
 .fields[6].fields[2].bytes=$batcherHash
 ' \
