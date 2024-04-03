@@ -12,12 +12,15 @@ use fractional/types/batcher.{
 }
 use fractional/types/reference.{ReferenceDatum}
 
-validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(redeemer: BatcherTokenRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
     let tx: Transaction = context.transaction
     // data reference stuff
-    expect ref_hash: ValidatorHash = ref_hash_data
     let ref_addr: Address = credential.from_script(ref_hash)
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // Get the reference datum

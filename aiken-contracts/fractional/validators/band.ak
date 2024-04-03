@@ -18,7 +18,7 @@ use fractional/types/band.{
 use fractional/types/constants
 use fractional/types/reference.{ReferenceDatum}
 
-validator(ref_hash_data: Data) {
+validator(ref_hash: ValidatorHash) {
   fn params(
     this_datum: BandLockUpDatum,
     redeemer: BandLockUpRedeemer,
@@ -33,7 +33,6 @@ validator(ref_hash_data: Data) {
         let this_input: Input = find.input_by_ref(tx.inputs, output_reference)
         let this_value: Value = this_input.output.value
         // data reference stuff
-        expect ref_hash: ValidatorHash = ref_hash_data
         let ref_addr: Address = credential.from_script(ref_hash)
         // find the first reference input
         let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
@@ -144,7 +143,6 @@ validator(ref_hash_data: Data) {
           // burn nft and unlock full band back to owner
           BurnBand -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             // find the first reference input
             let ref_input: Input =

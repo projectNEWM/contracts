@@ -26,18 +26,7 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
-
-# echo $tkn
-
-default_asset="${total_amt} ${pid}.${tkn}"
-
-utxo_value=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${script_address} + 5000000 + ${default_asset}" | tr -dc '0-9')
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -54,11 +43,10 @@ TXIN=$(jq -r --arg alltxin "" --arg tkn "${tkn}" 'to_entries[] | select(.value.i
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
 
-# exit
 LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
-utxo_value=$LOVELACE_VALUE
 echo LOVELACE: $LOVELACE_VALUE
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+echo BUNDLE: $CURRENT_VALUE
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
@@ -67,7 +55,7 @@ if [ ! -z "$POINTER_VALUE" ]; then
     echo "UTxO has pointer."
     exit 1
 fi
-prefix_555="ca7ab1e0"
+prefix_555="ca11ab1e"
 
 first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
 string=${first_utxo}
@@ -77,7 +65,7 @@ pointer_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from ge
 echo -n $pointer_name > ../tmp/pointer.token
 
 pointer_asset="1 ${pointer_pid}.${pointer_name}"
-
+echo POINTER: $pointer_asset
 # update the value map inside the start redeemer
 jq \
 --arg pid "$pointer_pid" \
@@ -89,7 +77,7 @@ jq \
 
 # compute the correct start redeemer 
 
-script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + ${pointer_asset}"
+script_address_out="${script_address} + ${LOVELACE_VALUE} + ${returning_asset} + ${pointer_asset}"
 echo $script_address_out
 #
 # exit
@@ -156,6 +144,7 @@ python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation impo
 
 cat ../data/exe_units.json
 
+# exit 
 cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
 mem=$(jq -r '.[0].mem' ../data/exe_units.json)
 

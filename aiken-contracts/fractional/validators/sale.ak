@@ -20,7 +20,11 @@ use fractional/types/sale.{
   UpdateSale,
 }
 
-validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(
     this_datum: SaleDatum,
     redeemer: SaleRedeemer,
@@ -29,7 +33,6 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
     // the transaction being validated
     let tx: Transaction = context.transaction
     // data reference stuff
-    expect ref_hash: ValidatorHash = ref_hash_data
     let ref_addr: Address = credential.from_script(ref_hash)
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)

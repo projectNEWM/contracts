@@ -18,7 +18,11 @@ use fractional/types/queue.{
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/sale.{Purchase, SaleDatum, SaleRedeemer}
 
-validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(
     this_datum: QueueDatum,
     redeemer: QueueRedeemer,
@@ -37,7 +41,6 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
           // a batcher can complete a purchase from the queue
           QueuePurchase -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
               find.input_by_addr(tx.reference_inputs, ref_addr)
@@ -152,7 +155,6 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
           // a batcher can auto refund a completed queue item
           QueueRefund -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
               find.input_by_addr(tx.reference_inputs, ref_addr)
