@@ -20,7 +20,6 @@ batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
-
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
@@ -38,21 +37,24 @@ echo Script UTxO: $script_tx_in
 
 lovelace=$(jq -r --arg alltxin "" --arg pkh "${batcher_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373135 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373331 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636303436"
+batcher_policy_id=$(cat ../../hashes/batcher.hash)
+batcher_token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
+complete_token_name="c011ec7ed000a55e75"
+
+complete_token="1 ${batcher_policy_id}.${complete_token_name}"
+
+assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373137 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373830 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636323334"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/band_lock/band-lock-datum.json \
-    --tx-out="${script_address} + 5000000 + ${assets}" | tr -dc '0-9')
+    --tx-out="${script_address} + 5000000 + ${assets} + ${complete_token}" | tr -dc '0-9')
 
 # this assumes no entry tokens
-script_address_out="${script_address} + ${min_utxo} + ${assets}"
+script_address_out="${script_address} + ${min_utxo} + ${assets} + ${complete_token}"
 echo Output: $script_address_out
 
-token_name="5ca1ab1e000affab1e000ca11ab1e0005e77ab1e"
-batcher_policy_id=$(cat ../../hashes/batcher.hash)
-batcher_token="1 ${batcher_policy_id}.${token_name}"
-
+batcher_token="1 ${batcher_policy_id}.${batcher_token_name}"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
@@ -88,11 +90,10 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-lock-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-reference-utxo.signed )
 batcher_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/batcher-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
-# exit
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
     --babbage-era \
@@ -108,10 +109,10 @@ FEE=$(${cli} transaction build \
     --spending-reference-tx-in-redeemer-file ../data/band_lock/mint-band-redeemer.json \
     --tx-out="${batcher_address_out}" \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file ../data/band_lock/full-band-lock-datum.json  \
+    --tx-out-inline-datum-file ../data/band_lock/band-lock-datum.json  \
     --required-signer-hash ${batcher_pkh} \
     --required-signer-hash ${collat_pkh} \
-    --mint="${batcher_token}" \
+    --mint="${batcher_token} + ${complete_token}" \
     --mint-tx-in-reference="${batcher_ref_utxo}#1" \
     --mint-plutus-script-v2 \
     --policy-id="${batcher_policy_id}" \

@@ -20,6 +20,8 @@ batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
+
+# this neeeds to automated in some way
 assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455631313736 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455632303132 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455633313639"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -76,7 +78,7 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-lock-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # exit
