@@ -52,8 +52,7 @@ validator(
                 ref_datum.contracts.stake,
               )
             // get the sale input from the reference inputs
-            let sale_input: Input =
-              find.input_by_addr(tx.reference_inputs, sale_addr)
+            let sale_input: Input = find.input_by_addr(tx.inputs, sale_addr)
             let sale_out_ref: OutputReference = sale_input.output_reference
             // the current value on the sale utxo
             let sale_value: Value = sale_input.output.value
@@ -93,7 +92,7 @@ validator(
             // remove the fee, cost value, and incentive
             // add the bundle value
             let return_queue_value: Value =
-              token.add_token_to_value(sale_value, token.negative(total_cost))
+              token.add_token_to_value(this_value, token.negative(total_cost))
                 |> value.merge(value.negate(tx.fee))
                 |> value.add(
                     sale_datum.bundle.pid,

@@ -7,7 +7,7 @@ testnet_magic=$(cat ./data/testnet.magic)
 
 # staking contract
 stake_script_path="../contracts/stake_contract.plutus"
-stake_key="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
+# stake_key="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # cip 68 contract
 cip68_script_path="../contracts/cip68_contract.plutus"
