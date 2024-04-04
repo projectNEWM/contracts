@@ -18,7 +18,11 @@ use fractional/types/queue.{
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/sale.{Purchase, SaleDatum, SaleRedeemer}
 
-validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(
     this_datum: QueueDatum,
     redeemer: QueueRedeemer,
@@ -37,7 +41,6 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
           // a batcher can complete a purchase from the queue
           QueuePurchase -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
               find.input_by_addr(tx.reference_inputs, ref_addr)
@@ -49,8 +52,7 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
                 ref_datum.contracts.stake,
               )
             // get the sale input from the reference inputs
-            let sale_input: Input =
-              find.input_by_addr(tx.reference_inputs, sale_addr)
+            let sale_input: Input = find.input_by_addr(tx.inputs, sale_addr)
             let sale_out_ref: OutputReference = sale_input.output_reference
             // the current value on the sale utxo
             let sale_value: Value = sale_input.output.value
@@ -90,7 +92,7 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
             // remove the fee, cost value, and incentive
             // add the bundle value
             let return_queue_value: Value =
-              token.add_token_to_value(sale_value, token.negative(total_cost))
+              token.add_token_to_value(this_value, token.negative(total_cost))
                 |> value.merge(value.negate(tx.fee))
                 |> value.add(
                     sale_datum.bundle.pid,
@@ -152,7 +154,6 @@ validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
           // a batcher can auto refund a completed queue item
           QueueRefund -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
               find.input_by_addr(tx.reference_inputs, ref_addr)

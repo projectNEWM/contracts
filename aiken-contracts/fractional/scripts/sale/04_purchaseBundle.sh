@@ -15,16 +15,11 @@ sale_script_address=$(${cli} address build --payment-script-file ${sale_script_p
 # bundle sale contract
 queue_script_path="../../contracts/queue_contract.plutus"
 queue_script_address=$(${cli} address build --payment-script-file ${queue_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
-queue_script_address2=$(${cli} address build --payment-script-file ${queue_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
 #
-newm_address=$(cat ../wallets/newm-wallet/payment.addr)
-newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/newm-wallet/payment.vkey)
-
 batcher_address=$(cat ../wallets/batcher-wallet/payment.addr)
 batcher_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/batcher-wallet/payment.vkey)
-
 
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
 artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
@@ -52,9 +47,11 @@ fi
 
 TXIN=$(jq -r --arg alltxin "" 'to_entries[] | .key | . + $alltxin + " --tx-in"' ../tmp/batcher_utxo.json)
 batcher_starting_lovelace=$(jq '[.[] | .value.lovelace] | add' ../tmp/batcher_utxo.json)
-batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add' ../tmp/batcher_utxo.json)
+batcher_starting_incentive=$(jq '[.[] | .value["698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d"]["7444524950"]] | add // 0' ../tmp/batcher_utxo.json)
 batcher_tx_in=${TXIN::-8}
 echo Batcher UTXO ${batcher_tx_in}
+echo Batcher Lovelace ${batcher_starting_lovelace}
+echo Batcher Incentive ${batcher_starting_incentive} "698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
 # exit
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
@@ -98,7 +95,6 @@ echo SALE UTXO ${sale_tx_in}
 cp ../tmp/sale_script_utxo.json ../tmp/script_utxo.json
 returning_asset=$(python3 ../py/token_string.py)
 
-# exit
 
 pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pointer_tkn=$(cat ../tmp/pointer.token)
@@ -107,21 +103,17 @@ pointer_asset="1 ${pointer_pid}.${pointer_tkn}"
 default_asset="${total_amt} ${pid}.${tkn}"
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/sale_script_utxo.json)
 echo REMAINING: $CURRENT_VALUE ${pid}.${tkn}
+# exit
 
 # how many bundles to purchase
-bundleSize=$(jq -r '.fields[2].int' ../data/queue/queue-datum.json)
-
-# need to build the cost object and calculate the total cost
-cost_value=$(python3 -c "import sys; sys.path.append('../py/'); from convertMapToOutput import get_map; get_map($(jq -r '.fields[2].map' ../data/sale/sale-datum.json), ${bundleSize})")
+bundleSize=$(jq -r '.fields[1].int' ../data/queue/queue-datum.json)
 
 # the bundle size
 bSize=$(jq -r '.fields[1].fields[2].int' ../data/sale/sale-datum.json)
 
-# the pure ada part
-pSize=$(jq '.fields[2].map[] | select(.k.bytes == "") | .v.map[].v.int' ../data/sale/sale-datum.json)
-if [[ -z $pSize ]]; then
-  pSize=0
-fi
+# the cost size
+pSize=$(jq -r '.fields[2].fields[2].int' ../data/sale/sale-datum.json)
+
 payAmt=$((${bundleSize} * ${pSize}))
 
 buyAmt=$((${bundleSize} * ${bSize}))
@@ -139,14 +131,21 @@ returning_asset="${retAmt} ${pid}.${tkn}"
 echo Buyer Bundle: $bundle_value
 echo Sale Return: $returning_asset
 
-sale_profit_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/sale_script_utxo.json)
-queue_payment_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/queue_script_utxo.json)
+# exit
+
+cpid=$(jq -r '.fields[2].fields[0].bytes' ../data/sale/sale-datum.json)
+ctkn=$(jq -r '.fields[2].fields[1].bytes' ../data/sale/sale-datum.json)
+
+sale_profit_amount=$(jq --arg cpid "$cpid" --arg ctkn "$ctkn" '[.[] | .value[$cpid][$ctkn]] | add' ../tmp/sale_script_utxo.json)
+queue_payment_amount=$(jq --arg cpid "$cpid" --arg ctkn "$ctkn" '[.[] | .value[$cpid][$ctkn]] | add' ../tmp/queue_script_utxo.json)
 if [ -z "$sale_profit_amount" ]; then
-    profit="$((${queue_payment_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+    profit="$((${queue_payment_amount})) ${cpid}.${ctkn}"
 else
-    profit="$((${sale_profit_amount} + ${queue_payment_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+    profit="$((${sale_profit_amount} + ${queue_payment_amount})) ${cpid}.${ctkn}"
 fi
 echo Current Profit: $profit
+
+# exit
 
 echo Batcher Incentive: $batcher_starting_incentive
 incentive="$((1000000 + ${batcher_starting_incentive})) 698a6ea0ca99f315034072af31eaac6ec11fe8558d3f48e9775aab9d.7444524950"
@@ -235,16 +234,16 @@ ${cli} transaction build-raw \
 python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation import from_file; exe_units=from_file('../tmp/tx.draft', False);print(json.dumps(exe_units))" > ../data/exe_units.json
 
 cat ../data/exe_units.json
-
-cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
-mem=$(jq -r '.[0].mem' ../data/exe_units.json)
+# exit
+cpu=$(jq -r '.[1].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[1].mem' ../data/exe_units.json)
 
 sale_execution_unts="(${cpu}, ${mem})"
 sale_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)
 sale_computation_fee_int=$(printf "%.0f" "$sale_computation_fee")
 
-cpu=$(jq -r '.[1].cpu' ../data/exe_units.json)
-mem=$(jq -r '.[1].mem' ../data/exe_units.json)
+cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
+mem=$(jq -r '.[0].mem' ../data/exe_units.json)
 
 queue_execution_unts="(${cpu}, ${mem})"
 queue_computation_fee=$(echo "0.0000721*${cpu} + 0.0577*${mem}" | bc)

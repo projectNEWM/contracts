@@ -96,20 +96,6 @@ echo -e "\nRefund OUTPUT: "${buyer_address_out}
 #
 # exit
 #
-echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
-${cli} query utxo \
-    --testnet-magic ${testnet_magic} \
-    --address ${buyer_address} \
-    --out-file ../tmp/buyer_utxo.json
-TXNS=$(jq length ../tmp/buyer_utxo.json)
-if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${buyer_address} \033[0m \n";
-   exit;
-fi
-alltxin=""
-TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' ../tmp/buyer_utxo.json)
-buyer_tx_in=${TXIN::-8}
-
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
     --testnet-magic ${testnet_magic} \

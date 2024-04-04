@@ -11,12 +11,15 @@ use assist/values
 use fractional/types/minter.{BurnTokens, MintRedeemer, MintTokens}
 use fractional/types/reference.{ReferenceDatum}
 
-validator(starter_pid: PolicyId, starter_tkn: AssetName, ref_hash_data: Data) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
     let tx: Transaction = context.transaction
     // data reference stuff
-    expect ref_hash: ValidatorHash = ref_hash_data
     // assume the reference address is not staked
     let ref_addr: Address = credential.from_script(ref_hash)
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)

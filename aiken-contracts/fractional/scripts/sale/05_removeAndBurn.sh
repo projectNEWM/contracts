@@ -6,13 +6,13 @@ cli=$(cat ../data/path_to_cli.sh)
 testnet_magic=$(cat ../data/testnet.magic)
 
 # staking contract
-# stake_script_path="../../contracts/stake_contract.plutus"
-stake_script_path="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
+stake_script_path="../../contracts/stake_contract.plutus"
+# stake_script_path="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
-# script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
-script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-address ${stake_script_path} --testnet-magic ${testnet_magic})
+script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+# script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-address ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
@@ -32,7 +32,6 @@ total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
-
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
     --address ${script_address} \
@@ -50,9 +49,9 @@ echo $script_tx_in
 
 # exit
 LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
-utxo_value=$LOVELACE_VALUE
 echo LOVELACE: $LOVELACE_VALUE
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
+echo BUNDLE: $CURRENT_VALUE
 returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
 
 POINTER_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pointer_pid}" --arg tkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
@@ -67,15 +66,11 @@ fi
 if [[ CURRENT_VALUE -le 0 ]] ; then
     utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
 
-    artist_address_out="${artist_address} + ${utxo_value}"
+    artist_address_out="${artist_address} + ${LOVELACE_VALUE}"
 else
-    artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
+    artist_address_out="${artist_address} + ${LOVELACE_VALUE} + ${returning_asset}"
 fi
 
-
-# artist_address_out="${artist_address} + ${utxo_value}"
-artist_address_out="${artist_address} + ${utxo_value} + ${default_asset}"
-# artist_address_out="${artist_address} + ${utxo_value} + ${returning_asset}"
 echo "Return OUTPUT: "${artist_address_out}
 #
 # exit
@@ -107,8 +102,8 @@ fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
-# data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
-data_ref_utxo="8472ae5dd6ff4620ec563f7b00ebd05ba24119274fa69a6e7f015bfaa657ebeb"
+data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
+# data_ref_utxo="8472ae5dd6ff4620ec563f7b00ebd05ba24119274fa69a6e7f015bfaa657ebeb"
 pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 
 

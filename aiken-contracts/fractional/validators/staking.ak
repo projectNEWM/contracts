@@ -7,9 +7,9 @@ use assist/data
 use assist/find
 use assist/payout
 use assist/signing
+use assist/types/hashes.{ValidatorHash}
 use assist/values
 use fractional/types/constants.{Lovelace}
-use assist/types/hashes.{ValidatorHash}
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/staking.{Delegate, Withdraw, WithdrawRedeemer}
 
@@ -17,14 +17,12 @@ use fractional/types/staking.{Delegate, Withdraw, WithdrawRedeemer}
 validator(
   starter_pid: PolicyId,
   starter_tkn: AssetName,
-  ref_hash_data: Data,
+  ref_hash: ValidatorHash,
   _random_string: ByteArray,
 ) {
   fn params(redeemer: WithdrawRedeemer, context: ScriptContext) -> Bool {
     let tx: Transaction = context.transaction
     // get reference utxo
-    expect ref_hash: ValidatorHash = ref_hash_data
-    // the reference address is assumed to not be staked
     let ref_addr: Address = credential.from_script(ref_hash)
     let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
     // get the reference datum

@@ -18,7 +18,7 @@ use fractional/types/band.{
 use fractional/types/constants
 use fractional/types/reference.{ReferenceDatum}
 
-validator(ref_hash_data: Data) {
+validator(ref_hash: ValidatorHash) {
   fn params(
     this_datum: BandLockUpDatum,
     redeemer: BandLockUpRedeemer,
@@ -33,7 +33,6 @@ validator(ref_hash_data: Data) {
         let this_input: Input = find.input_by_ref(tx.inputs, output_reference)
         let this_value: Value = this_input.output.value
         // data reference stuff
-        expect ref_hash: ValidatorHash = ref_hash_data
         let ref_addr: Address = credential.from_script(ref_hash)
         // find the first reference input
         let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
@@ -72,8 +71,8 @@ validator(ref_hash_data: Data) {
               (this_datum == that_datum)?,
               // owner must sign it
               signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
-              // owner must get the utxo back
-              payout.exact(this_addr, that_value, tx.outputs)?,
+              // send at least the members and this_value to the address
+              payout.at_least(this_addr, that_value, tx.outputs)?,
               // single script input
               count.inputs_by_vkh(tx.inputs, 1)?,
               // no script outputs
@@ -114,8 +113,8 @@ validator(ref_hash_data: Data) {
               (this_datum == that_datum)?,
               // owner must sign it
               signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
-              // owner must get the utxo back
-              payout.exact(this_addr, that_value, tx.outputs)?,
+              // at least this value and teh complete set token sent to this address
+              payout.at_least(this_addr, that_value, tx.outputs)?,
               // single script input
               count.inputs_by_vkh(tx.inputs, 1)?,
               // single script outputs
@@ -144,30 +143,18 @@ validator(ref_hash_data: Data) {
           // burn nft and unlock full band back to owner
           BurnBand -> {
             // data reference stuff
-            expect ref_hash: ValidatorHash = ref_hash_data
             let ref_addr: Address = credential.from_script(ref_hash)
             // find the first reference input
             let ref_input: Input =
               find.input_by_addr(tx.reference_inputs, ref_addr)
             // the reference this_datum
             expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
-            let owner_addr: Address = addresses.from_wallet(this_datum.owner)
             // check if something is being minted here
             let mint: List<(PolicyId, AssetName, Int)> =
               tx.mint
                 |> value.from_minted_value()
                 |> value.flatten()
-            // the complete set nft is removed
-            let that_value: Value =
-              this_value
-                |> value.add(
-                    ref_datum.batcher_data.batcher_pid,
-                    constants.complete_set_token_name,
-                    -1,
-                  )
             and {
-              // owner must get the utxo back
-              payout.exact(owner_addr, that_value, tx.outputs)?,
               // single script input
               count.inputs_by_vkh(tx.inputs, 1)?,
               // no script outputs

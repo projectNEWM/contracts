@@ -22,6 +22,7 @@ keeper1_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 keeper2_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/keeper2-wallet/payment.vkey)
 keeper3_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/keeper3-wallet/payment.vkey)
 
+
 # asset to trade
 policy_id=$(jq -r '.starterPid' ../../start_info.json)
 token_name=$(jq -r '.starterTkn' ../../start_info.json)
@@ -84,7 +85,7 @@ fi
 collat_tx_in=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 # script reference utxo
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/data-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/reference-reference-utxo.signed )
 
 echo -e "\033[0;36m Building Tx \033[0m"
 FEE=$(${cli} transaction build \
@@ -97,7 +98,7 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file ../data/reference/update-pool-redeemer.json \
+    --spending-reference-tx-in-redeemer-file ../data/reference/update-redeemer.json \
     --tx-out="${script_address_out}" \
     --tx-out-inline-datum-file ../data/reference/reference-datum.json \
     --required-signer-hash ${starter_pkh} \

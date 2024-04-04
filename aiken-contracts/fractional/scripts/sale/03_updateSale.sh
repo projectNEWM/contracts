@@ -48,16 +48,13 @@ script_tx_in=$TXIN
 
 # exit
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-returning_asset="${CURRENT_VALUE} ${pid}.${tkn}"
+POINTER_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
+LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-LOVELACE_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
-utxo_value=$LOVELACE_VALUE
-echo LOVELACE: $LOVELACE_VALUE
-
-if [[ CURRENT_VALUE -le 0 ]] ; then
-    script_address_out="${script_address} + ${utxo_value}"
+if [ ! -z "$POINTER_VALUE" ]; then
+    script_address_out="${script_address} + ${LOVELACE_VALUE} + ${CURRENT_VALUE} ${pid}.${tkn} + 1 ${pointer_pid}.${pointer_tkn}"
 else
-    script_address_out="${script_address} + ${utxo_value} + ${returning_asset} + 1 ${pointer_pid}.${pointer_tkn}"
+    script_address_out="${script_address} + ${LOVELACE_VALUE} + ${CURRENT_VALUE} ${pid}.${tkn}"
 fi
 
 echo "Update OUTPUT: "${script_address_out}

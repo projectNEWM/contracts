@@ -38,7 +38,7 @@ echo Script UTxO: $script_tx_in
 
 lovelace=$(jq -r --arg alltxin "" --arg pkh "${batcher_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373135 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373331 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636303436"
+assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373137 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373830 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636323334"
 
 # TODO: need to dynamiccaly update the redeemer here based off the asset string
 # else just update the data/band_lock/add-to-band-redeemer.json with the
@@ -49,19 +49,6 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --protocol-params-file ../tmp/protocol.json \
     --tx-out-inline-datum-file ../data/band_lock/band-lock-datum.json \
     --tx-out="${script_address} + 5000000 + ${assets}" | tr -dc '0-9')
-
-difference=$((${min_utxo} - ${lovelace}))
-echo Additional Lovelace: $difference
-
-# Check if the difference is negative
-if [ "$difference" -lt 0 ]; then
-  difference=0
-fi
-
-jq \
---argjson ada "$difference" \
-'.fields[0].map[0].v.map[0].v.int=$ada' \
-../data/band_lock/add-to-band-redeemer.json | sponge ../data/band_lock/add-to-band-redeemer.json
 
 # this assumes no entry tokens
 script_address_out="${script_address} + ${min_utxo} + ${assets}"
@@ -96,7 +83,7 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-lock-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/band-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 # exit
