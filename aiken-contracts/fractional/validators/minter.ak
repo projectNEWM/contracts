@@ -58,9 +58,9 @@ validator(
               )?,
               // data reference must be holding correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
             }
           BurnTokens { burn_amt } -> and {
@@ -91,9 +91,9 @@ validator(
               }?,
               // data reference must be holding correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
             }
         }

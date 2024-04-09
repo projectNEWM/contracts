@@ -52,9 +52,9 @@ validator(
             and {
               // data reference must be holding correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // check that something is being spent from the band lock
               is_correct_redeemer?,
@@ -73,9 +73,9 @@ validator(
             and {
               // data reference must be holding correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // check that something is being spent from the band lock
               is_correct_redeemer?,

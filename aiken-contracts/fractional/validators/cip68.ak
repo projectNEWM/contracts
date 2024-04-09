@@ -38,9 +38,9 @@ validator(
           RemoveMeta -> and {
               // must hold correct data token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // hot key must sign it
               signing.verify_sig(tx.extra_signatories, ref_datum.hot_key)?,
@@ -58,9 +58,9 @@ validator(
             and {
               // must hold correct data token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               ),
               // hot key must sign it
               signing.verify_sig(tx.extra_signatories, ref_datum.hot_key),

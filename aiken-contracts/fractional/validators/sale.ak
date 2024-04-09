@@ -79,9 +79,9 @@ validator(
               (this_datum == that_datum)?,
               // must be the correct reference data
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
             }
           }
@@ -102,16 +102,16 @@ validator(
             and {
               // must be the correct reference data
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // The transaction fee can not exceed an upperbound
               reference.valid_tx_fee(tx.fee, ref_datum.fees.start_sale_bound)?,
               // prove pointer has pointer token
               minting.is_occurring(mint, ref_datum.pointer, pointer.tkn)?,
               // prove validating value doesn't have pointer token
-              !values.prove_nft(ref_datum.pointer, this_value)?,
+              !values.prove_nft(this_value, ref_datum.pointer)?,
               // value must go back to script
               payout.exact(this_address, that_value, tx.outputs)?,
               // the sale_datum can not change
@@ -146,9 +146,9 @@ validator(
               count.outputs_by_addr(tx.outputs, this_address, 1)?,
               // must be the correct reference data
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
             }
           }
@@ -156,7 +156,7 @@ validator(
           RemoveSale -> {
             // check if the pointer token needs to be burned or not
             let burn_pointer_token: Bool =
-              if values.prove_nft(ref_datum.pointer, this_value) {
+              if values.prove_nft(this_value, ref_datum.pointer) {
                 // the input being validated
                 let mint: List<(PolicyId, AssetName, Int)> =
                   tx.mint |> value.from_minted_value() |> value.flatten()
@@ -177,9 +177,9 @@ validator(
             and {
               // must be the correct reference data
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // if have pointer burn else remove
               burn_pointer_token?,

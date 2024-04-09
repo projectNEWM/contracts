@@ -7,11 +7,13 @@ cli=$(cat ./data/path_to_cli.sh)
 testnet_magic=$(cat ./data/testnet.magic)
 
 # Addresses
-sender_path="wallets/buyer1-wallet/"
+sender_path="wallets/batcher-wallet/"
 sender_address=$(cat ${sender_path}payment.addr)
 # receiver_address=$(cat wallets/seller-wallet/payment.addr)
-# receiver_address=${sender_address}
-receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
+receiver_address=${sender_address}
+# receiver_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
+
+
 
 assets="100000000 20f604a8cd5f0f88f30719f2951c1993de340dc5f1cafb0e76d4c86f.001bc28001bada37cdb10ef964f34e4602a618dc5d5bde318f18a61bd679a148"
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
@@ -20,7 +22,7 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out="${receiver_address} + 5000000 + ${assets}" | tr -dc '0-9')
 
 tokens_to_be_traded="${receiver_address} + ${min_utxo} + ${assets}"
-echo -e "\nTrading Tokens:\n" ${tokens_to_be_traded}
+# echo -e "\nTrading Tokens:\n" ${tokens_to_be_traded}
 #
 # exit
 #

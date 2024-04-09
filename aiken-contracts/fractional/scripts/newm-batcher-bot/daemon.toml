@@ -1,0 +1,18 @@
+[source]
+type = "N2C"
+address = [ "Unix", "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-testnet/node.socket",]
+magic = "preprod"
+min_depth = 3
+
+[sink]
+type = "Webhook"
+url = "http://localhost:8008/webhook"
+timeout = 60000
+error_policy = "Exit"
+
+[source.intersect]
+type = "Point"
+value = [ 57019021, "0471665ba2b69e6917ef7569f31b7ffb2d932238ba877e407829378c1312dc5b",]
+
+[source.mapper]
+include_transaction_details = true

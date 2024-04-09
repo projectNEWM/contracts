@@ -1,0 +1,38 @@
+###############################################################################
+# Update this by hand for now, eventually this needs to be automated in some
+# fashion based off the wallet folder or the plutus.json file. This may just
+# need to be a custom config file of constants at a per user level.
+###############################################################################
+
+# Sale & Queue Contract Addresses
+sale_address: "addr_test1xrdcxs8czy6k778aa6dql97l97845qvk8ne3r895at74ntk40rxn7yxhflf44xw7hazl5ttaym2samu9av394s3e8cwq9dp8zt"
+queue_address: "addr_test1xzgsgmax3sf0u66ymfmyu6vaeuj7r2tv729uyh9gtd0ul5x40rxn7yxhflf44xw7hazl5ttaym2samu9av394s3e8cwqgar3zw"
+
+# Data, Sale, and Queue Contract Script Reference UTxOs
+data_ref_utxo: "263b4a41b93abc91b65a82bd4b1633d8bd3cefcfd25c434a6a6dff42ee50726f#0"
+sale_ref_utxo: "b3712556367fac35ea6b882eb5ee08adc6c88efc4c077b9fc2539b6488c85dbb#1"
+queue_ref_utxo: "b610ab302606db11bbda90d8424cdfda3e77aa1ff87866d94094950106ac9c6b#1"
+
+# Batcher Wallet Information
+batcher_address: "addr_test1vrs4fk7ea6rg2fvd00sa8um5unp0rt474kngwpc38v2z9vqujprdk"
+batcher_pkh: "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0"
+
+# Collat Wallet Information
+collat_pkh: "4c1017ed05f703f6cf31c6a743f2c69534dbe4846e0d51ed4cb24b85"
+collat_utxo: "949d496d900345508ed6e0b27b2a79a284fd3c37b7a3b7b01cece027fe1577aa#2"
+
+# The newm pointer policy id
+pointer_policy: "8430a7e28b864f60cf0df03bbdaf842bc2565b8db2da5d675918d103"
+
+# Node and network information
+network: "--testnet-magic 1"
+socket_path: "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-testnet/node.socket"
+
+# starting block information
+starting_block_number: 2120000
+starting_timestamp: 56761715
+starting_blockhash: "b58973b06a87ab2b518733a84e45cc1d7115f56caa5c541758a218fc52483cb1"
+
+# Logging Parameters
+max_log_file_size: "1 MB"
+max_num_log_files: 1
