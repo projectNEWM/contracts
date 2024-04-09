@@ -40,9 +40,9 @@ validator(
           Withdraw -> and {
               // data reference must hold correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // an at least here allows for small rewards to be withdrawn
               payout.at_least(
@@ -68,9 +68,9 @@ validator(
             and {
               // data reference must hold correct token
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // The only cert is for new delegation
               (certificate == new_delegation)?,

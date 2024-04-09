@@ -1,0 +1,5 @@
+key/
+venv/
+*.log
+batcher.db
+batcher.db-journal

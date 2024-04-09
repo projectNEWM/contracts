@@ -135,9 +135,9 @@ validator(
               (this_datum == that_datum)?,
               // prove correct sale datum
               values.prove_exact_nft(
+                sale_value,
                 ref_datum.pointer,
                 this_datum.pointer_tkn,
-                sale_value,
               )?,
               // must have at least one bundle for sale
               (cur_bundle_tkn_amt >= sale_datum.bundle.amt)?,
@@ -224,15 +224,15 @@ validator(
             and {
               // prove correct reference datum
               values.prove_exact_nft(
+                ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-                ref_input.output.value,
               )?,
               // prove correct sale datum
               values.prove_exact_nft(
+                sale_value,
                 ref_datum.pointer,
                 this_datum.pointer_tkn,
-                sale_value,
               )?,
               // can the queue entry be refunded
               is_refund_allowed?,

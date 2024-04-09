@@ -53,9 +53,9 @@ validator(ref_hash: ValidatorHash) {
               count.outputs_by_vkh(tx.outputs, 0)?,
               // anything but a complete set can be removed
               !values.prove_exact_nft(
+                this_value,
                 ref_datum.batcher_data.batcher_pid,
                 constants.complete_set_token_name,
-                this_value,
               )?,
             }
           }
@@ -79,9 +79,9 @@ validator(ref_hash: ValidatorHash) {
               count.outputs_by_vkh(tx.outputs, 1)?,
               // anything but a complete set can be updated
               !values.prove_exact_nft(
+                this_value,
                 ref_datum.batcher_data.batcher_pid,
                 constants.complete_set_token_name,
-                this_value,
               )?,
             }
           }
@@ -175,9 +175,9 @@ validator(ref_hash: ValidatorHash) {
               )?,
               // anything but a complete set can be removed
               values.prove_exact_nft(
+                this_value,
                 ref_datum.batcher_data.batcher_pid,
                 constants.complete_set_token_name,
-                this_value,
               )?,
             }
           }
