@@ -31,7 +31,7 @@ class Queue:
             queue_datum = data['tx_output']['inline_datum']['plutus_data'] if data['tx_output']['inline_datum'] is not None else {}
 
             # get the pointer token
-            pointer_token = queue_datum['fields'][4]['bytes']
+            pointer_token = queue_datum['fields'][3]['bytes']
 
             # convert to dict and add in lovelace
             lovelace = data['tx_output']['amount']

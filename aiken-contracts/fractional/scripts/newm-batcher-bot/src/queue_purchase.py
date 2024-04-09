@@ -27,8 +27,9 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     batcher_pkh = constants['batcher_pkh']
 
     # HARDCODE FEE FOR NOW, NEED WAY TO ESITMATE THESE UNITS BETTER
-    FEE = 505549
     # this needs to be dynamic here
+    # and it must be based off the tx simulation code for a mempool
+    FEE = 505549
     FEE_VALUE = {"lovelace": FEE}
     # [{"mem": 518944, "cpu": 190266843}, {"mem": 1506909, "cpu": 587212169}]
     sale_execution_units = "(290266843, 618944)"
@@ -66,14 +67,14 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     bundle_pid = sale_info['datum']['fields'][1]['fields'][0]['bytes']
     bundle_tkn = sale_info['datum']['fields'][1]['fields'][1]['bytes']
     bundle_amt = sale_info['datum']['fields'][1]['fields'][2]['int']
-    wanted_bundle_size = queue_info['datum']['fields'][2]['int']
+    wanted_bundle_size = queue_info['datum']['fields'][1]['int']
     current_bundle_amt = sale_info['value'][bundle_pid][bundle_tkn]
     if current_bundle_amt // bundle_amt < wanted_bundle_size:
         number_of_bundles = current_bundle_amt // bundle_amt
     else:
         number_of_bundles = wanted_bundle_size
 
-    incentive_data = queue_datum['fields'][3]['fields']
+    incentive_data = queue_datum['fields'][2]['fields']
     incentive_pid = incentive_data[0]['bytes']
     incentive_tkn = incentive_data[1]['bytes']
     incentive_amt = incentive_data[2]['int']
@@ -87,8 +88,11 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     batcher_value = batcher_info['value']
     sale_value = sale_info['value']
     queue_value = queue_info['value']
-    cost_value = parsing.cost_map_to_value_dict(
-        sale_info['datum']['fields'][2], number_of_bundles)
+
+    cost_pid = sale_info['datum']['fields'][2]['fields'][0]['bytes']
+    cost_tkn = sale_info['datum']['fields'][2]['fields'][1]['bytes']
+    cost_amt = sale_info['datum']['fields'][2]['fields'][2]['int']
+    cost_value = {cost_pid: {cost_tkn: cost_amt * number_of_bundles}}
 
     sv1 = dicts.add(sale_value, cost_value)
     sv2 = dicts.subtract(sv1, bundle_value)
@@ -136,6 +140,7 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
 
     # can log the result if required
     _ = subprocess.run(func, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # print('SUBMIT:', output)
     # update the sale, queue, and batcher info for the next stepz
 
     intermediate_txid = transaction.txid(out_file_path)

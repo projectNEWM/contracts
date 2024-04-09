@@ -5,31 +5,33 @@
 ###############################################################################
 
 # Sale & Queue Contract Addresses
-sale_address: "addr_test1xpa8h52wzp634xuq030l4r23drhu0kw7k40pels7pkev2rd77kxf9f4azcy30z8zufp39mkgzqvg6vyjfsgqflsaxxqqy5z2r2"
-queue_address: "addr_test1xzfklpyqquy540p4msdqptlwxk2m8yysl7td8hwpa3wfxt977kxf9f4azcy30z8zufp39mkgzqvg6vyjfsgqflsaxxqq94g2ge"
+sale_address: "addr_test1xrdcxs8czy6k778aa6dql97l97845qvk8ne3r895at74ntk40rxn7yxhflf44xw7hazl5ttaym2samu9av394s3e8cwq9dp8zt"
+queue_address: "addr_test1xzgsgmax3sf0u66ymfmyu6vaeuj7r2tv729uyh9gtd0ul5x40rxn7yxhflf44xw7hazl5ttaym2samu9av394s3e8cwqgar3zw"
 
 # Data, Sale, and Queue Contract Script Reference UTxOs
-data_ref_utxo: "ce80d33009265015f10e1e925ddc731726ef37f55aa880728e630046895dc2f8#0"
-sale_ref_utxo: "22d3b80a8a7d6387e01dc704f3612bf72f2a0c1ae94834c78bd13a1d2ffe576c#1"
-queue_ref_utxo: "2f727408c1907a015914a07f3c7732a4d3d9d2beb86a141561638252ad965600#1"
+data_ref_utxo: "263b4a41b93abc91b65a82bd4b1633d8bd3cefcfd25c434a6a6dff42ee50726f#0"
+sale_ref_utxo: "b3712556367fac35ea6b882eb5ee08adc6c88efc4c077b9fc2539b6488c85dbb#1"
+queue_ref_utxo: "b610ab302606db11bbda90d8424cdfda3e77aa1ff87866d94094950106ac9c6b#1"
 
 # Batcher Wallet Information
 batcher_address: "addr_test1vrs4fk7ea6rg2fvd00sa8um5unp0rt474kngwpc38v2z9vqujprdk"
 batcher_pkh: "e154dbd9ee8685258d7be1d3f374e4c2f1aebeada68707113b1422b0"
 
 # Collat Wallet Information
-collat_pkh: "b834fb41c45bd80e5fd9d99119723637fe9d1e3fc467bc1c57ae9aee"
-collat_utxo: "6e34390c14ea8041c85963cf4b00a4ac900ebfd4e7bbcc9df7ed9345393777f3#0"
+collat_pkh: "4c1017ed05f703f6cf31c6a743f2c69534dbe4846e0d51ed4cb24b85"
+collat_utxo: "949d496d900345508ed6e0b27b2a79a284fd3c37b7a3b7b01cece027fe1577aa#2"
 
-# The newm pointer policy id.
-pointer_policy: "a0655eab783984081505d81823d14c8f19f1f33058190a7b7b283d5f"
+# The newm pointer policy id
+pointer_policy: "8430a7e28b864f60cf0df03bbdaf842bc2565b8db2da5d675918d103"
 
 # Node and network information
 network: "--testnet-magic 1"
 socket_path: "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-testnet/node.socket"
-starting_block_number: 1860447
-starting_timestamp: 50586790
-starting_blockhash: "70aa54daad7f997176f7ad68c6048c4e09091889d03fe0acf0d126b36d1f1a5f"
+
+# starting block information
+starting_block_number: 2120000
+starting_timestamp: 56761715
+starting_blockhash: "b58973b06a87ab2b518733a84e45cc1d7115f56caa5c541758a218fc52483cb1"
 
 # Logging Parameters
 max_log_file_size: "1 MB"

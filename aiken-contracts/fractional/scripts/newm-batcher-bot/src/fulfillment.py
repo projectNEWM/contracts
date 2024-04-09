@@ -2,7 +2,6 @@ import os
 
 from src import (db_manager_sqlite3, parsing, query, queue_purchase,
                  queue_refund, transaction)
-from src.parsing import cost_map_to_value_dict
 
 
 def utxo(sale_info, queue_info):
@@ -12,7 +11,10 @@ def utxo(sale_info, queue_info):
     bundle_amt = sale_info['datum']['fields'][1]['fields'][2]['int']
 
     # check if cost is inside the queue
-    cost_value = cost_map_to_value_dict(sale_info['datum']['fields'][2])
+    cost_pid = sale_info['datum']['fields'][2]['fields'][0]['bytes']
+    cost_tkn = sale_info['datum']['fields'][2]['fields'][1]['bytes']
+    cost_amt = sale_info['datum']['fields'][2]['fields'][2]['int']
+    cost_value = {cost_pid: {cost_tkn: cost_amt}}
     queue_value = queue_info['value']
 
     if contains(cost_value, queue_value) is True:
@@ -145,6 +147,7 @@ class Fulfillment:
                     # submit tx
                     purchase_result, purchase_output = transaction.submit(
                         signed_purchase_tx, constants['socket_path'], constants['network'])
+                    # print('PURCHASE OUTPUT', purchase_output)
                     # if successful add to the seen record
                     if purchase_result is True:
                         logger.success(f"Order: {tag} Purchased: {purchase_result}")
@@ -153,6 +156,7 @@ class Fulfillment:
                         continue
                     refund_result, refund_output = transaction.submit(
                         signed_refund_tx, constants['socket_path'], constants['network'])
+                    # print('REFUND OUTPUT', refund_output)
                     # if successful add to the seen record
                     if refund_result is True:
                         # update the tag

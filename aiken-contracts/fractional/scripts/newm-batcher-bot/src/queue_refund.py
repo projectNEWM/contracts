@@ -45,7 +45,7 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
     buyer_address = address.from_pkh_sc(
         owner_info[0]['bytes'], owner_info[1]['bytes'], Network.TESTNET)
 
-    incentive_data = queue_datum['fields'][3]['fields']
+    incentive_data = queue_datum['fields'][2]['fields']
     incentive_pid = incentive_data[0]['bytes']
     incentive_tkn = incentive_data[1]['bytes']
     incentive_amt = incentive_data[2]['int']

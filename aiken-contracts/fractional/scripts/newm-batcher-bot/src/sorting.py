@@ -56,7 +56,7 @@ class Sorting:
                     order_hash = order[0]
                     order_data = order[1]
 
-                    incentive_data = order_data['datum']['fields'][3]['fields'][2]['int']
+                    incentive_data = order_data['datum']['fields'][2]['fields']
                     incentive_amt = incentive_data[2]['int']
 
                     # Sort by incentive amount (descending), then by timestamp and tx_idx

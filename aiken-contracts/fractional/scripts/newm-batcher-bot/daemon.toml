@@ -2,7 +2,7 @@
 type = "N2C"
 address = [ "Unix", "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-testnet/node.socket",]
 magic = "preprod"
-min_depth = 0
+min_depth = 3
 
 [sink]
 type = "Webhook"
@@ -12,7 +12,7 @@ error_policy = "Exit"
 
 [source.intersect]
 type = "Point"
-value = [ 50586790, "70aa54daad7f997176f7ad68c6048c4e09091889d03fe0acf0d126b36d1f1a5f",]
+value = [ 57019021, "0471665ba2b69e6917ef7569f31b7ffb2d932238ba877e407829378c1312dc5b",]
 
 [source.mapper]
 include_transaction_details = true

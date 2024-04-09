@@ -49,7 +49,7 @@ echo -e "\n \033[1;32m ${cip68_script_address} \033[0m \n";
 ${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_magic}
 
 #
-echo -e "\033[1;35m\nBundle Sale Script Address: \033[0m" 
+echo -e "\033[1;35m\nSale Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${sale_script_address} \033[0m \n";
 ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic}
 

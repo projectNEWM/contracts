@@ -1,13 +1,15 @@
 import toml
 
 
-def create_toml_file(filename, node_socket, timestamp, block_hash):
+# the delay is the number of block behind the tip. Without proper rollback
+# protection a non-zero delay must used. Suggested value is 3.
+def create_toml_file(filename, node_socket, timestamp, block_hash, delay=3):
     data = {
         "source": {
             "type": "N2C",
             "address": ["Unix", node_socket],
             "magic": "preprod",
-            "min_depth": 0,
+            "min_depth": delay,
             "intersect": {
                 "type": "Point",
                 "value": [timestamp, block_hash]
