@@ -57,7 +57,8 @@ if [ ! -z "$POINTER_VALUE" ]; then
 fi
 prefix_555="ca11ab1e"
 
-first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
+# first_utxo=$(jq -r 'keys[0]' ../tmp/script_utxo.json)
+first_utxo=${script_tx_in}
 string=${first_utxo}
 IFS='#' read -ra array <<< "$string"
 

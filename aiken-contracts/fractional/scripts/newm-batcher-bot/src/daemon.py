@@ -2,8 +2,8 @@ import toml
 
 
 # the delay is the number of block behind the tip. Without proper rollback
-# protection a non-zero delay must used. Suggested value is 3.
-def create_toml_file(filename, node_socket, timestamp, block_hash, delay=3):
+# protection a non-zero delay must used. Suggested value is 1 - 3.
+def create_toml_file(filename, node_socket, timestamp, block_hash, delay=1):
     data = {
         "source": {
             "type": "N2C",
