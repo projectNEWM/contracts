@@ -139,6 +139,12 @@ validator(
                 ref_datum.pointer,
                 this_datum.pointer_tkn,
               )?,
+              // must have logical number of bundles
+              (this_datum.number_of_bundles > 0)?,
+              // must be non-negative incentive
+              (this_datum.incentive.amt >= 0)?,
+              // max bundle amount must be postiive
+              (sale_datum.bundle.amt > 0)?,
               // must have at least one bundle for sale
               (cur_bundle_tkn_amt >= sale_datum.bundle.amt)?,
               // tx must be spending the certificate of batcher authenticity
@@ -234,6 +240,10 @@ validator(
                 ref_datum.pointer,
                 this_datum.pointer_tkn,
               )?,
+              // must have logical number of bundles
+              (this_datum.number_of_bundles > 0)?,
+              // must be non-negative incentive
+              (this_datum.incentive.amt >= 0)?,
               // can the queue entry be refunded
               is_refund_allowed?,
               // owner must get the utxo back

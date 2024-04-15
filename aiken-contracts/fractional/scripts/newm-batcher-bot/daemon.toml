@@ -12,7 +12,7 @@ error_policy = "Exit"
 
 [source.intersect]
 type = "Point"
-value = [ 57079935, "e65bec4b0437dadbcda42bbe463ac2b6c0eca1effe583c773f36376a7179a02b",]
+value = [ 57085079, "926d67a8a6a8256b18246b8e836bec5ecc0c28c77f1ff74b1921adb72d0409de",]
 
 [source.mapper]
 include_transaction_details = true

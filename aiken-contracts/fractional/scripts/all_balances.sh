@@ -52,6 +52,8 @@ ${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_ma
 echo -e "\033[1;35m\nSale Script Address: \033[0m" 
 echo -e "\n \033[1;32m ${sale_script_address} \033[0m \n";
 ${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic}
+${cli} query utxo --address ${sale_script_address} --testnet-magic ${testnet_magic} --out-file ./tmp/current_sale_utxo.json
+
 
 #
 echo -e "\033[1;35m\nQueue Script Address: \033[0m" 
