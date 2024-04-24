@@ -141,6 +141,7 @@ validator(
               )?,
               // must have logical number of bundles
               (this_datum.number_of_bundles > 0)?,
+              (sale_datum.max_bundle_size > 0)?,
               // must be non-negative incentive
               (this_datum.incentive.amt >= 0)?,
               // max bundle amount must be postiive
@@ -228,6 +229,8 @@ validator(
             //
             //
             and {
+              // single script input
+              count.inputs_by_addr(tx.inputs, this_address, 1)?,
               // prove correct reference datum
               values.prove_exact_nft(
                 ref_input.output.value,
@@ -242,6 +245,7 @@ validator(
               )?,
               // must have logical number of bundles
               (this_datum.number_of_bundles > 0)?,
+              (sale_datum.max_bundle_size > 0)?,
               // must be non-negative incentive
               (this_datum.incentive.amt >= 0)?,
               // can the queue entry be refunded

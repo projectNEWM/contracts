@@ -20,8 +20,6 @@ constants = yaml_file.read("constants.yaml")
 db = db_manager_sqlite3.DatabaseManagerSQLite()
 db.init_status_record(constants)
 
-# # Clear the database
-
 # initial flask
 app = Flask(__name__)
 
@@ -146,7 +144,7 @@ def start_processes():
     logger.info(f"Starting Block {sync_status['block_number']} @ Slot {sync_status['timestamp']} With Hash {sync_status['block_hash']}")
 
     daemon.create_toml_file(
-        'daemon.toml', constants['socket_path'], sync_status['timestamp'], sync_status['block_hash'])
+        'daemon.toml', constants['socket_path'], sync_status['timestamp'], sync_status['block_hash'], constants['delay_depth'])
 
     # start the processes as events in order
     start_event = multiprocessing.Event()

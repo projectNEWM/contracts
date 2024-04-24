@@ -32,6 +32,7 @@ socket_path: "/home/logic/Documents/Work/LogicalMechanism/testnet-node/node/db-t
 starting_block_number: 2120000
 starting_timestamp: 56761715
 starting_blockhash: "b58973b06a87ab2b518733a84e45cc1d7115f56caa5c541758a218fc52483cb1"
+delay_depth: 2
 
 # Logging Parameters
 max_log_file_size: "1 MB"

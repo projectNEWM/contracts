@@ -3,7 +3,7 @@ use aiken/transaction/value.{AssetName, PolicyId, Value}
 use assist/types/token.{Token}
 use assist/types/wallet.{Wallet}
 
-// single token bundle and cost
+// the queue datum
 pub type QueueDatum {
   owner: Wallet,
   number_of_bundles: Int,

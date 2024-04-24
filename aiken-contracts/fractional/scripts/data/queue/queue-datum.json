@@ -13,7 +13,7 @@
       ]
     },
     {
-      "int": 42069420
+      "int": 12345678
     },
     {
       "constructor": 0,
@@ -30,7 +30,7 @@
       ]
     },
     {
-      "bytes": ""
+      "bytes": "ca11ab1e002d1405b174ff70ad90c6a4de4dfbcb8214eae50780d8c3b58b5936"
     }
   ]
 }

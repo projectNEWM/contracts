@@ -2,7 +2,7 @@ use assist/types/token.{Token}
 use assist/types/wallet.{Wallet}
 use fractional/types/constants.{Lovelace}
 
-// single token bundle and cost
+// the sale datum
 pub type SaleDatum {
   owner: Wallet,
   bundle: Token,

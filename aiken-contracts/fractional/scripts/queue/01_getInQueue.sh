@@ -105,7 +105,7 @@ FEE=$(${cli} transaction build \
     --change-address ${buyer_address} \
     --tx-in ${buyer_tx_in} \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file ../data/queue/queue-datum.json  \
+    --tx-out-inline-datum-file ../data/queue/queue-datum.json \
     --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"

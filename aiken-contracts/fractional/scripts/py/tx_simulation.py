@@ -96,9 +96,12 @@ def query_tx_with_koios(hashes: list[str], network: bool) -> list[dict]:
         'content-type': 'application/json',
     }
 
-    url = 'https://' + subdomain + '.koios.rest/api/v0/tx_info'
+    url = 'https://' + subdomain + '.koios.rest/api/v1/tx_info'
     # return the tx information for a list of transactions, (the inputs)
-    return requests.post(url=url, headers=headers, json=json_data).json()
+    output = requests.post(url=url, headers=headers, json=json_data)
+    # print('OUTPUT', output)
+    # exit()
+    return output.json()
 
 
 def resolve_inputs_and_outputs(tx_cbor: str, network: bool) -> tuple[list[tuple[str, int]], list[dict]]:
