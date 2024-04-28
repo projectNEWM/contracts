@@ -20,7 +20,8 @@ pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-total_amt=100000000
+total_amt=50000000
+# total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
 pointer_asset="${total_amt} ${pointer_pid}.${tkn}"
