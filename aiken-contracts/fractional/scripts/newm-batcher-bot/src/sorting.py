@@ -55,15 +55,20 @@ class Sorting:
                     # unique order hash and the queue data for an order
                     order_hash = order[0]
                     order_data = order[1]
+                    try:
+                        # check if wallet type is correct and the incetive type is correct
+                        _ = order_data['datum']['fields'][0]['fields']
+                        incentive_data = order_data['datum']['fields'][2]['fields']
+                        incentive_amt = incentive_data[2]['int']
 
-                    incentive_data = order_data['datum']['fields'][2]['fields']
-                    incentive_amt = incentive_data[2]['int']
-
-                    # Sort by incentive amount (descending), then by timestamp and tx_idx
-                    # Larger incentive amounts get higher priority
-                    # a sale to order element is a tuple of
-                    # (order hash, timestamp, tx idx, incentive amount)
-                    sale_to_order_dict[pointer_token].append((order_hash, order_data['timestamp'], order_data['tx_idx'], incentive_amt))
+                        # Sort by incentive amount (descending), then by timestamp and tx_idx
+                        # Larger incentive amounts get higher priority
+                        # a sale to order element is a tuple of
+                        # (order hash, timestamp, tx idx, incentive amount)
+                        sale_to_order_dict[pointer_token].append((order_hash, order_data['timestamp'], order_data['tx_idx'], incentive_amt))
+                    except KeyError:
+                        # bad incentive data here
+                        continue
 
         # fifo the queue list per each sale
         return Sorting.fifo_sort(sale_to_order_dict)

@@ -1,8 +1,8 @@
 import os
 import subprocess
+from typing import Tuple
 
 from pycardano import Network
-
 from src import address, datums, dicts, json_file, parsing, transaction
 
 
@@ -11,7 +11,7 @@ def create_folder_if_not_exists(folder_path: str) -> None:
         os.makedirs(folder_path)
 
 
-def build_tx(sale_info, queue_info, batcher_info, constants: dict):
+def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict, dict, dict, bool]:
     data_ref_utxo = constants['data_ref_utxo']
     queue_ref_utxo = constants['queue_ref_utxo']
 
@@ -55,6 +55,9 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
         incentive_value = {incentive_pid: {incentive_tkn: incentive_amt}}
 
     queue_value = queue_info['value']
+    if dicts.contains(queue_value, incentive_value) is False:
+        # we need to catch this some how
+        return sale_info, queue_info, batcher_info, False
     qv1 = dicts.subtract(queue_value, FEE_VALUE)
     qv2 = dicts.subtract(qv1, incentive_value)
 
@@ -94,8 +97,8 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict):
     intermediate_txid = transaction.txid(out_file_path)
 
     queue_info['txid'] = intermediate_txid + "#1"
-    queue_info['value'] = qv1
+    queue_info['value'] = qv2
 
     batcher_info['txid'] = intermediate_txid + "#0"
 
-    return sale_info, queue_info, batcher_info
+    return sale_info, queue_info, batcher_info, True

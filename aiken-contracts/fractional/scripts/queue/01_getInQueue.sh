@@ -81,7 +81,7 @@ script_address_out="${script_address} + ${adaPay} + ${cost} + ${incentive}"
 
 echo "Script OUTPUT: "${script_address_out}
 #
-# exit
+exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \

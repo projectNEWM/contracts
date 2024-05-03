@@ -115,8 +115,11 @@ class Fulfillment:
                     continue
                 elif state is True:
                     # build the purchase tx
-                    sale_info, order_info, batcher_info = queue_purchase.build_tx(
+                    sale_info, order_info, batcher_info, purchase_success_flag = queue_purchase.build_tx(
                         sale_info, order_info, batcher_info, constants)
+                    if purchase_success_flag is False:
+                        logger.warning(f"Missing Incentive: User Must Remove Order: {order_hash}")
+                        continue
                     # sign tx
                     transaction.sign(out_file_path, signed_purchase_tx,
                                      constants['network'], batcher_skey_path, collat_skey_path, logger)
@@ -128,10 +131,13 @@ class Fulfillment:
                     if mempool_check is True:
                         logger.warning(f"Transaction: {intermediate_txid} Is In Mempool")
                         continue
-
                     # build the refund tx
-                    sale_info, order_info, batcher_info = queue_refund.build_tx(
+                    sale_info, order_info, batcher_info, refund_success_flag = queue_refund.build_tx(
                         sale_info, order_info, batcher_info, constants)
+                    # this means no incentive
+                    if refund_success_flag is False:
+                        logger.warning(f"Missing Incentive: User Must Remove Order: {order_hash}")
+                        continue
                     # sign tx
                     transaction.sign(out_file_path, signed_refund_tx,
                                      constants['network'], batcher_skey_path, collat_skey_path, logger)
@@ -168,8 +174,10 @@ class Fulfillment:
                     # needs better debug
                 else:
                     # # build the refund tx
-                    sale_info, order_info, batcher_info = queue_refund.build_tx(
+                    sale_info, order_info, batcher_info, refund_success_flag = queue_refund.build_tx(
                         sale_info, order_info, batcher_info, constants)
+                    if refund_success_flag is False:
+                        continue
                     # # sign tx
                     transaction.sign(out_file_path, signed_refund_tx,
                                      constants['network'], batcher_skey_path, collat_skey_path, logger)

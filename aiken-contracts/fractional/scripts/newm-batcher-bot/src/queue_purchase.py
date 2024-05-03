@@ -14,7 +14,7 @@ def create_folder_if_not_exists(folder_path: str) -> None:
         os.makedirs(folder_path)
 
 
-def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict, dict, dict]:
+def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict, dict, dict, bool]:
     """
     Build a transaction and save the fileName into the tmp folder.
     """
@@ -97,6 +97,9 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     sv1 = dicts.add(sale_value, cost_value)
     sv2 = dicts.subtract(sv1, bundle_value)
 
+    if dicts.contains(queue_value, incentive_value) is False:
+        # we need to catch this some how
+        return sale_info, queue_info, batcher_info, False
     qv1 = dicts.subtract(queue_value, cost_value)
     qv2 = dicts.add(qv1, bundle_value)
     qv3 = dicts.subtract(qv2, incentive_value)
@@ -154,4 +157,4 @@ def build_tx(sale_info, queue_info, batcher_info, constants: dict) -> Tuple[dict
     batcher_info['txid'] = intermediate_txid + "#0"
     batcher_info['value'] = bv1
 
-    return sale_info, queue_info, batcher_info
+    return sale_info, queue_info, batcher_info, True

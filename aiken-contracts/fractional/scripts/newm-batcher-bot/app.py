@@ -5,7 +5,6 @@ import subprocess
 
 from flask import Flask, request
 from loguru import logger
-
 from src import daemon, db_manager_sqlite3, query, yaml_file
 from src.batcher_wallet import Batcher
 from src.fulfillment import Fulfillment

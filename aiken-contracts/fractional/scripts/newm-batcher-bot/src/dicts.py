@@ -64,3 +64,32 @@ def delete_zeros(dict1):
     for key in zeros:
         del dict1[key]
     return dict1
+
+
+def contains(dict1, dict2):
+    for pid, assets in dict2.items():
+        if isinstance(assets, dict):
+            if pid not in dict1:
+                # pid doesn't exist
+                return False
+            else:
+                # pid does exist
+                for tkn, amt in dict2[pid].items():
+                    if dict1[pid][tkn] >= amt:
+                        # go to next enrty
+                        continue
+                    else:
+                        return False
+        else:
+            # lovelace
+            try:
+                if dict1[pid] >= dict2[pid]:
+                    # go to next entry
+                    continue
+                else:
+                    return False
+            except KeyError:
+                continue
+    return True
+
+
