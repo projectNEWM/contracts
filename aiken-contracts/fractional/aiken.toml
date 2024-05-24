@@ -1,5 +1,5 @@
 name = "projectNEWM/fractional-minter"
-version = "2.0.1"
+version = "2.0.2"
 license = "GPL-3.0-or-later"
 description = "Aiken contracts for Project NEWM"
 
@@ -10,10 +10,10 @@ platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
-version = "1.8.0"
+version = "1.9.0"
 source = "github"
 
 [[dependencies]]
 name = "logicalmechanism/assist"
-version = "v0.4.8"
+version = "v0.4.9"
 source = "github"

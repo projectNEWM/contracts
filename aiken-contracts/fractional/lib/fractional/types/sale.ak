@@ -19,7 +19,7 @@ pub fn valid_sale_datum_update(old: SaleDatum, new: SaleDatum) -> Bool {
     old.bundle.tkn == new.bundle.tkn,
     // can't set the bundle size to zero
     new.bundle.amt > 0,
-    // the cost can't be zero (empty dict)
+    // the cost can't be zero
     new.cost.amt > 0,
     // the max bundle size can't be zero
     new.max_bundle_size > 0,
