@@ -6,10 +6,11 @@ use assist/data
 use assist/find
 use assist/payout
 use assist/signing
+use assist/types/cip68.{CIP68}
 use assist/types/hashes.{ValidatorHash}
 use assist/values
-use fractional/types/cip68.{CIP68Datum, CIP68Redeemer, RemoveMeta, UpdateMeta}
 use fractional/types/reference.{ReferenceDatum}
+use fractional/types/storage.{CIP68Redeemer, RemoveMeta, UpdateMeta}
 
 validator(
   starter_pid: PolicyId,
@@ -17,7 +18,7 @@ validator(
   ref_hash: ValidatorHash,
 ) {
   fn params(
-    _datum: CIP68Datum,
+    _datum: CIP68,
     redeemer: CIP68Redeemer,
     context: ScriptContext,
   ) -> Bool {
@@ -61,15 +62,15 @@ validator(
                 ref_input.output.value,
                 starter_pid,
                 starter_tkn,
-              ),
+              )?,
               // hot key must sign it
-              signing.verify_sig(tx.extra_signatories, ref_datum.hot_key),
+              signing.verify_sig(tx.extra_signatories, ref_datum.hot_key)?,
               // single script input
-              count.inputs_by_addr(tx.inputs, this_addr, 1),
+              count.inputs_by_addr(tx.inputs, this_addr, 1)?,
               // single script output
-              count.outputs_by_addr(tx.outputs, this_addr, 1),
+              count.outputs_by_addr(tx.outputs, this_addr, 1)?,
               // make sure value is continuing properly
-              payout.exact(this_addr, that_value, tx.outputs),
+              payout.exact(this_addr, that_value, tx.outputs)?,
             }
           }
         }

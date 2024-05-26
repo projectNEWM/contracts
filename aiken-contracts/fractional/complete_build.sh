@@ -56,11 +56,11 @@ tkn_cbor=$(python ./convert_to_cbor.py ${tkn})
 poolId=$(jq -r '.poolId' start_info.json)
 
 echo -e "\033[1;33m Convert CIP68 Contract \033[0m"
-aiken blueprint apply -o plutus.json -v cip68.params "${pid_cbor}"
-aiken blueprint apply -o plutus.json -v cip68.params "${tkn_cbor}"
-aiken blueprint apply -o plutus.json -v cip68.params "${ref_cbor}"
-aiken blueprint convert -v cip68.params > contracts/cip68_contract.plutus
-cardano-cli transaction policyid --script-file contracts/cip68_contract.plutus > hashes/cip68.hash
+aiken blueprint apply -o plutus.json -v storage.params "${pid_cbor}"
+aiken blueprint apply -o plutus.json -v storage.params "${tkn_cbor}"
+aiken blueprint apply -o plutus.json -v storage.params "${ref_cbor}"
+aiken blueprint convert -v storage.params > contracts/storage_contract.plutus
+cardano-cli transaction policyid --script-file contracts/storage_contract.plutus > hashes/storage.hash
 
 # build the stake contract
 echo -e "\033[1;33m Convert Stake Contract \033[0m"
@@ -128,7 +128,7 @@ thres=2
 rewardPkh=$(cat_file_or_empty ./scripts/wallets/reward-wallet/payment.hash)
 rewardSc=""
 # validator hashes
-cip68Hash=$(cat hashes/cip68.hash)
+storageHash=$(cat hashes/storage.hash)
 saleHash=$(cat hashes/sale.hash)
 queueHash=$(cat hashes/queue.hash)
 bandHash=$(cat hashes/band_lock.hash)
@@ -159,7 +159,7 @@ jq \
 --arg poolId "$poolId" \
 --arg rewardPkh "$rewardPkh" \
 --arg rewardSc "$rewardSc" \
---arg cip68Hash "$cip68Hash" \
+--arg storageHash "$storageHash" \
 --arg bandHash "$bandHash" \
 --arg saleHash "$saleHash" \
 --arg queueHash "$queueHash" \
@@ -175,7 +175,7 @@ jq \
 .fields[2].fields[0].bytes=$poolId |
 .fields[2].fields[1].fields[0].bytes=$rewardPkh |
 .fields[2].fields[1].fields[1].bytes=$rewardSc |
-.fields[3].fields[0].bytes=$cip68Hash |
+.fields[3].fields[0].bytes=$storageHash |
 .fields[3].fields[1].bytes=$saleHash |
 .fields[3].fields[2].bytes=$queueHash |
 .fields[3].fields[3].bytes=$bandHash |

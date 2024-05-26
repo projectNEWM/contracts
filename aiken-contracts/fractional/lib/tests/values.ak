@@ -1,4 +1,3 @@
-use aiken/bytearray
 use aiken/dict.{Dict}
 use aiken/list
 use aiken/transaction/value
@@ -69,8 +68,8 @@ test merge_or_add4() {
 
 test asc_list_value1() {
   let cost_value = value.from_asset(#"acab", #"beef", 54) |> value.to_dict()
-  let tokens = dict.from_ascending_list([(#"beef", 54)], bytearray.compare)
-  let result = dict.from_ascending_list([(#"acab", tokens)], bytearray.compare)
+  let tokens = dict.from_ascending_pairs([Pair(#"beef", 54)])
+  let result = dict.from_ascending_pairs([Pair(#"acab", tokens)])
   cost_value == result
 }
 
@@ -80,13 +79,12 @@ test asc_list_value2() {
       |> value.add(#"acab", #"beef", 54)
       |> value.add(#"cafe", #"fade", 101)
       |> value.to_dict()
-  let tokens0 = dict.from_ascending_list([(#"", 100)], bytearray.compare)
-  let tokens1 = dict.from_ascending_list([(#"beef", 54)], bytearray.compare)
-  let tokens2 = dict.from_ascending_list([(#"fade", 101)], bytearray.compare)
+  let tokens0 = dict.from_ascending_pairs([Pair(#"", 100)])
+  let tokens1 = dict.from_ascending_pairs([Pair(#"beef", 54)])
+  let tokens2 = dict.from_ascending_pairs([Pair(#"fade", 101)])
   let result =
-    dict.from_ascending_list(
-      [(#"", tokens0), (#"acab", tokens1), (#"cafe", tokens2)],
-      bytearray.compare,
+    dict.from_ascending_pairs(
+      [Pair(#"", tokens0), Pair(#"acab", tokens1), Pair(#"cafe", tokens2)],
     )
   cost_value == result
 }
@@ -108,23 +106,22 @@ fn convert_tokens(tkns: Tokens) -> Dict<ByteArray, Dict<ByteArray, Int>> {
 
 fn convert_token_info_to_dict(
   tkns: List<AllTokenInfo>,
-  builder: List<(ByteArray, Dict<ByteArray, Int>)>,
+  builder: Pairs<ByteArray, Dict<ByteArray, Int>>,
 ) -> Dict<ByteArray, Dict<ByteArray, Int>> {
   when tkns is {
     // processed all of them build final dict
-    [] -> dict.from_ascending_list(builder, bytearray.compare)
+    [] -> dict.from_ascending_pairs(builder)
     // go through all the tokens from the set
     [alltkn, ..rest] -> {
       // there may be many tkns to a pid
-      let token_tuple: List<(ByteArray, Int)> =
-        list.map2(alltkn.tkns, alltkn.amts, fn(a, b) { (a, b) })
+      let token_tuple: Pairs<ByteArray, Int> =
+        list.map2(alltkn.tkns, alltkn.amts, fn(a, b) { Pair(a, b) })
       // build out the token dict
-      let tokens: Dict<ByteArray, Int> =
-        dict.from_ascending_list(token_tuple, bytearray.compare)
+      let tokens: Dict<ByteArray, Int> = dict.from_ascending_pairs(token_tuple)
       // continue to the next one
       convert_token_info_to_dict(
         rest,
-        list.concat(builder, [(alltkn.pid, tokens)]),
+        list.concat(builder, [Pair(alltkn.pid, tokens)]),
       )
     }
   }
