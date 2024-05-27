@@ -32,8 +32,8 @@ aiken build --trace-level verbose --filter-traces all
 # random string
 ranD=$(jq -r '.randomData' start_info.json)
 ranS=$(jq -r '.randomStake' start_info.json)
-ranD_cbor=$(python ./convert_to_cbor.py ${ranD})
-ranS_cbor=$(python ./convert_to_cbor.py ${ranS})
+ranD_cbor=$(python3 -c "import cbor2;hex_string='${ranD}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
+ranS_cbor=$(python3 -c "import cbor2;hex_string='${ranS}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
 
 echo -e "\033[1;33m Convert Reference Contract \033[0m"
 aiken blueprint apply -o plutus.json -v reference.params "${ranD_cbor}"
@@ -48,9 +48,9 @@ pid=$(jq -r '.starterPid' start_info.json)
 tkn=$(jq -r '.starterTkn' start_info.json)
 
 # cbor representation
-ref_cbor=$(python ./convert_to_cbor.py ${ref})
-pid_cbor=$(python ./convert_to_cbor.py ${pid})
-tkn_cbor=$(python ./convert_to_cbor.py ${tkn})
+ref_cbor=$(python3 -c "import cbor2;hex_string='${ref}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
+pid_cbor=$(python3 -c "import cbor2;hex_string='${pid}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
+tkn_cbor=$(python3 -c "import cbor2;hex_string='${tkn}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
 
 # The pool to stake at
 poolId=$(jq -r '.poolId' start_info.json)
