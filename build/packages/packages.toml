@@ -1,0 +1,9 @@
+[[packages]]
+name = "aiken-lang/stdlib"
+version = "1.9.0"
+source = "github"
+
+[[packages]]
+name = "logicalmechanism/assist"
+version = "v0.4.9"
+source = "github"

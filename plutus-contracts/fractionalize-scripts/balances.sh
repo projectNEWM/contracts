@@ -1,1 +1,0 @@
-../tokenize-scripts/balances.sh
