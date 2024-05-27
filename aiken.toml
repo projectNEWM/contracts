@@ -1,11 +1,11 @@
-name = "projectNEWM/fractional-minter"
+name = "projectNEWM/contracts"
 version = "2.0.2"
 license = "GPL-3.0-or-later"
 description = "Aiken contracts for Project NEWM"
 
 [repository]
-user = "aiken-lang"
-project = "fractional-minter"
+user = "projectNEWM"
+project = "contracts"
 platform = "github"
 
 [[dependencies]]
