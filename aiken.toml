@@ -1,0 +1,19 @@
+name = "projectNEWM/contracts"
+version = "2.0.3"
+license = "GPL-3.0-or-later"
+description = "Aiken contracts for Project NEWM"
+
+[repository]
+user = "projectNEWM"
+project = "contracts"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "1.9.0"
+source = "github"
+
+[[dependencies]]
+name = "logicalmechanism/assist"
+version = "v0.4.9"
+source = "github"

@@ -1,65 +1,76 @@
-# Project NEWM
+# NEWM's Fractionalization Contract
 
 A collection of smart contracts for Project NEWM.
 
-# V2.0.0 (Aiken)
+Fractionalization refers to the process of dividing the ownership of streaming rights of a piece of art into 100 million pieces. The resulting fractions are given to the artist, who has the freedom to sell or trade them as they wish, or can be sold on the NEWM marketplace with the proceeds going directly to the artist.
 
-The v2.0.0 contract version is a complete rewrite and expansion of the v1.0.0 contracts using Aiken. The system now controls minting, burning, staking, bundle sales, order books, and batcher regulation. The tokenization and fractionalization processes have been simplified, streamlined and updated into CIP68 compliant tokens.
+## Updating Aiken
+
+Please refer to the official documentation for [installation instructions](https://github.com/aiken-lang/aiken?tab=readme-ov-file#installation).
+
+If `cargo` is already on path then this will install the lastest commit.
+
+```
+cargo install --git https://github.com/aiken-lang/aiken.git -f
+```
+
+Or just use the default updater to update aiken to the newest version.
+
+```
+aikup
+```
 
 ### assist library
 
-Project newm usings the Assist libray, a library of specialized Aiken functions for smart contracts on Cardano.
+Project NEWM uses the Assist libray, a library of specialized Aiken functions for smart contracts on Cardano.
 
 https://github.com/logicalmechanism/assist
 
-## Building
+Documentation for Assist can be view [here](https://www.logicalmechanism.io/docs/index.html).
 
-```bash
-./complete_build.sh  
+## Build
+
+Set up the `start_info.json` file with the correct starter token information, NEWM hot key, upper fee bounds, and pool id. These values are used inside the `complete_build.sh` script to compile and apply the contracts. The build script will auto generate the correct datums and redeemers.
+
+All the tests can be ran with Aiken.
+
 ```
-
-## Testing
-
-```bash
 aiken check
 ```
 
-# v1.0.0 (PlutusV2)
+## Happy Path Setup
 
-The v1.0.0 plutus contract version assume NEWM holds a special wallet that will regulate the minting of tokenized tokens and minting and burning fractionalized tokens. A multisig regulates the burning of tokenized tokens.
+The `scripts` folder assumes there will be test wallets inside the `wallets`folder.
 
-### useful-funcs
-
-A library for useful functions for inside the contracts.
-
-https://github.com/logicalmechanism/useful-funcs
-
-## Flow
-
-An artist comes to NEWM wishing to tokenize a piece of art, digitalizing a real-world object onto the blockchain. The artist may decide to split the ownership rights of the tokenized object by fractionalization, splitting a tokeninzed object into 100,000,000 fractions. First, NEWM will create the initial tokenized object by minting an NFT on an official NEWM catalog policy id. At this point, the artist may keep the original tokenized version of their art or they may fractionalize the original NFT into a fungible token.
-
-Fractionalization refers to the process of dividing the ownership of streaming rights of a tokenized piece of art into 100 million pieces, locking the tokenized token into a smart contract. The resulting fractions are given to the artist, who has the freedom to sell or trade them as they wish, or are sold on the NEWM marketplace with the proceeds going directly to the artist.
-
-The process is reversible. At any point, a wallet may obtain the original tokenized token by burning the 100 million fractional tokens.
-
-## Tokenization
-
-Each UTxO contained within the tokenization contract holding a starter token functions as a catalog for NEWM. The catalog includes a datum with a token prefix, such as "NEWM", "Paintings", or "Songs", as well as the current NFT counter. As a sequential NFT generator, the contract mints tokens by combining the prefix, an underscore, and the current token counter. This sequence of NFTs is infinite, or at least until the token name exceeds 32 characters. Therefore, the resulting NFTs will be named in the format "NEWM_0" or "NEWM_414", and so on.
-
-## Fractionalization
-
-Within the fractionalization contract, each UTxO represents a distinct fractionalization of a NEWM tokenized token. These fractionalized tokens will have the fractional NEWM policy ID, but will retain the same name as the original tokenized object. To mint the fractions, the original NEWM NFT must first be sent into the fractional contract to be locked. As a result, the fractionalized UTxO can only be unlocked if all 100 million fractions are burned together in a single transaction.
-
-## Building
-
-Compiling the smart contracts is a simple as running the script `complete_build.sh` with a specific prefix.
-
-```bash
-./complete_build.sh NEWM
+```
+artist-wallet
+collat-wallet
+reference-wallet
+keeper1-wallet
+keeper2-wallet
+keeper3-wallet
+newm-wallet
+reward-wallet
+starter-wallet
 ```
 
-This script will populate the testing folder with the update-to-date contracts.
+Use the `create_wallet.sh` script to auto generate simple wallets for testing.
 
-## Testing
+First create the reference scripts with `00_createScriptReferences.sh` found in the scripts folder. This script will use funds held on the reference-wallet to store the smart contracts on UTxOs.
 
-The testing of the smart contracts are split into two steps located in the `test-suite` folder. The first step is starting the private testnet with `start_testnet_node.sh` script. The testnet is ready when the terminal displays `Testnet is ready for testing!`. The second step is running the python script `run_tests.py`. This will automatically run the test cases against the private testnet.
+Next, we need to create the data reference UTxO using `01_createReferenceUTxO.sh` script inside the `reference` subfolder. This script will use the the starter-wallet to send the starter token defined in `start_info.json` into the data reference contract. The starter token acts like a pointer for the other contracts to correctly identify the true reference data. The `reference` folder contains test scripts for updating data on the data UTxO. These scripts require a valid n-out-of-m multisig with the set of keeper wallets held on a datum in the data reference contract. The `keeper*-wallet` do not need funds as they are just signing the transaction. The update scripts assume the `newm-wallet` will pay for the transaction fees.
+
+After the reference data contract has been set up, register and delegate the stake key inside the `staking` subfolder. The staking contract will delegate the ada value inside the cip68 storage and sale contract to a specific pool defined in the `start_info.json` file. The test scripts in the `staking` folder assume that the `newm-wallet` will pay for the transaction fee.
+
+At this point tokens may be minted and the sale contract can be used.
+
+## Mint
+
+Inside the `mint` subfolder are files for managing minting and burning tokens. A pair of tokens is minted each time the mint validator is executed, 1 reference token is sent to the cip68 storage contract and 100 million fractions are sent to the sale contract. The sale parameters are currently generated inside the `01_mintTokens.sh` script. Update the sale data by updating that script.
+
+During minting, both tokens must exist inside the same tx but burning allows either just some amount of fractions, the reference, or both to be burned. A burning validation requires the valid multisig defined in the data reference contract.
+
+## Sale
+
+The sale contracts allows tokens to be sold at a fixed price. A potential buyer will pick some amount of tokens they wish to purchase. They place their purchase order into the queue contract that is then batched together with the sale contract to automate the sale.
+
