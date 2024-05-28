@@ -29,12 +29,20 @@ validator(
     context: ScriptContext,
   ) -> Bool {
     // the transaction being validated
-    let tx: Transaction = context.transaction
+    let Transaction {
+      inputs,
+      outputs,
+      reference_inputs,
+      fee,
+      extra_signatories,
+      redeemers,
+      ..
+    } = context.transaction
     // the reference this_datum
     when context.purpose is {
       Spend(output_reference) -> {
         // the input being validated
-        let this_input: Input = find.input_by_ref(tx.inputs, output_reference)
+        let this_input: Input = find.input_by_ref(inputs, output_reference)
         let this_value: Value = this_input.output.value
         let this_address: Address = this_input.output.address
         when redeemer is {
@@ -43,7 +51,7 @@ validator(
             // data reference stuff
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
-              find.input_by_addr(tx.reference_inputs, ref_addr)
+              find.input_by_addr(reference_inputs, ref_addr)
             expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
             // sale stuff
             let sale_addr: Address =
@@ -52,7 +60,7 @@ validator(
                 ref_datum.contracts.stake,
               )
             // get the sale input from the reference inputs
-            let sale_input: Input = find.input_by_addr(tx.inputs, sale_addr)
+            let sale_input: Input = find.input_by_addr(inputs, sale_addr)
             let sale_out_ref: OutputReference = sale_input.output_reference
             // the current value on the sale utxo
             let sale_value: Value = sale_input.output.value
@@ -93,7 +101,7 @@ validator(
             // add the bundle value
             let return_queue_value: Value =
               token.add_token_to_value(this_value, token.negative(total_cost))
-                |> value.merge(value.negate(tx.fee))
+                |> value.merge(value.negate(fee))
                 |> value.add(
                     sale_datum.bundle.pid,
                     sale_datum.bundle.tkn,
@@ -106,11 +114,11 @@ validator(
                   )
             // the queue_datum going back to the queue contract
             expect that_datum: QueueDatum =
-              find.output_datum_by_addr(tx.outputs, this_address)
+              find.output_datum_by_addr(outputs, this_address)
             // this should fail for bad data
             // the redeemer is now the general redeemer type that we seek out the specific sub redeemer
             expect that_redeemer: SaleRedeemer =
-              find.redeemer_by_ref(tx.redeemers, sale_out_ref)
+              find.redeemer_by_ref(redeemers, sale_out_ref)
             let is_corect_redeemer: Bool =
               when that_redeemer is {
                 // only the purchase redeemer is allowed
@@ -122,13 +130,13 @@ validator(
             //
             and {
               // single sale script input
-              count.inputs_by_addr(tx.inputs, sale_addr, 1)?,
+              count.inputs_by_addr(inputs, sale_addr, 1)?,
               // one sale script output
-              count.outputs_by_addr(tx.outputs, sale_addr, 1)?,
+              count.outputs_by_addr(outputs, sale_addr, 1)?,
               // queue gets the bundle
-              payout.exact(this_address, return_queue_value, tx.outputs)?,
+              payout.exact(this_address, return_queue_value, outputs)?,
               // sale gets the cost
-              payout.exact(sale_addr, return_sale_value, tx.outputs)?,
+              payout.exact(sale_addr, return_sale_value, outputs)?,
               // correct redeemer on the sale contract side
               is_corect_redeemer?,
               // keep the datum constant
@@ -152,7 +160,7 @@ validator(
               queue.prove_existence_of_batcher(
                 ref_datum.batcher_data.batcher_pid,
                 constants.batcher_token_name,
-                tx.inputs,
+                inputs,
                 output_reference,
                 sale_out_ref,
               )?,
@@ -163,7 +171,7 @@ validator(
             // data reference stuff
             let ref_addr: Address = credential.from_script(ref_hash)
             let ref_input: Input =
-              find.input_by_addr(tx.reference_inputs, ref_addr)
+              find.input_by_addr(reference_inputs, ref_addr)
             expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
             // sale stuff
             let sale_addr: Address =
@@ -173,7 +181,7 @@ validator(
               )
             // get the sale input from the reference inputs
             let sale_input: Input =
-              find.input_by_addr(tx.reference_inputs, sale_addr)
+              find.input_by_addr(reference_inputs, sale_addr)
             let sale_out_ref: OutputReference = sale_input.output_reference
             // the current value on the sale utxo
             let sale_value: Value = sale_input.output.value
@@ -219,7 +227,7 @@ validator(
             // subtract the fee from the value being spent
             // the incentive is paid to refund it back
             let that_value: Value =
-              value.merge(this_value, value.negate(tx.fee))
+              value.merge(this_value, value.negate(fee))
                 |> value.add(
                     this_datum.incentive.pid,
                     this_datum.incentive.tkn,
@@ -230,7 +238,7 @@ validator(
             //
             and {
               // single script input
-              count.inputs_by_addr(tx.inputs, this_address, 1)?,
+              count.inputs_by_addr(inputs, this_address, 1)?,
               // prove correct reference datum
               values.prove_exact_nft(
                 ref_input.output.value,
@@ -251,12 +259,12 @@ validator(
               // can the queue entry be refunded
               is_refund_allowed?,
               // owner must get the utxo back
-              payout.exact(owner_addr, that_value, tx.outputs)?,
+              payout.exact(owner_addr, that_value, outputs)?,
               // tx must be spending the certificate of batcher authenticity
               queue.prove_existence_of_batcher(
                 ref_datum.batcher_data.batcher_pid,
                 constants.batcher_token_name,
-                tx.inputs,
+                inputs,
                 output_reference,
                 sale_out_ref,
               )?,
@@ -269,9 +277,9 @@ validator(
             //
             and {
               // the owner must sign it
-              signing.verify_sig(tx.extra_signatories, this_datum.owner.pkh)?,
+              signing.verify_sig(extra_signatories, this_datum.owner.pkh)?,
               // single script input
-              count.inputs_by_addr(tx.inputs, this_address, 1)?,
+              count.inputs_by_addr(inputs, this_address, 1)?,
             }
         }
       }
