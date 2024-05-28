@@ -19,10 +19,11 @@ validator(
 ) {
   fn params(redeemer: BatcherTokenRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
-    let tx: Transaction = context.transaction
+    let Transaction { inputs, reference_inputs, redeemers, .. } =
+      context.transaction
     // data reference stuff
     let ref_addr: Address = credential.from_script(ref_hash)
-    let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    let ref_input: Input = find.input_by_addr(reference_inputs, ref_addr)
     // Get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // create the band lock address
@@ -32,7 +33,7 @@ validator(
         ref_datum.contracts.stake,
       )
     // find the first band input
-    let band_input: Input = find.input_by_addr(tx.inputs, band_addr)
+    let band_input: Input = find.input_by_addr(inputs, band_addr)
     // get the reference
     let band_out_ref: OutputReference = band_input.output_reference
     when context.purpose is {
@@ -42,7 +43,7 @@ validator(
           // must spend 1 thing from the band contract and use the mint band redeemer
           MintBatcherToken -> {
             expect that_redeemer: BandLockUpRedeemer =
-              find.redeemer_by_ref(tx.redeemers, band_out_ref)
+              find.redeemer_by_ref(redeemers, band_out_ref)
             let is_correct_redeemer =
               when that_redeemer is {
                 // must mint the batcher and complete set tokens
@@ -63,7 +64,7 @@ validator(
           // must spend 1 thing from the band contract and use the burn band redeemer
           BurnBatcherToken -> {
             expect that_redeemer: BandLockUpRedeemer =
-              find.redeemer_by_ref(tx.redeemers, band_out_ref)
+              find.redeemer_by_ref(redeemers, band_out_ref)
             let is_correct_redeemer =
               when that_redeemer is {
                 // must burn the batcher and complete set tokens

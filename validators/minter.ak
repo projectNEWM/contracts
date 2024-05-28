@@ -18,24 +18,25 @@ validator(
 ) {
   fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
     // the transaction being validated
-    let tx: Transaction = context.transaction
+    let Transaction { inputs, reference_inputs, extra_signatories, mint, .. } =
+      context.transaction
     // data reference stuff
     // assume the reference address is not staked
     let ref_addr: Address = credential.from_script(ref_hash)
-    let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    let ref_input: Input = find.input_by_addr(reference_inputs, ref_addr)
     // Get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
     // get tx info
-    let first_index: Int = find.first_input_index(tx.inputs)
-    let first_tx_hash: TxHash = find.first_input_txid(tx.inputs)
+    let first_index: Int = find.first_input_index(inputs)
+    let first_tx_hash: TxHash = find.first_input_txid(inputs)
     // use the ref prefix
     let reference_tkn: AssetName =
       values.unique_token_name(first_tx_hash, first_index, cip68.prefix_100)
     // use the rft prefix
     let fractions_tkn: AssetName =
       values.unique_token_name(first_tx_hash, first_index, cip68.prefix_444)
-    let mint: List<(PolicyId, AssetName, Int)> =
-      tx.mint
+    let mint_list: List<(PolicyId, AssetName, Int)> =
+      mint
         |> value.from_minted_value()
         |> value.flatten()
     when context.purpose is {
@@ -44,14 +45,14 @@ validator(
         when redeemer is {
           MintTokens -> and {
               // hot key must sign
-              signing.verify_sig(tx.extra_signatories, ref_datum.hot_key)?,
+              signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
               // prevent roll over double nft attack
               (first_index < 256)?,
               // must mint 1 reference token
-              minting.exact(mint, own_currency_symbol, reference_tkn, 1)?,
+              minting.exact(mint_list, own_currency_symbol, reference_tkn, 1)?,
               // must mint 100 M fractions
               minting.exact(
-                mint,
+                mint_list,
                 own_currency_symbol,
                 fractions_tkn,
                 100_000_000,
@@ -68,7 +69,7 @@ validator(
               (burn_amt <= 0)?,
               // has to be a multisig action
               signing.verify_multisig(
-                tx.extra_signatories,
+                extra_signatories,
                 ref_datum.keepers.pkhs,
                 ref_datum.keepers.threshold,
               )?,
@@ -76,14 +77,14 @@ validator(
               or {
                 // burn only 1 ref token
                 minting.by_prefix(
-                  mint,
+                  mint_list,
                   own_currency_symbol,
                   cip68.prefix_100,
                   -1,
                 )?,
                 // burn any amount of the fractions
                 minting.by_prefix(
-                  mint,
+                  mint_list,
                   own_currency_symbol,
                   cip68.prefix_444,
                   burn_amt,
