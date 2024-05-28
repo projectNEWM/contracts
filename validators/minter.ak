@@ -17,6 +17,7 @@ validator(
   ref_hash: ValidatorHash,
 ) {
   fn params(redeemer: MintRedeemer, context: ScriptContext) -> Bool {
+    expect Mint(currency_symbol) = context.purpose
     // the transaction being validated
     let Transaction { inputs, reference_inputs, extra_signatories, mint, .. } =
       context.transaction
@@ -39,67 +40,51 @@ validator(
       mint
         |> value.from_minted_value()
         |> value.flatten()
-    when context.purpose is {
-      // Mint 1 ref token and 100M rfts
-      Mint(own_currency_symbol) ->
-        when redeemer is {
-          MintTokens -> and {
-              // hot key must sign
-              signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
-              // prevent roll over double nft attack
-              (first_index < 256)?,
-              // must mint 1 reference token
-              minting.exact(mint_list, own_currency_symbol, reference_tkn, 1)?,
-              // must mint 100 M fractions
-              minting.exact(
-                mint_list,
-                own_currency_symbol,
-                fractions_tkn,
-                100_000_000,
-              )?,
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-            }
-          BurnTokens { burn_amt } -> and {
-              // burn amount must be negative or zero
-              (burn_amt <= 0)?,
-              // has to be a multisig action
-              signing.verify_multisig(
-                extra_signatories,
-                ref_datum.keepers.pkhs,
-                ref_datum.keepers.threshold,
-              )?,
-              // one ref token or any amount of fractions or both
-              or {
-                // burn only 1 ref token
-                minting.by_prefix(
-                  mint_list,
-                  own_currency_symbol,
-                  cip68.prefix_100,
-                  -1,
-                )?,
-                // burn any amount of the fractions
-                minting.by_prefix(
-                  mint_list,
-                  own_currency_symbol,
-                  cip68.prefix_444,
-                  burn_amt,
-                )?,
-              }?,
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-            }
+    when redeemer is {
+      MintTokens -> and {
+          // hot key must sign
+          signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
+          // prevent roll over double nft attack
+          (first_index < 256)?,
+          // must mint 1 reference token
+          minting.exact(mint_list, currency_symbol, reference_tkn, 1)?,
+          // must mint 100 M fractions
+          minting.exact(mint_list, currency_symbol, fractions_tkn, 100_000_000)?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
         }
-      // anything else fails
-      _ -> False
+      BurnTokens { burn_amt } -> and {
+          // burn amount must be negative or zero
+          (burn_amt <= 0)?,
+          // has to be a multisig action
+          signing.verify_multisig(
+            extra_signatories,
+            ref_datum.keepers.pkhs,
+            ref_datum.keepers.threshold,
+          )?,
+          // one ref token or any amount of fractions or both
+          or {
+            // burn only 1 ref token
+            minting.by_prefix(mint_list, currency_symbol, cip68.prefix_100, -1)?,
+            // burn any amount of the fractions
+            minting.by_prefix(
+              mint_list,
+              currency_symbol,
+              cip68.prefix_444,
+              burn_amt,
+            )?,
+          }?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
+        }
     }
   }
 }

@@ -19,6 +19,7 @@ validator(
   ref_hash: ValidatorHash,
 ) {
   fn params(redeemer: MintPointerRedeemer, context: ScriptContext) -> Bool {
+    expect Mint(currency_symbol) = context.purpose
     // the transaction being validated
     let Transaction { inputs, reference_inputs, extra_signatories, mint, .. } =
       context.transaction
@@ -37,46 +38,40 @@ validator(
       mint
         |> value.from_minted_value()
         |> value.flatten()
-    when context.purpose is {
-      // Mint 1 ref token and 100M fractions
-      Mint(own_currency_symbol) ->
-        when redeemer is {
-          // mint a pointer token to start a sale
-          // this can not have destination validation due to lexico cbor
-          MintPointerToken -> and {
-              // hot key must sign
-              signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
-              // prevent roll over double nft attack
-              (first_index < 256)?,
-              // must mint 1 pointer token
-              minting.exact(mint_list, own_currency_symbol, pointer_tkn, 1)?,
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-            }
-          // burn a single pointer token
-          BurnPointerToken -> and {
-              // must burn 1 pointer token
-              minting.by_prefix(
-                mint_list,
-                own_currency_symbol,
-                // non standard prefix
-                prefixes.callable,
-                -1,
-              )?,
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-            }
+    when redeemer is {
+      // mint a pointer token to start a sale
+      // this can not have destination validation due to lexico cbor
+      MintPointerToken -> and {
+          // hot key must sign
+          signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
+          // prevent roll over double nft attack
+          (first_index < 256)?,
+          // must mint 1 pointer token
+          minting.exact(mint_list, currency_symbol, pointer_tkn, 1)?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
         }
-      // Minting Only
-      _ -> False
+      // burn a single pointer token
+      BurnPointerToken -> and {
+          // must burn 1 pointer token
+          minting.by_prefix(
+            mint_list,
+            currency_symbol,
+            // non standard prefix
+            prefixes.callable,
+            -1,
+          )?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
+        }
     }
   }
 }

@@ -33,6 +33,7 @@ validator(
     let ref_input: Input = find.input_by_addr(reference_inputs, ref_addr)
     // get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
+    // the purpose can be withdrawing and publishing
     when context.purpose is {
       // handle all withdrawals
       WithdrawFrom(stake_credential) -> {

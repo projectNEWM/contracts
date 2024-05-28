@@ -18,6 +18,7 @@ validator(
   ref_hash: ValidatorHash,
 ) {
   fn params(redeemer: BatcherTokenRedeemer, context: ScriptContext) -> Bool {
+    expect Mint(_) = context.purpose
     // the transaction being validated
     let Transaction { inputs, reference_inputs, redeemers, .. } =
       context.transaction
@@ -36,55 +37,49 @@ validator(
     let band_input: Input = find.input_by_addr(inputs, band_addr)
     // get the reference
     let band_out_ref: OutputReference = band_input.output_reference
-    when context.purpose is {
-      // Mint 1 token; logic inside the bandlock
-      Mint(_) ->
-        when redeemer is {
-          // must spend 1 thing from the band contract and use the mint band redeemer
-          MintBatcherToken -> {
-            expect that_redeemer: BandLockUpRedeemer =
-              find.redeemer_by_ref(redeemers, band_out_ref)
-            let is_correct_redeemer =
-              when that_redeemer is {
-                // must mint the batcher and complete set tokens
-                MintBand -> True
-                _ -> fail @"Incorrect Band Lock Redeemer"
-              }
-            and {
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-              // check that something is being spent from the band lock
-              is_correct_redeemer?,
-            }
+    when redeemer is {
+      // must spend 1 thing from the band contract and use the mint band redeemer
+      MintBatcherToken -> {
+        expect that_redeemer: BandLockUpRedeemer =
+          find.redeemer_by_ref(redeemers, band_out_ref)
+        let is_correct_redeemer =
+          when that_redeemer is {
+            // must mint the batcher and complete set tokens
+            MintBand -> True
+            _ -> fail @"Incorrect Band Lock Redeemer"
           }
-          // must spend 1 thing from the band contract and use the burn band redeemer
-          BurnBatcherToken -> {
-            expect that_redeemer: BandLockUpRedeemer =
-              find.redeemer_by_ref(redeemers, band_out_ref)
-            let is_correct_redeemer =
-              when that_redeemer is {
-                // must burn the batcher and complete set tokens
-                BurnBand -> True
-                _ -> fail @"Incorrect Band Lock Redeemer"
-              }
-            and {
-              // data reference must be holding correct token
-              values.prove_exact_nft(
-                ref_input.output.value,
-                starter_pid,
-                starter_tkn,
-              )?,
-              // check that something is being spent from the band lock
-              is_correct_redeemer?,
-            }
-          }
+        and {
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
+          // check that something is being spent from the band lock
+          is_correct_redeemer?,
         }
-      // anything else fails
-      _ -> False
+      }
+      // must spend 1 thing from the band contract and use the burn band redeemer
+      BurnBatcherToken -> {
+        expect that_redeemer: BandLockUpRedeemer =
+          find.redeemer_by_ref(redeemers, band_out_ref)
+        let is_correct_redeemer =
+          when that_redeemer is {
+            // must burn the batcher and complete set tokens
+            BurnBand -> True
+            _ -> fail @"Incorrect Band Lock Redeemer"
+          }
+        and {
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
+          // check that something is being spent from the band lock
+          is_correct_redeemer?,
+        }
+      }
     }
   }
 }
