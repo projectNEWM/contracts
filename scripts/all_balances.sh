@@ -10,8 +10,8 @@ stake_script_path="../contracts/stake_contract.plutus"
 # stake_key="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # cip 68 contract
-cip68_script_path="../contracts/cip68_contract.plutus"
-cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_path="../contracts/storage_contract.plutus"
+storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # bundle sale contract
 sale_script_path="../contracts/sale_contract.plutus"
@@ -45,8 +45,8 @@ jq -r 'to_entries[] | .value.inlineDatum' tmp/current_reference_utxo.json > data
 
 #
 echo -e "\033[1;35m\nCIP68 Script Address: \033[0m" 
-echo -e "\n \033[1;32m ${cip68_script_address} \033[0m \n";
-${cli} query utxo --address ${cip68_script_address} --testnet-magic ${testnet_magic}
+echo -e "\n \033[1;32m ${storage_script_address} \033[0m \n";
+${cli} query utxo --address ${storage_script_address} --testnet-magic ${testnet_magic}
 
 #
 echo -e "\033[1;35m\nSale Script Address: \033[0m" 

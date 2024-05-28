@@ -1,16 +1,17 @@
 # NEWM's Fraction Minting Contract
 
-- TODO
+A collection of smart contracts for Project NEWM.
 
 ## Updating Aiken
+Please refer to the official documentation for [installation instructions](https://github.com/aiken-lang/aiken?tab=readme-ov-file#installation).
 
-This will install the lastest commit.
+If `cargo` is already on path then this will install the lastest commit.
 
 ```
 cargo install --git https://github.com/aiken-lang/aiken.git -f
 ```
 
-Or just use the default updater.
+Or just use the default updater to update aiken to the newest version.
 
 ```
 aikup
@@ -28,7 +29,7 @@ aiken check
 
 ## Setup
 
-The `scripts` folder assumes there will be test wallets inside the wallets folder.
+The `scripts` folder assumes there will be test wallets inside the `wallets`folder.
 
 ```
 artist-wallet
@@ -54,7 +55,7 @@ At this point tokens may be minted and the sale contract can be used.
 
 ## Mint
 
-Inside the `mint` folder are the files required to manage minting and burning tokens. A pair of tokens is minted each time the mint validator is executed. 1 reference token is sent to the cip68 contract and 100 million fractions are sent to the sale contract. The sale parameters are currently generated inside the `01_mintTokens.sh` script. Update the sale data by updating that script. The tokens do not have a validated destination so the reference and fractions can be sent anywhere.
+Inside the `mint` folder are the files required to manage minting and burning tokens. A pair of tokens is minted each time the mint validator is executed. 1 reference token is sent to the cip68 storage contract and 100 million fractions are sent to the sale contract. The sale parameters are currently generated inside the `01_mintTokens.sh` script. Update the sale data by updating that script. The tokens do not have a validated destination so the reference and fractions can be sent anywhere.
 
 During minting, both tokens must exist inside the same tx but burning allows either just some amount of fractions, the reference, or both to be burned. A burning validation requires the valid multisig defined in the data reference contract.
 
