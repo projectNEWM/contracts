@@ -18,7 +18,11 @@ use fractional/types/band.{
 use fractional/types/constants
 use fractional/types/reference.{ReferenceDatum}
 
-validator(ref_hash: ValidatorHash) {
+validator(
+  starter_pid: PolicyId,
+  starter_tkn: AssetName,
+  ref_hash: ValidatorHash,
+) {
   fn params(
     this_datum: BandLockUpDatum,
     redeemer: BandLockUpRedeemer,
@@ -62,6 +66,12 @@ validator(ref_hash: ValidatorHash) {
             ref_datum.batcher_data.batcher_pid,
             constants.complete_set_token_name,
           )?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
         }
       }
       // add some memebers to the band if not full
@@ -86,6 +96,12 @@ validator(ref_hash: ValidatorHash) {
             this_value,
             ref_datum.batcher_data.batcher_pid,
             constants.complete_set_token_name,
+          )?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
           )?,
         }
       }
@@ -142,6 +158,12 @@ validator(ref_hash: ValidatorHash) {
             constants.complete_set_token_name,
             1,
           )?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
+          )?,
         }
       }
       // burn nft and unlock full band back to owner
@@ -181,6 +203,12 @@ validator(ref_hash: ValidatorHash) {
             this_value,
             ref_datum.batcher_data.batcher_pid,
             constants.complete_set_token_name,
+          )?,
+          // data reference must be holding correct token
+          values.prove_exact_nft(
+            ref_input.output.value,
+            starter_pid,
+            starter_tkn,
           )?,
         }
       }

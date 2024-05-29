@@ -38,7 +38,8 @@ echo Script UTxO: $script_tx_in
 
 lovelace=$(jq -r --arg alltxin "" --arg pkh "${batcher_pkh}" 'to_entries[] | select(.value.inlineDatum.fields[0].fields[0].bytes == $pkh) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373237 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373333 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636303835"
+# this needs to be dynamic
+assets="1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455634373637 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455635373739 + 1 7d878696b149b529807aa01b8e20785e0a0d470c32c13f53f08a55e3.44455636303836"
 
 min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
