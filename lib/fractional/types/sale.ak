@@ -1,6 +1,5 @@
-use assist/types/token.{Token}
+use assist/types/token.{Token, Tokens}
 use assist/types/wallet.{Wallet}
-use fractional/types/constants.{Lovelace}
 
 // the sale datum
 pub type SaleDatum {
@@ -39,7 +38,6 @@ pub fn valid_number_of_bundles(buy_amt: Int, max_bundle_size: Int) -> Bool {
 pub type SaleRedeemer {
   Purchase
   StartSale { pointer: Token }
-  ExtractSale { profit: Token }
+  TransformSale { transforms: Tokens }
   RemoveSale
-  UpdateSale { lovelace: Lovelace }
 }

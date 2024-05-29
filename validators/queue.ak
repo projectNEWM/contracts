@@ -11,7 +11,7 @@ use assist/signing
 use assist/types/hashes.{ValidatorHash}
 use assist/types/token.{Token}
 use assist/values
-use fractional/types/constants
+use fractional/constants
 use fractional/types/queue.{
   QueueCancel, QueueDatum, QueuePurchase, QueueRedeemer, QueueRefund,
 }
@@ -43,7 +43,7 @@ validator(
     // the input being validated
     let this_input: Input = find.input_by_ref(inputs, output_reference)
     let this_value: Value = this_input.output.value
-    let this_address: Address = this_input.output.address
+    let this_addr: Address = this_input.output.address
     when redeemer is {
       // a batcher can complete a purchase from the queue
       QueuePurchase -> {
@@ -57,7 +57,7 @@ validator(
             ref_datum.contracts.sale,
             ref_datum.contracts.stake,
           )
-        // get the sale input from the reference inputs
+        // get the sale input output reference from the inputs
         let sale_input: Input = find.input_by_addr(inputs, sale_addr)
         let sale_out_ref: OutputReference = sale_input.output_reference
         // the current value on the sale utxo
@@ -112,7 +112,7 @@ validator(
               )
         // the queue_datum going back to the queue contract
         expect that_datum: QueueDatum =
-          find.output_datum_by_addr(outputs, this_address)
+          find.output_datum_by_addr(outputs, this_addr)
         // this should fail for bad data
         // the redeemer is now the general redeemer type that we seek out the specific sub redeemer
         expect that_redeemer: SaleRedeemer =
@@ -132,7 +132,7 @@ validator(
           // one sale script output
           count.outputs_by_addr(outputs, sale_addr, 1)?,
           // queue gets the bundle
-          payout.exact(this_address, return_queue_value, outputs)?,
+          payout.exact(this_addr, return_queue_value, outputs)?,
           // sale gets the cost
           payout.exact(sale_addr, return_sale_value, outputs)?,
           // correct redeemer on the sale contract side
@@ -145,16 +145,22 @@ validator(
             ref_datum.pointer,
             this_datum.pointer_tkn,
           )?,
-          // must have logical number of bundles
+          // number of bundles must be positive
           (this_datum.number_of_bundles > 0)?,
+          // maximum number of bundles must be positive
           (sale_datum.max_bundle_size > 0)?,
+          // the number of bundles can be more than max
+          (sale_datum.max_bundle_size >= this_datum.number_of_bundles)?,
           // must be non-negative incentive
           (this_datum.incentive.amt >= 0)?,
-          // max bundle amount must be postiive
+          // bundle amount must be postiive
           (sale_datum.bundle.amt > 0)?,
           // must have at least one bundle for sale
           (cur_bundle_tkn_amt >= sale_datum.bundle.amt)?,
+          // the fee for this transaction must be valid
+          reference.valid_tx_fee(fee, ref_datum.fees.purchase_queue_bound)?,
           // tx must be spending the certificate of batcher authenticity
+          // it can't be this output reference or the sale output reference
           queue.prove_existence_of_batcher(
             ref_datum.batcher_data.batcher_pid,
             constants.batcher_token_name,
@@ -176,7 +182,7 @@ validator(
             ref_datum.contracts.sale,
             ref_datum.contracts.stake,
           )
-        // get the sale input from the reference inputs
+        // get the sale input output reference from the reference inputs
         let sale_input: Input = find.input_by_addr(reference_inputs, sale_addr)
         let sale_out_ref: OutputReference = sale_input.output_reference
         // the current value on the sale utxo
@@ -192,13 +198,14 @@ validator(
             sale_datum.bundle.pid,
             sale_datum.bundle.tkn,
           )
-        // check the state of the sale with a queue item
+        // check the state of the sale with a queue item.
         let is_refund_allowed: Bool =
           if
-          // Does the cost exist in the this value
+          // Does the cost exist in the this value?
+          // i.e. Can the queue entry even pay for the token bundle?
           value.quantity_of(this_value, total_cost.pid, total_cost.tkn) >= total_cost.amt{
           
-            // Ther queue entry could pay for some amount of bundles
+            // The queue entry could pay for some amount of bundles if they exist.
             //
             // Does the current sale have enough tokens for at least 1 bundle
             if cur_bundle_tkn_amt >= sale_datum.bundle.amt {
@@ -234,7 +241,7 @@ validator(
         //
         and {
           // single script input
-          count.inputs_by_addr(inputs, this_address, 1)?,
+          count.inputs_by_addr(inputs, this_addr, 1)?,
           // prove correct reference datum
           values.prove_exact_nft(
             ref_input.output.value,
@@ -247,13 +254,18 @@ validator(
             ref_datum.pointer,
             this_datum.pointer_tkn,
           )?,
-          // must have logical number of bundles
+          // number of bundles must be positive
           (this_datum.number_of_bundles > 0)?,
+          // maximum number of bundles must be positive
           (sale_datum.max_bundle_size > 0)?,
+          // the number of bundles can be more than max
+          (sale_datum.max_bundle_size >= this_datum.number_of_bundles)?,
           // must be non-negative incentive
           (this_datum.incentive.amt >= 0)?,
           // can the queue entry be refunded
           is_refund_allowed?,
+          // the fee for this transaction must be valid
+          reference.valid_tx_fee(fee, ref_datum.fees.refund_queue_bound)?,
           // owner must get the utxo back
           payout.exact(owner_addr, that_value, outputs)?,
           // tx must be spending the certificate of batcher authenticity
@@ -275,7 +287,7 @@ validator(
           // the owner must sign it
           signing.verify_sig(extra_signatories, this_datum.owner.pkh)?,
           // single script input
-          count.inputs_by_addr(inputs, this_address, 1)?,
+          count.inputs_by_addr(inputs, this_addr, 1)?,
         }
     }
   }

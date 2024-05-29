@@ -12,10 +12,10 @@ use assist/signing
 use assist/types/hashes.{ValidatorHash}
 use assist/types/token
 use assist/values
+use fractional/constants
 use fractional/types/band.{
   AddToBand, BandLockUpDatum, BandLockUpRedeemer, BurnBand, MintBand, RemoveBand,
 }
-use fractional/types/constants
 use fractional/types/reference.{ReferenceDatum}
 
 validator(

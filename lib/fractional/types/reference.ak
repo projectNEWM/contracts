@@ -3,7 +3,7 @@ use aiken/transaction/credential.{PoolId}
 use aiken/transaction/value.{PolicyId, Value}
 use assist/types/hashes.{PublicKeyHash, ValidatorHash}
 use assist/types/wallet.{Wallet}
-use fractional/types/constants.{Lovelace}
+use fractional/constants.{Lovelace}
 
 // staking info
 pub type Staking {

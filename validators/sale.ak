@@ -1,3 +1,4 @@
+use aiken/list
 use aiken/transaction.{Input,
   OutputReference, ScriptContext, Spend, Transaction}
 use aiken/transaction/credential.{Address}
@@ -16,8 +17,7 @@ use assist/values
 use fractional/types/queue.{QueuePurchase, QueueRedeemer}
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/sale.{
-  ExtractSale, Purchase, RemoveSale, SaleDatum, SaleRedeemer, StartSale,
-  UpdateSale,
+  Purchase, RemoveSale, SaleDatum, SaleRedeemer, StartSale, TransformSale,
 }
 
 validator(
@@ -85,6 +85,8 @@ validator(
           count.outputs_by_addr(outputs, queue_addr, 1)?,
           // input sale_datum and output sale_datum must equal
           (this_datum == that_datum)?,
+          (ref_datum.pointer != this_datum.bundle.pid)?,
+          (ref_datum.pointer != this_datum.cost.pid)?,
           // must be the correct reference data
           values.prove_exact_nft(
             ref_input.output.value,
@@ -118,8 +120,11 @@ validator(
           reference.valid_tx_fee(fee, ref_datum.fees.start_sale_bound)?,
           // prove pointer has pointer token
           minting.is_occurring(mint_list, ref_datum.pointer, pointer.tkn)?,
-          // prove validating value doesn't have pointer token
+          // prove this value doesn't have pointer token
           !values.prove_nft(this_value, ref_datum.pointer)?,
+          // what is being sold can't be the pointer token
+          (ref_datum.pointer != this_datum.bundle.pid)?,
+          (ref_datum.pointer != this_datum.cost.pid)?,
           // value must go back to script
           payout.exact(this_address, that_value, outputs)?,
           // the sale_datum can not change
@@ -130,24 +135,26 @@ validator(
           count.outputs_by_addr(outputs, this_address, 1)?,
         }
       }
-      // Extract profit back to seller wallet
-      ExtractSale { profit } -> {
-        // the thing getting spent
-        let that_value: Value = token.add_token_to_value(this_value, profit)
-        // the this_datum going back to the contract
+      // Transform the sale by some token
+      TransformSale { transforms } -> {
+        // this value is transformed into that value
+        let that_value: Value =
+          token.add_tokens_to_value(this_value, transforms)
+        // that datum going back to the contract
         expect that_datum: SaleDatum =
           find.output_datum_by_addr(outputs, this_address)
+        //
+        //
+        //
         and {
           // the owner must sign it
           signing.verify_sig(extra_signatories, this_datum.owner.pkh)?,
-          // prove profit does not have pointer token
-          (ref_datum.pointer != profit.pid)?,
-          // removing some amount only
-          (profit.amt < 0)?,
+          // prove transforms does not have pointer token
+          (list.all(transforms, fn(n) { ref_datum.pointer != n.pid }) == True)?,
           // value must go back to script
           payout.exact(this_address, that_value, outputs)?,
           // the this_datum can not change
-          (this_datum == that_datum)?,
+          sale.valid_sale_datum_update(this_datum, that_datum)?,
           // single script input
           count.inputs_by_addr(inputs, this_address, 1)?,
           // single script output
@@ -195,36 +202,6 @@ validator(
           signing.verify_sig(extra_signatories, this_datum.owner.pkh)?,
           // single script input
           count.inputs_by_addr(inputs, this_address, 1)?,
-          // no script output
-          count.outputs_by_addr(outputs, this_address, 0)?,
-        }
-      }
-      // update the size or price of a sale
-      UpdateSale { lovelace } -> {
-        let that_value: Value =
-          value.add(
-            this_value,
-            value.ada_policy_id,
-            value.ada_asset_name,
-            lovelace,
-          )
-        // the this_datum going back to the contract
-        expect that_datum: SaleDatum =
-          find.output_datum_by_addr(outputs, this_address)
-        //
-        //
-        //
-        and {
-          // the owner must sign it
-          signing.verify_sig(extra_signatories, this_datum.owner.pkh)?,
-          // value must go back to script
-          payout.exact(this_address, that_value, outputs)?,
-          // the this_datum can not change
-          sale.valid_sale_datum_update(this_datum, that_datum)?,
-          // single script input
-          count.inputs_by_addr(inputs, this_address, 1)?,
-          // single script output
-          count.outputs_by_addr(outputs, this_address, 1)?,
         }
       }
     }

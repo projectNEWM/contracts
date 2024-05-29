@@ -9,7 +9,7 @@ use assist/payout
 use assist/signing
 use assist/types/hashes.{ValidatorHash}
 use assist/values
-use fractional/types/constants.{Lovelace}
+use fractional/constants.{Lovelace}
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/staking.{Delegate, Withdraw, WithdrawRedeemer}
 
