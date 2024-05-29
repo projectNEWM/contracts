@@ -9,8 +9,8 @@ testnet_magic=$(cat ../data/testnet.magic)
 stake_script_path="../../contracts/stake_contract.plutus"
 
 # cip 68 contract
-cip68_script_path="../../contracts/cip68_contract.plutus"
-cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_path="../../contracts/storage_contract.plutus"
+storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -26,50 +26,15 @@ tkn=$(cat ../tmp/reference.token)
 asset="1 ${pid}.${tkn}"
 # echo $asset
 
-current_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-datum-embed-cbor-file /home/westbam/haskell/metadata-datum.cbor \
-    --tx-out="${cip68_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out-inline-datum-file ../data/storage/updated-metadata-datum.json \
+    --tx-out="${storage_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-#    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
+    # --tx-out-datum-embed-cbor-file /home/westbam/haskell/metadata-datum.cbor \
 
-updated_min_utxo=$(${cli} transaction calculate-min-required-utxo \
-    --babbage-era \
-    --protocol-params-file ../tmp/protocol.json \
-    --tx-out-datum-embed-cbor-file /home/westbam/haskell/updated-metadata-datum.cbor \
-    --tx-out="${cip68_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
-
-#    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
-
-difference=$((${updated_min_utxo} - ${current_min_utxo}))
-
-direction=0
-if [ "$difference" -eq "0" ]; then
-    echo "Minimum ADA Constant"
-    min_utxo=${updated_min_utxo}
-    difference=0
-elif [ "$difference" -lt "0" ]; then
-    positive=$(( -1 * ${difference}))
-    echo "Minimum ADA Decreasing by" ${positive}
-    direction=1
-    difference=$positive
-else
-    echo "Minimum ADA Increasing by" ${difference}
-fi
-
-# assume the min will always be the updated since updated can just be constant
-min_utxo=${updated_min_utxo}
-
-# update the difference
-variable=${difference}; jq --argjson variable "$variable" '.fields[0].fields[0].int=$variable' ../data/cip68/update-redeemer.json > ../data/cip68/update-redeemer-new.json
-mv ../data/cip68/update-redeemer-new.json ../data/cip68/update-redeemer.json
-
-# update the direciton, 0 is increase
-variable=${direction}; jq --argjson variable "$variable" '.fields[1].int=$variable' ../data/cip68/update-redeemer.json > ../data/cip68/update-redeemer-new.json
-    mv ../data/cip68/update-redeemer-new.json ../data/cip68/update-redeemer.json
-
-script_address_out="${cip68_script_address} + ${min_utxo} + ${asset}"
+script_address_out="${storage_script_address} + ${min_utxo} + ${asset}"
 echo "Update OUTPUT: "${script_address_out}
 #
 # exit
@@ -93,19 +58,19 @@ newm_tx_in=${TXIN::-8}
 # get script utxo
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
-    --address ${cip68_script_address} \
+    --address ${storage_script_address} \
     --testnet-magic ${testnet_magic} \
     --out-file ../tmp/script_utxo.json
 TXNS=$(jq length ../tmp/script_utxo.json)
 if [ "${TXNS}" -eq "0" ]; then
-   echo -e "\n \033[0;31m NO UTxOs Found At ${cip68_script_address} \033[0m \n";
+   echo -e "\n \033[0;31m NO UTxOs Found At ${storage_script_address} \033[0m \n";
    exit;
 fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" --arg policy_id "$pid" --arg name "$tkn" 'to_entries[] | select(.value.value[$policy_id][$name] == 1) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
-echo "TXIN: $TXIN"
 script_tx_in=${TXIN::-8}
 echo $script_tx_in
+
 # collat info
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -121,7 +86,7 @@ fi
 collat_tx_in=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 # script reference utxo
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/cip-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/storage-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -135,16 +100,16 @@ FEE=$(${cli} transaction build \
     --tx-in ${script_tx_in} \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
-    --spending-reference-tx-in-datum-cbor-file /home/westbam/haskell/metadata-datum.cbor \
-    --spending-reference-tx-in-redeemer-file ../data/cip68/update-redeemer.json \
+    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-redeemer-file ../data/storage/update-redeemer.json \
     --tx-out="${script_address_out}" \
-    --tx-out-datum-embed-cbor-file /home/westbam/haskell/updated-metadata-datum.cbor \
+    --tx-out-inline-datum-file ../data/storage/updated-metadata-datum.json \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
 
-#    --spending-reference-tx-in-inline-datum-present \
-#    --tx-out-inline-datum-file ../data/cip68/updated-metadata-datum.json \
+    # --spending-reference-tx-in-datum-cbor-file /home/westbam/haskell/metadata-datum.cbor \
+    # --tx-out-datum-embed-cbor-file /home/westbam/haskell/updated-metadata-datum.cbor \
 
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -169,7 +134,7 @@ ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file ../tmp/tx.signed
 
-cp ../data/cip68/updated-metadata-datum.json ../data/cip68/metadata-datum.json
+cp ../data/storage/updated-metadata-datum.json ../data/storage/metadata-datum.json
 
 tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx

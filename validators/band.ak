@@ -74,7 +74,7 @@ validator(
           )?,
         }
       }
-      // add some memebers to the band if not full
+      // add some members to the band if not full
       AddToBand { members } -> {
         let that_value: Value = this_value |> token.add_tokens_to_value(members)
         let this_addr: Address = this_input.output.address

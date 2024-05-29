@@ -12,8 +12,8 @@ ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ../
 stake_script_path="../../contracts/stake_contract.plutus"
 
 # cip 68 contract
-cip68_script_path="../../contracts/cip68_contract.plutus"
-cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_path="../../contracts/storage_contract.plutus"
+storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
@@ -27,7 +27,7 @@ newm_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/ne
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 #
-# receiver_address=$(cat ../wallets/artist-wallet/payment.addr)
+receiver_address=$(cat ../wallets/artist-wallet/payment.addr)
 receiver_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/artist-wallet/payment.vkey)
 
 # the minting script policy
@@ -62,27 +62,27 @@ frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTo
 echo -n $ref_name > ../tmp/reference.token
 echo -n $frac_name > ../tmp/fraction.token
 
-# the cost of a bundle is defined in the sale data folder
-value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
+# # the cost of a bundle is defined in the sale data folder
+# value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
 
-# update bundle sale datum with frac token name
-bundle_size=1
-max_bundle_size=100000000
-jq \
---arg pkh "$receiver_pkh" \
---arg policy_id "$policy_id" \
---arg frac_name "$frac_name" \
---argjson bundle_price "$value_map" \
---argjson bundle_size "$bundle_size" \
---argjson max_bundle_size "$max_bundle_size" \
-'.fields[0].fields[0].bytes=$pkh |
-.fields[1].fields[0].bytes=$policy_id | 
-.fields[1].fields[1].bytes=$frac_name |
-.fields[1].fields[2].int=$bundle_size |
-.fields[2].map=$bundle_price |
-.fields[3].int=$max_bundle_size
-' \
-../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json
+# # update bundle sale datum with frac token name
+# bundle_size=1
+# max_bundle_size=100000000
+# jq \
+# --arg pkh "$receiver_pkh" \
+# --arg policy_id "$policy_id" \
+# --arg frac_name "$frac_name" \
+# --argjson bundle_price "$value_map" \
+# --argjson bundle_size "$bundle_size" \
+# --argjson max_bundle_size "$max_bundle_size" \
+# '.fields[0].fields[0].bytes=$pkh |
+# .fields[1].fields[0].bytes=$policy_id | 
+# .fields[1].fields[1].bytes=$frac_name |
+# .fields[1].fields[2].int=$bundle_size |
+# .fields[2].map=$bundle_price |
+# .fields[3].int=$max_bundle_size
+# ' \
+# ../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json
 
 
 REFERENCE_ASSET="1 ${policy_id}.${ref_name}"
@@ -95,29 +95,31 @@ MINT_ASSET="1 ${policy_id}.${ref_name} + 100000000 ${policy_id}.${frac_name}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
-    --tx-out="${cip68_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
-reference_address_out="${cip68_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
+    --tx-out-inline-datum-file ../data/storage/empty.metadata-datum.json \
+    --tx-out="${storage_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
+reference_address_out="${storage_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
 
 
-# cost value + incentive + bundle
-worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-+ 9223372036854775807 115d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-+ 9223372036854775807 215d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-"
-UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+# # cost value + incentive + bundle
+# worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
+# + 9223372036854775807 115d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
+# + 9223372036854775807 215d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
+# "
+# UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
+#     --babbage-era \
+#     --protocol-params-file ../tmp/protocol.json \
+#     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
+#     --tx-out="${sale_script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
+
+# self_start_fee=$(jq '.fields[4].fields[2].int' ../data/reference/reference-datum.json)
+# min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
+# fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
+
+min_ada=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-    --tx-out="${sale_script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
-
-self_start_fee=$(jq '.fields[4].fields[2].int' ../data/reference/reference-datum.json)
-min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
-fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
-
-# just send it to some address for testing
-# test_wallet_address="addr_test1qrvnxkaylr4upwxfxctpxpcumj0fl6fdujdc72j8sgpraa9l4gu9er4t0w7udjvt2pqngddn6q4h8h3uv38p8p9cq82qav4lmp"
-# fraction_address_out="${test_wallet_address} + ${min_ada} + ${FRACTION_ASSET}"
+    --tx-out="${receiver_address} + 5000000 + ${FRACTION_ASSET}" | tr -dc '0-9')
+fraction_address_out="${receiver_address} + ${min_ada} + ${FRACTION_ASSET}"
 
 echo "Reference Mint OUTPUT:" ${reference_address_out}
 echo "Fraction Mint OUTPUT:" ${fraction_address_out}
@@ -149,9 +151,8 @@ FEE=$(${cli} transaction build \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${newm_tx_in} \
     --tx-out="${reference_address_out}" \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
+    --tx-out-inline-datum-file ../data/storage/empty.metadata-datum.json \
     --tx-out="${fraction_address_out}" \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --required-signer-hash ${collat_pkh} \
     --required-signer-hash ${newm_pkh} \
     --mint="${MINT_ASSET}" \
@@ -160,6 +161,8 @@ FEE=$(${cli} transaction build \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
     --testnet-magic ${testnet_magic})
+
+    # --tx-out-inline-datum-file ../data/sale/sale-datum.json \
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"

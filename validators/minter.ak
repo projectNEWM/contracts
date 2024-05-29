@@ -41,6 +41,9 @@ validator(
         |> value.from_minted_value()
         |> value.flatten()
     when redeemer is {
+      //
+      //
+      //
       MintTokens -> and {
           // hot key must sign
           signing.verify_sig(extra_signatories, ref_datum.hot_key)?,
@@ -57,6 +60,9 @@ validator(
             starter_tkn,
           )?,
         }
+      //
+      //
+      //
       BurnTokens { burn_amt } -> and {
           // burn amount must be negative or zero
           (burn_amt <= 0)?,

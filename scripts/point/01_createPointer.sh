@@ -13,9 +13,9 @@ ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ../
 stake_script_path="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # cip 68 contract
-cip68_script_path="../../contracts/cip68_contract.plutus"
-# cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
-cip68_script_address="addr_test1xzpq3mqglyyrqce7fgh725ra2tp8hv2kssx0kx6ul6gxhskprjsrdd7kke64w5s0vj8x8hfa9zmc86qps3dw0q4eca2q8r9cjd"
+storage_script_path="../../contracts/storage_contract.plutus"
+# storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_address="addr_test1xzpq3mqglyyrqce7fgh725ra2tp8hv2kssx0kx6ul6gxhskprjsrdd7kke64w5s0vj8x8hfa9zmc86qps3dw0q4eca2q8r9cjd"
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
