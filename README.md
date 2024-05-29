@@ -30,7 +30,7 @@ Documentation for Assist can be view [here](https://www.logicalmechanism.io/docs
 
 ## Build
 
-Set up the `start_info.json` file with the correct starter token information, NEWM hot key, upper fee bounds, and pool id. These values are used inside the `complete_build.sh` script to compile and apply the contracts. The build script will auto generate the correct datums and redeemers.
+Set up the `config.json` file with the correct starter token information, NEWM hot key, upper fee bounds, and pool id. These values are used inside the `complete_build.sh` script to compile and apply the contracts. The build script will auto generate the correct datums and redeemers.
 
 All the tests can be ran with Aiken.
 
@@ -58,9 +58,9 @@ Use the `create_wallet.sh` script to auto generate simple wallets for testing.
 
 First create the reference scripts with `00_createScriptReferences.sh` found in the scripts folder. This script will use funds held on the reference-wallet to store the smart contracts on UTxOs.
 
-Next, we need to create the data reference UTxO using `01_createReferenceUTxO.sh` script inside the `reference` subfolder. This script will use the the starter-wallet to send the starter token defined in `start_info.json` into the data reference contract. The starter token acts like a pointer for the other contracts to correctly identify the true reference data. The `reference` folder contains test scripts for updating data on the data UTxO. These scripts require a valid n-out-of-m multisig with the set of keeper wallets held on a datum in the data reference contract. The `keeper*-wallet` do not need funds as they are just signing the transaction. The update scripts assume the `newm-wallet` will pay for the transaction fees.
+Next, we need to create the data reference UTxO using `01_createReferenceUTxO.sh` script inside the `reference` subfolder. This script will use the the starter-wallet to send the starter token defined in `config.json` into the data reference contract. The starter token acts like a pointer for the other contracts to correctly identify the true reference data. The `reference` folder contains test scripts for updating data on the data UTxO. These scripts require a valid n-out-of-m multisig with the set of keeper wallets held on a datum in the data reference contract. The `keeper*-wallet` do not need funds as they are just signing the transaction. The update scripts assume the `newm-wallet` will pay for the transaction fees.
 
-After the reference data contract has been set up, register and delegate the stake key inside the `staking` subfolder. The staking contract will delegate the ada value inside the cip68 storage and sale contract to a specific pool defined in the `start_info.json` file. The test scripts in the `staking` folder assume that the `newm-wallet` will pay for the transaction fee.
+After the reference data contract has been set up, register and delegate the stake key inside the `staking` subfolder. The staking contract will delegate the ada value inside the cip68 storage and sale contract to a specific pool defined in the `config.json` file. The test scripts in the `staking` folder assume that the `newm-wallet` will pay for the transaction fee.
 
 At this point tokens may be minted and the sale contract can be used.
 

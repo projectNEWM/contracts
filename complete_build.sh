@@ -30,8 +30,8 @@ echo -e "\033[1;34m Building Contracts \033[0m"
 aiken build --trace-level verbose --filter-traces all
 
 # random string
-ranD=$(jq -r '.randomData' start_info.json)
-ranS=$(jq -r '.randomStake' start_info.json)
+ranD=$(jq -r '.randomData' config.json)
+ranS=$(jq -r '.randomStake' config.json)
 ranD_cbor=$(python3 -c "import cbor2;hex_string='${ranD}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
 ranS_cbor=$(python3 -c "import cbor2;hex_string='${ranS}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
 
@@ -44,8 +44,8 @@ cardano-cli transaction policyid --script-file contracts/reference_contract.plut
 ref=$(cat hashes/reference_contract.hash)
 
 # the reference token
-pid=$(jq -r '.starterPid' start_info.json)
-tkn=$(jq -r '.starterTkn' start_info.json)
+pid=$(jq -r '.starterPid' config.json)
+tkn=$(jq -r '.starterTkn' config.json)
 
 # cbor representation
 ref_cbor=$(python3 -c "import cbor2;hex_string='${ref}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
@@ -53,7 +53,7 @@ pid_cbor=$(python3 -c "import cbor2;hex_string='${pid}';data = bytes.fromhex(hex
 tkn_cbor=$(python3 -c "import cbor2;hex_string='${tkn}';data = bytes.fromhex(hex_string);encoded = cbor2.dumps(data);print(encoded.hex())")
 
 # The pool to stake at
-poolId=$(jq -r '.poolId' start_info.json)
+poolId=$(jq -r '.poolId' config.json)
 
 echo -e "\033[1;33m Convert CIP68 Contract \033[0m"
 aiken blueprint apply -o plutus.json -v storage.params "${pid_cbor}"
@@ -139,15 +139,15 @@ pointerHash=$(cat hashes/pointer_policy.hash)
 batcherHash=$(cat hashes/batcher.hash)
 
 # the purchase upper bound
-pqb=$(jq -r '.purchaseQueueBound' start_info.json)
+pqb=$(jq -r '.purchaseQueueBound' config.json)
 # the refund upper bound
-rqb=$(jq -r '.refundQueueBound' start_info.json)
+rqb=$(jq -r '.refundQueueBound' config.json)
 # the start upper bound
-ssb=$(jq -r '.startSaleBound' start_info.json)
+ssb=$(jq -r '.startSaleBound' config.json)
 
 # This needs to be generated from the hot key in start info.
 # Assume the hot key is all the keys for now
-hotKey=$(jq -r '.hotKey' start_info.json)
+hotKey=$(jq -r '.hotKey' config.json)
 
 cp ./scripts/data/reference/reference-datum.json ./scripts/data/reference/backup-reference-datum.json
 
