@@ -12,8 +12,8 @@ ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file ../
 stake_script_path="../../contracts/stake_contract.plutus"
 
 # cip 68 contract
-cip68_script_path="../../contracts/cip68_contract.plutus"
-cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_path="../../contracts/storage_contract.plutus"
+storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
@@ -101,9 +101,9 @@ MINT_ASSET="${REFERENCE_ASSET} + ${FRACTION_ASSET} + ${POINTER_ASSET}"
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
-    --tx-out="${cip68_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
-reference_address_out="${cip68_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
+    --tx-out-inline-datum-file ../data/storage/metadata-datum.json \
+    --tx-out="${storage_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
+reference_address_out="${storage_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
 
 UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -144,7 +144,7 @@ FEE=$(${cli} transaction build \
     --read-only-tx-in-reference="${data_ref_utxo}#0" \
     --tx-in ${newm_tx_in} \
     --tx-out="${reference_address_out}" \
-    --tx-out-inline-datum-file ../data/cip68/metadata-datum.json \
+    --tx-out-inline-datum-file ../data/storage/metadata-datum.json \
     --tx-out="${fraction_address_out}" \
     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
     --required-signer-hash ${collat_pkh} \

@@ -10,9 +10,9 @@ Ensure you have the following:
 
 ## Updating Contract Parameters
 
-1. **Locate the `start_info.json` File**: This file contains parameters that need to be updated with live contract data.
+1. **Locate the `config.json` File**: This file contains parameters that need to be updated with live contract data.
 
-2. **Edit `start_info.json`**: Update the following values in the `start_info.json` file with the current data:
+2. **Edit `config.json`**: Update the following values in the `config.json` file with the current data:
     - `refDataHash`: The hash of the live reference data contract.
     - `starterPid`: The project ID associated with the starter token.
     - `starterTkn`: Information about the starter token.
@@ -21,7 +21,7 @@ These updates ensure that the new contracts are correctly parameterized with the
 
 ## Building the Contracts
 
-Once the necessary parameters are updated in `start_info.json`, proceed with building the contracts:
+Once the necessary parameters are updated in `config.json`, proceed with building the contracts:
 
 ```bash
 ./initial_sale_build.sh

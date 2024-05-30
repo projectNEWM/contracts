@@ -24,8 +24,8 @@ keeper3_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets
 
 
 # asset to trade
-policy_id=$(jq -r '.starterPid' ../../start_info.json)
-token_name=$(jq -r '.starterTkn' ../../start_info.json)
+policy_id=$(jq -r '.starterPid' ../../config.json)
+token_name=$(jq -r '.starterTkn' ../../config.json)
 asset="1 ${policy_id}.${token_name}"
 
 min_value=$(${cli} transaction calculate-min-required-utxo \

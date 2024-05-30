@@ -20,11 +20,14 @@ artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
+pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
+tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+total_amt=100000000
+
 pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pointer_tkn=$(cat ../tmp/pointer.token)
 
-cost_pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
-cost_tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
+default_asset="${total_amt} ${pid}.${tkn}"
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -37,38 +40,24 @@ if [ "${TXNS}" -eq "0" ]; then
    echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
    exit;
 fi
-TXIN=$(jq -r --arg alltxin "" --arg tkn "${cost_tkn}" 'to_entries[] | select(.value.inlineDatum.fields[1].fields[1].bytes == $tkn) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
-script_tx_in=${TXIN::-8}
-echo Script UTxO: $script_tx_in
+
+TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .key' ../tmp/script_utxo.json)
+script_tx_in=$TXIN
+
+# echo $script_tx_in
+
 # exit
-LOVELACE_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
-utxo_value=$LOVELACE_VALUE
-echo LOVELACE: $LOVELACE_VALUE
-
-pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
-tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-default_asset="${total_amt} ${pid}.${tkn}"
 CURRENT_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value[$pid][$tkn]' ../tmp/script_utxo.json)
-echo REMAINING: $CURRENT_VALUE ${pid}.${tkn}
+POINTER_VALUE=$(jq -r --arg ppid "${pointer_pid}" --arg ptkn "${pointer_tkn}" 'to_entries[] | select(.value.value[$ppid][$ptkn] == 1) | .value.value.lovelace' ../tmp/script_utxo.json)
+LOVELACE_VALUE=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .value.value.lovelace' ../tmp/script_utxo.json)
 
-
-script_address_out="${script_address} + ${LOVELACE_VALUE} + 1 ${pointer_pid}.${pointer_tkn} + $CURRENT_VALUE ${pid}.${tkn}"
-
-
-sale_profit_amount=$(jq '[.[] | .value["015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d"]["43757272656e6379"]] | add' ../tmp/script_utxo.json)
-echo $sale_profit_amount
-if [ -z "$sale_profit_amount" ]; then
-    echo No Profit yet
-    exit
+if [ ! -z "$POINTER_VALUE" ]; then
+    script_address_out="${script_address} + ${LOVELACE_VALUE} + ${CURRENT_VALUE} ${pid}.${tkn} + 1 ${pointer_pid}.${pointer_tkn}"
 else
-    profit="$((${sale_profit_amount})) 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.43757272656e6379"
+    script_address_out="${script_address} + ${LOVELACE_VALUE} + ${CURRENT_VALUE} ${pid}.${tkn}"
 fi
-echo Current Profit: $profit
 
-variable=${sale_profit_amount}; jq --argjson variable "$variable" '.fields[0].map[0].v.map[0].v.int=$variable' ../data/sale/extract-redeemer.json > ../data/sale/extract-redeemer-new.json
-mv ../data/sale/extract-redeemer-new.json ../data/sale/extract-redeemer.json
-
-echo "Return OUTPUT: "${script_address_out}
+echo "Update OUTPUT: "${script_address_out}
 #
 # exit
 #
@@ -98,10 +87,24 @@ if [ "${TXNS}" -eq "0" ]; then
 fi
 collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
+echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
+${cli} query utxo \
+    --address ${script_address} \
+    --testnet-magic ${testnet_magic} \
+    --out-file ../tmp/script_utxo.json
+
+# transaction variables
+TXNS=$(jq length ../tmp/script_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
+   exit;
+fi
+alltxin=""
+TXIN=$(jq -r --arg alltxin "" --arg artistPkh "${artist_pkh}" --arg pid "${pid}" --arg tkn "${tkn}" 'to_entries[] | select(.value.value[$pid] // empty | keys[0] == $tkn) | .key' ../tmp/script_utxo.json)
+script_tx_in=$TXIN
+
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
-pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
-
 
 # exit
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -116,9 +119,9 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file ../data/sale/extract-redeemer.json \
+    --spending-reference-tx-in-redeemer-file ../data/sale/transform-redeemer.json \
     --tx-out="${script_address_out}" \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json  \
+    --tx-out-inline-datum-file ../data/sale/updated-sale-datum.json  \
     --required-signer-hash ${artist_pkh} \
     --required-signer-hash ${collat_pkh} \
     --testnet-magic ${testnet_magic})
@@ -144,6 +147,8 @@ echo -e "\033[0;36m Submitting \033[0m"
 ${cli} transaction submit \
     --testnet-magic ${testnet_magic} \
     --tx-file ../tmp/tx.signed
+
+cp ../data/sale/updated-sale-datum.json ../data/sale/sale-datum.json
 
 tx=$(cardano-cli transaction txid --tx-file ../tmp/tx.signed)
 echo "Tx Hash:" $tx

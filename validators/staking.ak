@@ -9,7 +9,7 @@ use assist/payout
 use assist/signing
 use assist/types/hashes.{ValidatorHash}
 use assist/values
-use fractional/types/constants.{Lovelace}
+use fractional/constants.{Lovelace}
 use fractional/types/reference.{ReferenceDatum}
 use fractional/types/staking.{Delegate, Withdraw, WithdrawRedeemer}
 
@@ -21,12 +21,19 @@ validator(
   _random_string: ByteArray,
 ) {
   fn params(redeemer: WithdrawRedeemer, context: ScriptContext) -> Bool {
-    let tx: Transaction = context.transaction
+    let Transaction {
+      outputs,
+      reference_inputs,
+      extra_signatories,
+      withdrawals,
+      ..
+    } = context.transaction
     // get reference utxo
     let ref_addr: Address = credential.from_script(ref_hash)
-    let ref_input: Input = find.input_by_addr(tx.reference_inputs, ref_addr)
+    let ref_input: Input = find.input_by_addr(reference_inputs, ref_addr)
     // get the reference datum
     expect ref_datum: ReferenceDatum = data.input_datum(ref_input)
+    // the purpose can be withdrawing and publishing
     when context.purpose is {
       // handle all withdrawals
       WithdrawFrom(stake_credential) -> {
@@ -34,7 +41,7 @@ validator(
           addresses.from_wallet(ref_datum.staking.reward_wallet)
         // if no reward is found error
         let reward: Lovelace =
-          find.stake_reward_by_sc(tx.withdrawals, stake_credential)
+          find.stake_reward_by_sc(withdrawals, stake_credential)
         when redeemer is {
           // can only withdraw
           Withdraw -> and {
@@ -45,11 +52,7 @@ validator(
                 starter_tkn,
               )?,
               // an at least here allows for small rewards to be withdrawn
-              payout.at_least(
-                reward_addr,
-                value.from_lovelace(reward),
-                tx.outputs,
-              )?,
+              payout.at_least(reward_addr, value.from_lovelace(reward), outputs)?,
             }
           // other redeemers fail here
           _ -> False
@@ -76,7 +79,7 @@ validator(
               (certificate == new_delegation)?,
               // only keepers can update the data
               signing.verify_multisig(
-                tx.extra_signatories,
+                extra_signatories,
                 ref_datum.keepers.pkhs,
                 ref_datum.keepers.threshold,
               )?,

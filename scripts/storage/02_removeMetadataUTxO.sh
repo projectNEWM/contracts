@@ -9,8 +9,8 @@ testnet_magic=$(cat ../data/testnet.magic)
 stake_script_path="../../contracts/stake_contract.plutus"
 
 # cip 68 contract
-cip68_script_path="../../contracts/cip68_contract.plutus"
-cip68_script_address=$(${cli} address build --payment-script-file ${cip68_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
+storage_script_path="../../contracts/storage_contract.plutus"
+storage_script_address=$(${cli} address build --payment-script-file ${storage_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
@@ -29,12 +29,12 @@ tkn=$(cat ../tmp/reference.token)
 asset="1 ${pid}.${tkn}"
 # echo $asset
 
-current_min_utxo=$(${cli} transaction calculate-min-required-utxo \
+min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out="${cip68_script_address} + 5000000 + ${asset}" | tr -dc '0-9')
+    --tx-out="${artist_address} + 5000000 + ${asset}" | tr -dc '0-9')
 
-artist_address_out="${artist_address} + ${current_min_utxo} + ${asset}"
+artist_address_out="${artist_address} + ${min_utxo} + ${asset}"
 echo "Remove OUTPUT: "${artist_address_out}
 #
 # exit
@@ -58,7 +58,7 @@ newm_tx_in=${TXIN::-8}
 # get script utxo
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
-    --address ${cip68_script_address} \
+    --address ${storage_script_address} \
     --testnet-magic ${testnet_magic} \
     --out-file ../tmp/script_utxo.json
 TXNS=$(jq length ../tmp/script_utxo.json)
@@ -69,6 +69,7 @@ fi
 alltxin=""
 TXIN=$(jq -r --arg alltxin "" --arg policy_id "$pid" --arg name "$tkn" 'to_entries[] | select(.value.value[$policy_id][$name] == 1) | .key | . + $alltxin + " --tx-in"' ../tmp/script_utxo.json)
 script_tx_in=${TXIN::-8}
+echo $script_tx_in
 
 # collat info
 echo -e "\033[0;36m Gathering Collateral UTxO Information  \033[0m"
@@ -85,7 +86,7 @@ fi
 collat_tx_in=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 # script reference utxo
-script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/cip-reference-utxo.signed )
+script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/storage-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
 
 echo -e "\033[0;36m Building Tx \033[0m"
@@ -100,7 +101,7 @@ FEE=$(${cli} transaction build \
     --spending-tx-in-reference="${script_ref_utxo}#1" \
     --spending-plutus-script-v2 \
     --spending-reference-tx-in-inline-datum-present \
-    --spending-reference-tx-in-redeemer-file ../data/cip68/remove-redeemer.json \
+    --spending-reference-tx-in-redeemer-file ../data/storage/remove-redeemer.json \
     --tx-out="${artist_address_out}" \
     --required-signer-hash ${newm_pkh} \
     --required-signer-hash ${collat_pkh} \

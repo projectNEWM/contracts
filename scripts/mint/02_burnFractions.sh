@@ -20,7 +20,7 @@ fi
 
 burnAmt=${1}
 # update the starting lock time
-variable=${burnAmt}; jq --argjson variable "$variable" '.fields[0].int=$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
+variable=${burnAmt}; jq --argjson variable "$variable" '.fields[0].int=-$variable' ../data/mint/burn-redeemer.json > ../data/mint/burn-redeemer-new.json
 mv ../data/mint/burn-redeemer-new.json ../data/mint/burn-redeemer.json
 
 # get params

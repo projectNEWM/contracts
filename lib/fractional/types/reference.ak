@@ -3,7 +3,7 @@ use aiken/transaction/credential.{PoolId}
 use aiken/transaction/value.{PolicyId, Value}
 use assist/types/hashes.{PublicKeyHash, ValidatorHash}
 use assist/types/wallet.{Wallet}
-use fractional/types/constants.{Lovelace}
+use fractional/constants.{Lovelace}
 
 // staking info
 pub type Staking {
@@ -93,13 +93,16 @@ pub fn valid_tx_fee(fee: Value, upper_bound: Lovelace) -> Bool {
   value.lovelace_of(fee) <= upper_bound
 }
 
+/// Assumes a single monster policy id but many monster prefixes. The batcher
+/// policy id may change but the name is always constant.
+///
 pub type BatcherData {
   monster_pid: PolicyId,
   monster_prefixes: List<ByteArray>,
   batcher_pid: PolicyId,
 }
 
-// data to be used inside other contracts
+/// The reference data to be used inside other contracts.
 pub type ReferenceDatum {
   hot_key: PublicKeyHash,
   keepers: Keepers,
