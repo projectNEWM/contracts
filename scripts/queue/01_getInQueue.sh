@@ -44,7 +44,6 @@ bundle_tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
 
 # point to a sale
 pointer_tkn=$(cat ../tmp/pointer.token)
-# pointer_tkn=""
 
 variable=${pointer_tkn}; jq --arg variable "$variable" '.fields[3].bytes=$variable' ../data/queue/queue-datum.json > ../data/queue/queue-datum-new.json
 mv ../data/queue/queue-datum-new.json ../data/queue/queue-datum.json
@@ -81,7 +80,7 @@ script_address_out="${script_address} + ${adaPay} + ${cost} + ${incentive}"
 
 echo "Script OUTPUT: "${script_address_out}
 #
-exit
+# exit
 #
 echo -e "\033[0;36m Gathering Buyer UTxO Information  \033[0m"
 ${cli} query utxo \
