@@ -12,19 +12,14 @@ stake_script_path="../../contracts/stake_contract.plutus"
 sale_script_path="../../contracts/sale_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
 
-# collat, artist, reference
+# artist address
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
-
-#
-pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-total_amt=50000000
-# total_amt=100000000
+total_amt=100000000
 
 default_asset="${total_amt} ${pid}.${tkn}"
-pointer_asset="${total_amt} ${pointer_pid}.${tkn}"
 
 # cost value + incentive + bundle
 worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
@@ -34,14 +29,14 @@ worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932
 utxo_value=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
     --protocol-params-file ../tmp/protocol.json \
-    --tx-out-inline-datum-file ../data/sale/sale-datum.json \
+    --tx-out-inline-datum-file ../data/sale/worst-case-sale-datum.json \
     --tx-out="${script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
 
 self_start_fee=$(jq '.fields[4].fields[2].int' ../data/reference/reference-datum.json)
 min_ada=$((${utxo_value} + ${self_start_fee}))
 
 script_address_out="${script_address} + ${min_ada} + ${default_asset}"
-echo "Artist OUTPUT: "${script_address_out}
+echo "Sale OUTPUT: "${script_address_out}
 #
 # exit
 #

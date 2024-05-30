@@ -26,8 +26,7 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-total_amt=50000000
-# total_amt=100000000
+total_amt=100000000
 
 echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
 ${cli} query utxo \
@@ -146,7 +145,7 @@ python3 -c "import sys, json; sys.path.append('../py/'); from tx_simulation impo
 
 cat ../data/exe_units.json
 
-# exit 
+# exit
 cpu=$(jq -r '.[0].cpu' ../data/exe_units.json)
 mem=$(jq -r '.[0].mem' ../data/exe_units.json)
 

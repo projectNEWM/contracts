@@ -7,12 +7,10 @@ testnet_magic=$(cat ../data/testnet.magic)
 
 # staking contract
 stake_script_path="../../contracts/stake_contract.plutus"
-# stake_script_path="stake_test17rq3egpkklttva2h2g8kfrnrm57j3duraqqcgkh8s2uuw4q7ph8gc"
 
 # bundle sale contract
 sale_script_path="../../contracts/sale_contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-script-file ${stake_script_path} --testnet-magic ${testnet_magic})
-# script_address=$(${cli} address build --payment-script-file ${sale_script_path} --stake-address ${stake_script_path} --testnet-magic ${testnet_magic})
 
 # collat, artist, reference
 artist_address=$(cat ../wallets/artist-wallet/payment.addr)
@@ -22,13 +20,12 @@ artist_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/
 collat_address=$(cat ../wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file ../wallets/collat-wallet/payment.vkey)
 
-pointer_pid=$(cat ../../hashes/pointer_policy.hash)
 pid=$(jq -r '.fields[1].fields[0].bytes' ../data/sale/sale-datum.json)
 tkn=$(jq -r '.fields[1].fields[1].bytes' ../data/sale/sale-datum.json)
-pointer_tkn=$(cat ../tmp/pointer.token)
 total_amt=100000000
 
-# echo $tkn
+pointer_pid=$(cat ../../hashes/pointer_policy.hash)
+pointer_tkn=$(cat ../tmp/pointer.token)
 
 default_asset="${total_amt} ${pid}.${tkn}"
 
@@ -62,10 +59,7 @@ if [ -z "$POINTER_VALUE" ]; then
     exit 1
 fi
 
-
 if [[ CURRENT_VALUE -le 0 ]] ; then
-    utxo_value=$(jq -r '.[].value.lovelace' ../tmp/script_utxo.json)
-
     artist_address_out="${artist_address} + ${LOVELACE_VALUE}"
 else
     artist_address_out="${artist_address} + ${LOVELACE_VALUE} + ${returning_asset}"
@@ -103,7 +97,6 @@ collat_utxo=$(jq -r 'keys[0]' ../tmp/collat_utxo.json)
 
 script_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/sale-reference-utxo.signed )
 data_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/referenceable-tx.signed )
-# data_ref_utxo="8472ae5dd6ff4620ec563f7b00ebd05ba24119274fa69a6e7f015bfaa657ebeb"
 pointer_ref_utxo=$(${cli} transaction txid --tx-file ../tmp/pointer-reference-utxo.signed)
 
 

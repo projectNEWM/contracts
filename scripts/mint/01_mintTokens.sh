@@ -62,28 +62,6 @@ frac_name=$(python3 -c "import sys; sys.path.append('../../lib/py/'); from getTo
 echo -n $ref_name > ../tmp/reference.token
 echo -n $frac_name > ../tmp/fraction.token
 
-# # the cost of a bundle is defined in the sale data folder
-# value_map=$(python3 -c "import sys; sys.path.append('../py/'); from convertCostToMap import map_cost_file; map_cost_file('../data/sale/cost.json')")
-
-# # update bundle sale datum with frac token name
-# bundle_size=1
-# max_bundle_size=100000000
-# jq \
-# --arg pkh "$receiver_pkh" \
-# --arg policy_id "$policy_id" \
-# --arg frac_name "$frac_name" \
-# --argjson bundle_price "$value_map" \
-# --argjson bundle_size "$bundle_size" \
-# --argjson max_bundle_size "$max_bundle_size" \
-# '.fields[0].fields[0].bytes=$pkh |
-# .fields[1].fields[0].bytes=$policy_id | 
-# .fields[1].fields[1].bytes=$frac_name |
-# .fields[1].fields[2].int=$bundle_size |
-# .fields[2].map=$bundle_price |
-# .fields[3].int=$max_bundle_size
-# ' \
-# ../data/sale/sale-datum.json | sponge ../data/sale/sale-datum.json
-
 
 REFERENCE_ASSET="1 ${policy_id}.${ref_name}"
 FRACTION_ASSET="100000000 ${policy_id}.${frac_name}"
@@ -98,22 +76,6 @@ UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-inline-datum-file ../data/storage/empty.metadata-datum.json \
     --tx-out="${storage_script_address} + 5000000 + ${REFERENCE_ASSET}" | tr -dc '0-9')
 reference_address_out="${storage_script_address} + ${UTXO_VALUE} + ${REFERENCE_ASSET}"
-
-
-# # cost value + incentive + bundle
-# worst_case_token="9223372036854775807 015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-# + 9223372036854775807 115d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-# + 9223372036854775807 215d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d.015d83f25700c83d708fbf8ad57783dc257b01a932ffceac9dcd0c3d00000000
-# "
-# UTXO_VALUE=$(${cli} transaction calculate-min-required-utxo \
-#     --babbage-era \
-#     --protocol-params-file ../tmp/protocol.json \
-#     --tx-out-inline-datum-file ../data/sale/sale-datum.json \
-#     --tx-out="${sale_script_address} + 5000000 + ${worst_case_token}" | tr -dc '0-9')
-
-# self_start_fee=$(jq '.fields[4].fields[2].int' ../data/reference/reference-datum.json)
-# min_ada=$((${UTXO_VALUE} + ${self_start_fee}))
-# fraction_address_out="${sale_script_address} + ${min_ada} + ${FRACTION_ASSET}"
 
 min_ada=$(${cli} transaction calculate-min-required-utxo \
     --babbage-era \
@@ -161,8 +123,6 @@ FEE=$(${cli} transaction build \
     --policy-id="${policy_id}" \
     --mint-reference-tx-in-redeemer-file ../data/mint/mint-redeemer.json \
     --testnet-magic ${testnet_magic})
-
-    # --tx-out-inline-datum-file ../data/sale/sale-datum.json \
 
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
